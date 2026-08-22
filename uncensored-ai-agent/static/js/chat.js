@@ -16,7 +16,9 @@
     function formatTime(iso) {
         if (!iso) return '';
         try {
-            const d = new Date(iso);
+            let ts = iso;
+            if (!/Z$|[+-]\d\d:?\d\d$/.test(ts)) ts += 'Z';
+            const d = new Date(ts);
             return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
         } catch {
             return iso.slice(11, 16) || '';
@@ -63,7 +65,13 @@
                 const data = JSON.parse(event.data);
 
                 if (data.type === 'history') {
-                    // Already rendered from server, but can sync if needed
+                    const msgs = data.messages || [];
+                    messagesEl.replaceChildren();
+                    msgs.forEach(m => addMessage(m.role, m.content, m.created_at));
+                    const last = msgs[msgs.length - 1];
+                    if (last && last.role === 'assistant') {
+                        typingEl.style.display = 'none';
+                    }
                     return;
                 }
 
@@ -133,6 +141,15 @@
         } finally {
             sendBtn.disabled = false;
             input.focus();
+        }
+    });
+
+    // Mobile browsers suspend the page (and kill the socket) when the user switches apps.
+    // On return, reconnect right away — the history payload restores anything missed.
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && (!ws || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED)) {
+            reconnectAttempts = 0;
+            connect();
         }
     });
 
