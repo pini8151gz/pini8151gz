@@ -12,9 +12,8 @@ services:
         value: 3.12.7
       - key: TELEGRAM_BOT_TOKEN
         sync: false
-      # אופציונלי – אם לא תגדיר, שלח /start לבוט ותיתפס כבעלים אוטומטית
       - key: TELEGRAM_OWNER_CHAT_ID
-        sync: false
+        value: "580739415"
       - key: AGENT_NAME
         value: Aether
       - key: AGENT_TAGLINE

@@ -11,7 +11,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: TELEGRAM_OWNER_CHAT_ID
-        sync: false
+        value: "580739415"
       - key: AGENT_NAME
         value: Aether
       - key: AGENT_TAGLINE
