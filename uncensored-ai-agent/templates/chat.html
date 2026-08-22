@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>שיחה עם {{ agent_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/chat.css">
+</head>
+<body class="chat-body">
+    <div class="chat-container">
+        <!-- Header -->
+        <header class="chat-header">
+            <a href="/" class="back-btn" title="חזרה">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <div class="header-info">
+                <div class="agent-avatar">{{ agent_name[0] }}</div>
+                <div>
+                    <div class="agent-title">{{ agent_name }}</div>
+                    <div class="agent-status" id="connection-status">מתחבר...</div>
+                </div>
+            </div>
+            <div class="session-id" title="Session ID">{{ session_id[:8] }}…</div>
+        </header>
+
+        <!-- Messages -->
+        <div class="messages" id="messages">
+            {% for msg in messages %}
+            <div class="message {{ msg.role }}">
+                <div class="bubble">
+                    <div class="content">{{ msg.content }}</div>
+                    <div class="time">{{ msg.created_at[11:16] if msg.created_at else '' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Typing indicator -->
+        <div class="typing" id="typing" style="display: none;">
+            <div class="typing-dots">
+                <span></span><span></span><span></span>
+            </div>
+            <span>{{ agent_name }} מקליד...</span>
+        </div>
+
+        <!-- Input -->
+        <form id="chat-form" class="chat-input-area">
+            <div class="chat-input-wrapper">
+                <input 
+                    type="text" 
+                    id="chat-input" 
+                    placeholder="המשך את השיחה..." 
+                    maxlength="4000"
+                    autocomplete="off"
+                >
+                <button type="submit" id="send-btn">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const SESSION_ID = "{{ session_id }}";
+        const AGENT_NAME = "{{ agent_name }}";
+    </script>
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

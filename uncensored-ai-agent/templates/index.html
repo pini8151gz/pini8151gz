@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ agent_name }} — {{ agent_tagline }}</title>
+    <meta name="description" content="סוכן AI לא מצונזר עם תשובות אמיתיות">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- Three.js Canvas -->
+    <canvas id="psychedelic-bg"></canvas>
+
+    <!-- Overlay gradient -->
+    <div class="overlay"></div>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="logo-area">
+            <div class="logo-glow"></div>
+            <h1 class="agent-name">{{ agent_name }}</h1>
+            <p class="tagline">{{ agent_tagline }}</p>
+        </div>
+
+        <form id="ask-form" class="search-form" autocomplete="off">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    id="question" 
+                    name="question" 
+                    placeholder="שאל אותי כל דבר..." 
+                    maxlength="4000"
+                    autofocus
+                    required
+                >
+                <button type="submit" id="submit-btn" aria-label="שלח">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="hint">לחץ Enter או על הכפתור • ללא צנזורה • תשובות אמיתיות</p>
+        </form>
+
+        <div class="status" id="status"></div>
+    </main>
+
+    <footer class="footer">
+        <span>Powered by human intelligence + AI</span>
+    </footer>
+
+    <script src="/static/js/psychedelic.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
