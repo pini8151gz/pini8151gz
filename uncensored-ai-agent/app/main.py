@@ -12,12 +12,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from dotenv import load_dotenv
 from telegram import Update, Bot
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.constants import ParseMode
 
 from .database import (
     init_db, create_session, add_message, get_messages,
-    get_session_by_telegram_msg, update_telegram_message_id
+    get_session_by_telegram_msg, update_telegram_message_id,
+    get_setting, set_setting
 )
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,8 +31,11 @@ TELEGRAM_OWNER_CHAT_ID = os.getenv("TELEGRAM_OWNER_CHAT_ID")
 AGENT_NAME = os.getenv("AGENT_NAME", "Aether")
 AGENT_TAGLINE = os.getenv("AGENT_TAGLINE", "סוכן AI לא מצונזר")
 
-if not TELEGRAM_BOT_TOKEN or not TELEGRAM_OWNER_CHAT_ID:
-    print("⚠️  חסר TELEGRAM_BOT_TOKEN או TELEGRAM_OWNER_CHAT_ID בקובץ .env")
+# הבעלים בפועל: מגיע מ-ENV, או נתפס אוטומטית ב-/start הראשון (ראה claim_owner)
+owner_chat_id: str = TELEGRAM_OWNER_CHAT_ID or ""
+
+if not TELEGRAM_BOT_TOKEN:
+    print("⚠️  חסר TELEGRAM_BOT_TOKEN בקובץ .env")
 
 # WebSocket connections: session_id -> set of websockets
 active_connections: Dict[str, Set[WebSocket]] = {}
@@ -77,7 +81,7 @@ async def handle_owner_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     # רק הודעות מהבעלים
-    if str(update.effective_user.id) != str(TELEGRAM_OWNER_CHAT_ID):
+    if not owner_chat_id or str(update.effective_user.id) != str(owner_chat_id):
         return
 
     replied_msg = update.message.reply_to_message
@@ -116,18 +120,44 @@ async def handle_owner_reply(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await update.message.reply_text(f"✅ נשלח למשתמש\nSession: `{session_id[:8]}...`", parse_mode=ParseMode.MARKDOWN)
 
 
+async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/start או /id – מציג את ה-Chat ID. אם אין בעלים מוגדר, השולח הראשון נתפס כבעלים."""
+    global owner_chat_id
+    if not update.message:
+        return
+    chat_id = str(update.effective_chat.id)
+
+    if not owner_chat_id:
+        owner_chat_id = chat_id
+        await set_setting("owner_chat_id", chat_id)
+        await update.message.reply_text(
+            f"👑 אתה עכשיו הבעלים של {AGENT_NAME}!\n\n"
+            f"ה-Chat ID שלך: {chat_id}\n\n"
+            f"כדי לקבע את זה גם אחרי דיפלוי מחדש, הוסף בהגדרות השרת:\n"
+            f"TELEGRAM_OWNER_CHAT_ID={chat_id}\n\n"
+            f"מעכשיו כל שאלה מהאתר תגיע אליך לכאן. ענה ב-Reply והתשובה תופיע באתר."
+        )
+    elif chat_id == str(owner_chat_id):
+        await update.message.reply_text(
+            f"👑 אתה הבעלים.\nChat ID: {chat_id}\n\n"
+            f"שאלות מהאתר מגיעות לכאן – ענה ב-Reply להודעת השאלה."
+        )
+    else:
+        await update.message.reply_text(f"ה-Chat ID שלך: {chat_id}")
+
+
 async def send_to_owner(text: str):
     """שולח לבעלים בטלגרם. אם ה-Markdown נשבר (תווים מיוחדים בשאלה) – שולח כטקסט רגיל."""
     bot: Bot = telegram_app.bot
     try:
         return await bot.send_message(
-            chat_id=TELEGRAM_OWNER_CHAT_ID,
+            chat_id=owner_chat_id,
             text=text,
             parse_mode=ParseMode.MARKDOWN
         )
     except Exception:
         return await bot.send_message(
-            chat_id=TELEGRAM_OWNER_CHAT_ID,
+            chat_id=owner_chat_id,
             text=text.replace("*", "").replace("`", "").replace("_", "")
         )
 
@@ -143,16 +173,30 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("✅ Database ready")
 
-    global telegram_app
-    if TELEGRAM_BOT_TOKEN:
-        telegram_app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-        telegram_app.add_handler(MessageHandler(filters.REPLY & filters.TEXT, handle_owner_reply))
-        telegram_app.add_error_handler(error_handler)
+    global telegram_app, owner_chat_id
+    if not owner_chat_id:
+        saved = await get_setting("owner_chat_id")
+        if saved:
+            owner_chat_id = saved
+            print(f"✅ Owner loaded from DB: {owner_chat_id}")
 
-        await telegram_app.initialize()
-        await telegram_app.start()
-        await telegram_app.updater.start_polling(drop_pending_updates=True)
-        print("✅ Telegram bot started (polling)")
+    if TELEGRAM_BOT_TOKEN:
+        try:
+            tg = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+            tg.add_handler(CommandHandler(["start", "id"], handle_start))
+            tg.add_handler(MessageHandler(filters.REPLY & filters.TEXT, handle_owner_reply))
+            tg.add_error_handler(error_handler)
+
+            await tg.initialize()
+            await tg.start()
+            await tg.updater.start_polling(drop_pending_updates=True)
+            telegram_app = tg
+            print("✅ Telegram bot started (polling)")
+            if not owner_chat_id:
+                print("ℹ️  אין בעלים עדיין – שלח /start לבוט בטלגרם כדי להפוך לבעלים")
+        except Exception as e:
+            telegram_app = None
+            print(f"⚠️  Telegram bot failed to start ({e}) – האתר רץ בלי טלגרם")
     else:
         print("⚠️  Telegram bot not started – missing token")
 
@@ -210,7 +254,7 @@ async def ask(question: str = Form(...)):
 
     # שליחה לטלגרם
     telegram_msg_id = None
-    if telegram_app and TELEGRAM_OWNER_CHAT_ID:
+    if telegram_app and owner_chat_id:
         try:
             text = (
                 f"🧠 *שאלה חדשה*\n\n"
@@ -247,7 +291,7 @@ async def send_followup(session_id: str, message: str = Form(...)):
     msg_id = await add_message(session_id, "user", message)
 
     # שליחה לטלגרם
-    if telegram_app and TELEGRAM_OWNER_CHAT_ID:
+    if telegram_app and owner_chat_id:
         try:
             text = (
                 f"💬 *המשך שיחה*\n\n"
@@ -302,5 +346,6 @@ async def health():
         "status": "ok",
         "agent": AGENT_NAME,
         "telegram": bool(telegram_app),
+        "owner_configured": bool(owner_chat_id),
         "active_sessions": len(active_connections)
     }

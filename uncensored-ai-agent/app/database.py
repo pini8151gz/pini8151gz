@@ -32,6 +32,12 @@ async def init_db():
             CREATE INDEX IF NOT EXISTS idx_messages_session 
             ON messages(session_id)
         """)
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
         await db.commit()
 
 
@@ -90,5 +96,22 @@ async def update_telegram_message_id(message_db_id: int, telegram_message_id: in
         await db.execute(
             "UPDATE messages SET telegram_message_id = ? WHERE id = ?",
             (telegram_message_id, message_db_id)
+        )
+        await db.commit()
+
+
+async def get_setting(key: str) -> Optional[str]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute("SELECT value FROM settings WHERE key = ?", (key,))
+        row = await cursor.fetchone()
+        return row[0] if row else None
+
+
+async def set_setting(key: str, value: str):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO settings (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value)
         )
         await db.commit()

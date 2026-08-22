@@ -44,17 +44,21 @@ cp .env.example .env
 
 ```env
 TELEGRAM_BOT_TOKEN=הטוקן_של_הבוט_שלך
-TELEGRAM_OWNER_CHAT_ID=המספר_שלך_בטלגרם
 
 AGENT_NAME=Aether
 AGENT_TAGLINE=סוכן AI לא מצונזר
 ```
 
-**איך מוצאים את ה-CHAT_ID שלך?**
-1. שלח הודעה כלשהי לבוט שלך.
-2. היכנס לכתובת:  
-   `https://api.telegram.org/bot<TOKEN>/getUpdates`
-3. חפש `"chat":{"id": 123456789}` — זה המספר שאתה צריך.
+**אין צורך למצוא Chat ID ידנית!** אחרי שהשרת רץ, שלח `/start` לבוט שלך בטלגרם —
+השולח הראשון נתפס אוטומטית כבעלים, והבוט גם יגיד לך את ה-Chat ID שלך.
+כדי לקבע את הבעלות לתמיד (גם אחרי דיפלוי מחדש), הוסף אחר כך:
+
+```env
+TELEGRAM_OWNER_CHAT_ID=המספר_שהבוט_נתן_לך
+```
+
+> ⚠️ **אבטחה:** אל תעלה את הטוקן לגיט אף פעם (הקובץ `.env` כבר ב-.gitignore).
+> אם הטוקן דלף — היכנס ל-@BotFather בטלגרם → `/mybots` → הבוט שלך → API Token → Revoke.
 
 ### 4. הרץ את השרת
 
@@ -81,13 +85,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 הפרויקט כולל כבר קבצי פריסה מוכנים — `Procfile`, `render.yaml`, `railway.json`, `runtime.txt` ו-`Dockerfile`.
 
-### Render (הכי פשוט – יש `render.yaml`)
+### Render (הכי פשוט – יש `render.yaml` גם בשורש הריפו)
 
 1. העלה את הקוד ל-GitHub.
-2. ב-[render.com](https://render.com) → **New → Blueprint** → בחר את הריפו.
-3. Render יקרא את `render.yaml` לבד. הוסף את שני הערכים הסודיים:
-   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_CHAT_ID`.
-4. Deploy. תקבל כתובת כמו `https://uncensored-ai-agent.onrender.com`.
+2. ב-[render.com](https://render.com) → **New → Blueprint** → בחר את הריפו ואת הענף הנכון.
+3. Render יקרא את `render.yaml` לבד. הדבק את `TELEGRAM_BOT_TOKEN`
+   (את `TELEGRAM_OWNER_CHAT_ID` אפשר להשאיר ריק — שלח `/start` לבוט אחרי הדיפלוי).
+4. Deploy. תקבל כתובת כמו `https://aether.onrender.com`.
+5. שלח `/start` לבוט בטלגרם → אתה הבעלים → מוכן.
 
 ### Railway
 

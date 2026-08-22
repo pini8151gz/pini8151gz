@@ -1,0 +1,21 @@
+# Deploy מהשורש של הריפו: האפליקציה יושבת ב-uncensored-ai-agent/
+services:
+  - type: web
+    name: aether
+    runtime: python
+    plan: free
+    rootDir: uncensored-ai-agent
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      # אופציונלי – אם לא תגדיר, שלח /start לבוט ותיתפס כבעלים אוטומטית
+      - key: TELEGRAM_OWNER_CHAT_ID
+        sync: false
+      - key: AGENT_NAME
+        value: Aether
+      - key: AGENT_TAGLINE
+        value: סוכן AI לא מצונזר
