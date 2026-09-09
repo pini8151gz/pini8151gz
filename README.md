@@ -14,3 +14,21 @@ Here are some ideas to get you started:
 - 😄 Pronouns: ...
 - ⚡ Fun fact: ...
 -->
+
+## Venice MCP server
+
+This repo ships a project-scoped MCP config (`.mcp.json`) that registers the
+[Venice](https://venice.ai) MCP server for Claude Code.
+
+Setup:
+
+1. Export your Venice API key in your shell (or put it in a local `.env`, see `.env.example`):
+
+   ```sh
+   export VENICE_API_KEY=your-venice-api-key
+   ```
+
+2. Open this repo in Claude Code and approve the `venice` project MCP server when prompted.
+3. Run `/mcp` to confirm the server is connected.
+
+The key is read from the `VENICE_API_KEY` environment variable at startup, so it is never committed.
