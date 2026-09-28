@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="he" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Pini Goldberg — The Future</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800;900&family=Orbitron:wght@600;800;900&display=block"
+      rel="stylesheet"
+    />
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Noto Color Emoji";
+        src: local("Noto Color Emoji");
+      }
+      :root {
+        --bg: #04020c;
+        --violet: #8a2be2;
+        --pink: #ff2d95;
+        --orange: #ffb13b;
+        --cyan: #28f0ff;
+        --text: #f5f3ff;
+        --muted: #b7b2d6;
+        --ig: linear-gradient(45deg, #feda75 0%, #fa7e1e 25%, #d62976 50%, #962fbf 75%, #4f5bd5 100%);
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--bg);
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--bg);
+        font-family: Heebo, "Noto Color Emoji", sans-serif;
+        color: var(--text);
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+      .orbitron {
+        font-family: Orbitron, Heebo, sans-serif;
+      }
+      .rtl {
+        direction: rtl;
+      }
+
+      /* ---------- persistent world ---------- */
+      #world {
+        overflow: hidden;
+      }
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.55;
+      }
+      #orb1 {
+        width: 900px;
+        height: 900px;
+        left: -300px;
+        top: -200px;
+        background: var(--violet);
+      }
+      #orb2 {
+        width: 800px;
+        height: 800px;
+        right: -320px;
+        top: 700px;
+        background: var(--pink);
+      }
+      #orb3 {
+        width: 700px;
+        height: 700px;
+        left: 100px;
+        bottom: -350px;
+        background: #1b3cff;
+      }
+      #stars {
+        position: absolute;
+        inset: 0;
+      }
+      .star {
+        position: absolute;
+        border-radius: 50%;
+        background: #fff;
+      }
+      #floor-wrap {
+        position: absolute;
+        left: -540px;
+        right: -540px;
+        bottom: -80px;
+        height: 900px;
+        perspective: 600px;
+        perspective-origin: 50% 0%;
+        mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 45%);
+      }
+      #floor {
+        position: absolute;
+        inset: 0;
+        transform: rotateX(62deg);
+        transform-origin: 50% 0%;
+        background-image:
+          linear-gradient(rgba(40, 240, 255, 0.55) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(255, 45, 149, 0.45) 2px, transparent 2px);
+        background-size: 120px 120px;
+      }
+      #scan {
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0.035) 0px,
+          rgba(255, 255, 255, 0.035) 1px,
+          transparent 2px,
+          transparent 4px
+        );
+        pointer-events: none;
+      }
+      #vignette {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
+        pointer-events: none;
+      }
+      #hud {
+        position: absolute;
+        inset: 0;
+      }
+      .hud-corner {
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        border-color: rgba(40, 240, 255, 0.8);
+        border-style: solid;
+        border-width: 0;
+      }
+      #hc1 {
+        left: 50px;
+        top: 50px;
+        border-left-width: 4px;
+        border-top-width: 4px;
+      }
+      #hc2 {
+        right: 50px;
+        top: 50px;
+        border-right-width: 4px;
+        border-top-width: 4px;
+      }
+      #hc3 {
+        left: 50px;
+        bottom: 50px;
+        border-left-width: 4px;
+        border-bottom-width: 4px;
+      }
+      #hc4 {
+        right: 50px;
+        bottom: 50px;
+        border-right-width: 4px;
+        border-bottom-width: 4px;
+      }
+      #hud-top {
+        position: absolute;
+        top: 72px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-size: 24px;
+        letter-spacing: 0.4em;
+        color: var(--cyan);
+      }
+      #rec {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #ff3355;
+        margin-right: 14px;
+        vertical-align: 1px;
+      }
+      #timebar {
+        position: absolute;
+        left: 160px;
+        right: 160px;
+        bottom: 84px;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+      }
+      #timebar-fill {
+        width: 100%;
+        height: 100%;
+        background: var(--ig);
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+      }
+
+      /* ---------- scene 1 : time jump ---------- */
+      #warp {
+        position: absolute;
+        left: 540px;
+        top: 900px;
+      }
+      .streak {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 4px;
+        border-radius: 2px;
+        transform-origin: 0 50%;
+        background: linear-gradient(90deg, transparent, #fff 60%, var(--cyan));
+      }
+      #s1-center {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 620px;
+        text-align: center;
+      }
+      #s1-kicker {
+        font-size: 40px;
+        letter-spacing: 0.5em;
+        color: var(--cyan);
+        font-weight: 800;
+      }
+      #year-wrap {
+        position: relative;
+        margin-top: 30px;
+        height: 330px;
+      }
+      #year {
+        display: inline-block;
+        font-size: 300px;
+        font-weight: 900;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        background: var(--ig);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 40px rgba(255, 45, 149, 0.55));
+      }
+      .year-ghost {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        font-size: 300px;
+        font-weight: 900;
+        line-height: 1;
+        mix-blend-mode: screen;
+      }
+      #year-r {
+        color: rgba(255, 0, 80, 0.75);
+      }
+      #year-c {
+        color: rgba(0, 240, 255, 0.75);
+      }
+      #s1-sub {
+        margin-top: 60px;
+        font-size: 64px;
+        font-weight: 800;
+      }
+      #s1-handle {
+        margin-top: 16px;
+        font-size: 58px;
+        font-weight: 600;
+        color: var(--muted);
+      }
+      #flash {
+        background: #fff;
+        opacity: 0;
+      }
+
+      /* ---------- scene 2 : holographic profile ---------- */
+      #card {
+        position: absolute;
+        left: 70px;
+        right: 70px;
+        top: 360px;
+        height: 1080px;
+        border-radius: 56px;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03));
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        box-shadow:
+          0 0 80px rgba(138, 43, 226, 0.45),
+          inset 0 0 60px rgba(40, 240, 255, 0.12);
+        overflow: hidden;
+      }
+      #card-shine {
+        position: absolute;
+        top: -200px;
+        left: -400px;
+        width: 260px;
+        height: 1600px;
+        transform: rotate(25deg);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+      }
+      #avatar-wrap {
+        position: absolute;
+        left: 50%;
+        top: 90px;
+        width: 360px;
+        height: 360px;
+        margin-left: -180px;
+      }
+      #avatar-ring {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: conic-gradient(#feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #28f0ff, #feda75);
+      }
+      #avatar-img {
+        position: absolute;
+        inset: 16px;
+        border-radius: 50%;
+        border: 10px solid #0d0820;
+        background: url("assets/avatar.jpg") center / cover no-repeat;
+      }
+      #name-row {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 500px;
+        text-align: center;
+        font-size: 76px;
+        font-weight: 800;
+      }
+      #verified {
+        display: inline-block;
+        width: 62px;
+        height: 62px;
+        vertical-align: -6px;
+        margin-left: 12px;
+      }
+      #role {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 610px;
+        text-align: center;
+        font-size: 40px;
+        color: var(--muted);
+      }
+      #stats {
+        position: absolute;
+        left: 30px;
+        right: 30px;
+        top: 720px;
+        display: flex;
+        justify-content: space-around;
+        text-align: center;
+      }
+      .stat-num {
+        font-size: 62px;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+      .stat-label {
+        font-size: 36px;
+        color: var(--muted);
+      }
+      #stat-followers .stat-num {
+        background: linear-gradient(90deg, #feda75, #ff2d95, #28f0ff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        width: 330px;
+      }
+      #growth {
+        position: absolute;
+        left: 80px;
+        right: 80px;
+        top: 930px;
+        height: 22px;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+      }
+      #growth-fill {
+        width: 100%;
+        height: 100%;
+        background: var(--ig);
+        transform-origin: 0 50%;
+        transform: scaleX(0.02);
+      }
+      #growth-cap {
+        position: absolute;
+        left: 80px;
+        right: 80px;
+        top: 970px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 28px;
+        color: var(--muted);
+      }
+      #s2-title {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 170px;
+        text-align: center;
+        font-size: 64px;
+        font-weight: 900;
+      }
+      .notif {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding: 22px 34px;
+        border-radius: 60px;
+        background: rgba(20, 12, 45, 0.85);
+        border: 2px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 10px 40px rgba(255, 45, 149, 0.35);
+        font-size: 38px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .notif .ico {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+      }
+      #n1 {
+        left: 40px;
+        top: 1470px;
+      }
+      #n2 {
+        right: 40px;
+        top: 1590px;
+      }
+      #n3 {
+        left: 90px;
+        top: 1710px;
+      }
+      #n4 {
+        right: 30px;
+        top: 250px;
+      }
+
+      /* ---------- scene 3 : views ---------- */
+      #s3-title {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 190px;
+        text-align: center;
+      }
+      #views-big {
+        font-size: 190px;
+        font-weight: 900;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        background: linear-gradient(90deg, #28f0ff, #ffffff 50%, #ff2d95);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 30px rgba(40, 240, 255, 0.5));
+      }
+      #views-label {
+        font-size: 56px;
+        font-weight: 800;
+        margin-top: 10px;
+      }
+      #chart {
+        position: absolute;
+        left: 60px;
+        top: 560px;
+        width: 960px;
+        height: 380px;
+      }
+      #tiles {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1000px;
+        height: 700px;
+        perspective: 1400px;
+      }
+      .tile {
+        position: absolute;
+        top: 0;
+        width: 330px;
+        height: 580px;
+        border-radius: 30px;
+        overflow: hidden;
+        border: 3px solid rgba(255, 255, 255, 0.35);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        background-size: cover;
+        background-position: center;
+      }
+      #t1 {
+        left: 40px;
+        background-image: url("assets/post1.jpg");
+      }
+      #t2 {
+        left: 375px;
+        background-image: url("assets/post2.jpg");
+        z-index: 2;
+      }
+      #t3 {
+        left: 710px;
+        background-image: url("assets/post3.jpg");
+      }
+      .tile-views {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 80px 24px 22px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.85), transparent);
+        font-size: 44px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .tile-views svg {
+        width: 40px;
+        height: 40px;
+      }
+      .viral {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        padding: 8px 18px;
+        border-radius: 20px;
+        background: var(--pink);
+        font-size: 26px;
+        font-weight: 900;
+      }
+
+      /* ---------- scene 4 : finale ---------- */
+      #bloom {
+        position: absolute;
+        left: 540px;
+        top: 700px;
+        width: 1200px;
+        height: 1200px;
+        margin: -600px 0 0 -600px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 45, 149, 0.7), rgba(138, 43, 226, 0.35) 40%, transparent 70%);
+      }
+      #burst {
+        position: absolute;
+        left: 540px;
+        top: 700px;
+      }
+      .spark {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        margin: -9px 0 0 -9px;
+        border-radius: 50%;
+      }
+      #f-avatar {
+        position: absolute;
+        left: 50%;
+        top: 440px;
+        width: 520px;
+        height: 520px;
+        margin-left: -260px;
+        border-radius: 50%;
+        padding: 16px;
+        background: conic-gradient(#feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #28f0ff, #feda75);
+        box-shadow: 0 0 120px rgba(255, 45, 149, 0.7);
+      }
+      #f-avatar div {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 12px solid #0d0820;
+        background: url("assets/avatar.jpg") center / cover no-repeat;
+      }
+      #f-num {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1010px;
+        text-align: center;
+        font-size: 300px;
+        font-weight: 900;
+        line-height: 1;
+        background: var(--ig);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 50px rgba(255, 45, 149, 0.6));
+      }
+      #f-label {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1320px;
+        text-align: center;
+        font-size: 84px;
+        font-weight: 900;
+      }
+      #f-handle {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1470px;
+        text-align: center;
+        font-size: 54px;
+        font-weight: 600;
+        color: var(--cyan);
+      }
+      #f-tag {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1590px;
+        text-align: center;
+        font-size: 60px;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="10"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- persistent background world -->
+      <div id="world" class="clip" data-start="0" data-duration="10" data-track-index="0">
+        <div class="orb" id="orb1"></div>
+        <div class="orb" id="orb2"></div>
+        <div class="orb" id="orb3"></div>
+        <div id="stars"></div>
+        <div id="floor-wrap"><div id="floor"></div></div>
+      </div>
+
+      <!-- SCENE 1 — time jump -->
+      <div id="s1" class="clip" data-start="0" data-duration="2.6" data-track-index="1">
+        <div id="warp"></div>
+        <div id="s1-center">
+          <div id="s1-kicker" class="orbitron">TIME JUMP</div>
+          <div id="year-wrap" class="orbitron">
+            <span id="year">2026</span>
+            <div class="year-ghost" id="year-r">2026</div>
+            <div class="year-ghost" id="year-c">2026</div>
+          </div>
+          <div id="s1-sub" class="rtl">העתיד של פיני גולדברג</div>
+          <div id="s1-handle">@pini_goldberg</div>
+        </div>
+      </div>
+
+      <!-- SCENE 2 — holographic profile -->
+      <div id="s2" class="clip" data-start="2.2" data-duration="3.9" data-track-index="2">
+        <div id="s2-title" class="rtl">2030 · הפרופיל שלך</div>
+        <div id="card">
+          <div id="card-shine"></div>
+          <div id="avatar-wrap">
+            <div id="avatar-ring"></div>
+            <div id="avatar-img"></div>
+          </div>
+          <div id="name-row">
+            Pini Goldberg<svg id="verified" viewBox="0 0 40 40">
+              <path
+                fill="#2f9bff"
+                d="M20 2l4.2 3.1 5.2-.3 1.6 5 4.4 2.8-1.2 5.1 2.2 4.7-3.6 3.8-.3 5.2-5 1.6-2.8 4.4-5.1-1.2L15 37.8l-3.8-3.6-5.2-.3-1.6-5L0 26.1l1.2-5.1L-1 16.3l3.6-3.8.3-5.2 5-1.6L10.7 1.3l5.1 1.2z"
+                transform="translate(1 0) scale(.95)"
+              />
+              <path d="M12 20.5l5.5 5.5L29 14" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div id="role">Digital creator · יוצר תוכן ועורך וידאו</div>
+          <div id="stats">
+            <div id="stat-posts">
+              <div class="stat-num" id="num-posts">31</div>
+              <div class="stat-label">posts</div>
+            </div>
+            <div id="stat-followers">
+              <div class="stat-num" id="num-followers">1,947</div>
+              <div class="stat-label">followers</div>
+            </div>
+            <div id="stat-following">
+              <div class="stat-num">1,777</div>
+              <div class="stat-label">following</div>
+            </div>
+          </div>
+          <div id="growth"><div id="growth-fill"></div></div>
+          <div id="growth-cap"><span>2026</span><span class="orbitron" id="growth-pct">+0%</span><span>2030</span></div>
+        </div>
+
+        <div class="notif" id="n1">
+          <div class="ico" style="background: var(--pink)">❤️</div>
+          <span class="rtl">248K לייקים</span>
+        </div>
+        <div class="notif" id="n2">
+          <div class="ico" style="background: #4f5bd5">👤</div>
+          <span class="rtl"><bdi dir="ltr">+25K</bdi> עוקבים חדשים</span>
+        </div>
+        <div class="notif" id="n3">
+          <div class="ico" style="background: #fa7e1e">💬</div>
+          <span class="rtl">12.4K תגובות</span>
+        </div>
+        <div class="notif" id="n4">
+          <div class="ico" style="background: #28c76f">✔</div>
+          <span>Verified</span>
+        </div>
+      </div>
+
+      <!-- SCENE 3 — views explosion -->
+      <div id="s3" class="clip" data-start="5.8" data-duration="2.6" data-track-index="3">
+        <div id="s3-title">
+          <div id="views-big" class="orbitron">0M</div>
+          <div id="views-label" class="rtl">צפיות בחודש 🚀</div>
+        </div>
+        <svg id="chart" viewBox="0 0 960 380">
+          <defs>
+            <linearGradient id="lg" x1="0" x2="1">
+              <stop offset="0" stop-color="#8a2be2" />
+              <stop offset=".6" stop-color="#ff2d95" />
+              <stop offset="1" stop-color="#28f0ff" />
+            </linearGradient>
+            <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ff2d95" stop-opacity=".45" />
+              <stop offset="1" stop-color="#ff2d95" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <g stroke="rgba(255,255,255,.12)" stroke-width="2">
+            <line x1="0" y1="95" x2="960" y2="95" />
+            <line x1="0" y1="190" x2="960" y2="190" />
+            <line x1="0" y1="285" x2="960" y2="285" />
+            <line x1="0" y1="378" x2="960" y2="378" />
+          </g>
+          <path id="area" fill="url(#ag)" d="M0 370 C150 365 260 355 380 330 S600 260 700 170 S860 40 940 20 L940 380 L0 380 Z" />
+          <path
+            id="line"
+            fill="none"
+            stroke="url(#lg)"
+            stroke-width="10"
+            stroke-linecap="round"
+            d="M0 370 C150 365 260 355 380 330 S600 260 700 170 S860 40 940 20"
+          />
+          <circle id="peak" cx="940" cy="20" r="18" fill="#28f0ff" />
+        </svg>
+        <div id="tiles">
+          <div class="tile" id="t1">
+            <div class="viral">🔥 VIRAL</div>
+            <div class="tile-views"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 5v14l11-7z" /></svg><span id="v1">0</span></div>
+          </div>
+          <div class="tile" id="t2">
+            <div class="viral">🔥 VIRAL</div>
+            <div class="tile-views"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 5v14l11-7z" /></svg><span id="v2">0</span></div>
+          </div>
+          <div class="tile" id="t3">
+            <div class="viral">🔥 VIRAL</div>
+            <div class="tile-views"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 5v14l11-7z" /></svg><span id="v3">0</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCENE 4 — finale -->
+      <div id="s4" class="clip" data-start="8.1" data-duration="1.9" data-track-index="4">
+        <div id="bloom"></div>
+        <div id="burst"></div>
+        <div id="f-avatar"><div></div></div>
+        <div id="f-num" class="orbitron">1M</div>
+        <div id="f-label" class="rtl">עוקבים 💎</div>
+        <div id="f-handle">@pini_goldberg</div>
+        <div id="f-tag" class="rtl">העתיד מתחיל עכשיו</div>
+      </div>
+
+      <!-- HUD overlay -->
+      <div id="hud" class="clip" data-start="0" data-duration="10" data-track-index="5">
+        <div class="hud-corner" id="hc1"></div>
+        <div class="hud-corner" id="hc2"></div>
+        <div class="hud-corner" id="hc3"></div>
+        <div class="hud-corner" id="hc4"></div>
+        <div id="hud-top" class="orbitron"><span id="rec"></span>FUTURE · SIM</div>
+        <div id="timebar"><div id="timebar-fill"></div></div>
+        <div id="scan"></div>
+        <div id="vignette"></div>
+      </div>
+      <div id="flash" class="clip" data-start="0" data-duration="10" data-track-index="6"></div>
+    </div>
+
+    <script>
+      // ---------- deterministic generators (seeded PRNG, no Math.random) ----------
+      function mulberry32(a) {
+        return function () {
+          a |= 0;
+          a = (a + 0x6d2b79f5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const rnd = mulberry32(20300101);
+
+      const stars = document.getElementById("stars");
+      for (let i = 0; i < 110; i++) {
+        const s = document.createElement("div");
+        s.className = "star";
+        const size = 2 + rnd() * 4;
+        s.style.cssText = `left:${rnd() * 1080}px;top:${rnd() * 1300}px;width:${size}px;height:${size}px;opacity:${0.25 + rnd() * 0.7}`;
+        stars.appendChild(s);
+      }
+
+      const warp = document.getElementById("warp");
+      const streaks = [];
+      for (let i = 0; i < 64; i++) {
+        const s = document.createElement("div");
+        s.className = "streak";
+        const ang = (i / 64) * 360 + rnd() * 5;
+        s.style.width = 500 + rnd() * 700 + "px";
+        s.style.transform = `rotate(${ang}deg) translateX(${80 + rnd() * 140}px) scaleX(0)`;
+        s.dataset.ang = ang;
+        s.dataset.off = 80 + rnd() * 140;
+        warp.appendChild(s);
+        streaks.push(s);
+      }
+
+      const burst = document.getElementById("burst");
+      const sparks = [];
+      const sparkColors = ["#feda75", "#fa7e1e", "#ff2d95", "#962fbf", "#28f0ff", "#ffffff"];
+      for (let i = 0; i < 56; i++) {
+        const s = document.createElement("div");
+        s.className = "spark";
+        const c = sparkColors[i % sparkColors.length];
+        s.style.background = c;
+        s.style.boxShadow = `0 0 20px ${c}`;
+        const ang = (i / 56) * Math.PI * 2 + rnd() * 0.3;
+        const dist = 380 + rnd() * 520;
+        s.dataset.x = Math.cos(ang) * dist;
+        s.dataset.y = Math.sin(ang) * dist;
+        s.dataset.sc = 0.5 + rnd() * 1.3;
+        burst.appendChild(s);
+        sparks.push(s);
+      }
+
+      // seek-safe counter: GSAP calls function-properties as setters on every render (incl. seeks)
+      function counter(start, render) {
+        let cur = start;
+        render(start);
+        return { v: (val) => (val === undefined ? cur : (render((cur = val)), cur)) };
+      }
+      const fmt = (n) => Math.round(n).toLocaleString("en-US");
+      const fmtM = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : Math.round(n));
+
+      // ---------- timeline ----------
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+
+      // world — continuous motion across all 10s
+      tl.fromTo("#floor", { backgroundPosition: "0px 0px" }, { backgroundPosition: "0px 1440px", duration: 10, ease: "none" }, 0);
+      tl.fromTo("#stars", { y: 0, scale: 1 }, { y: 120, scale: 1.12, duration: 10, ease: "none" }, 0);
+      tl.fromTo("#orb1", { x: 0, y: 0 }, { x: 220, y: 160, duration: 10, ease: "sine.inOut" }, 0);
+      tl.fromTo("#orb2", { x: 0, y: 0 }, { x: -200, y: -260, duration: 10, ease: "sine.inOut" }, 0);
+      tl.fromTo("#orb3", { x: 0, scale: 1 }, { x: 180, scale: 1.3, duration: 10, ease: "sine.inOut" }, 0);
+      tl.fromTo("#timebar-fill", { scaleX: 0 }, { scaleX: 1, duration: 10, ease: "none" }, 0);
+      tl.fromTo(".hud-corner", { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: 0.5, stagger: 0.05, ease: "power3.out" }, 0.05);
+      tl.fromTo("#hud-top", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.1);
+      for (let i = 0; i < 10; i++) tl.to("#rec", { opacity: i % 2 ? 1 : 0.15, duration: 0.5, ease: "steps(1)" }, i * 0.5 + 0.5);
+
+      // ---------- SCENE 1 (0 – 2.6) ----------
+      streaks.forEach((s, i) => {
+        const a = s.dataset.ang,
+          o = +s.dataset.off;
+        tl.fromTo(
+          s,
+          { transform: `rotate(${a}deg) translateX(${o}px) scaleX(0)`, opacity: 0 },
+          { transform: `rotate(${a}deg) translateX(${o + 900}px) scaleX(1)`, opacity: 1, duration: 1.1, ease: "power2.in" },
+          0.15 + (i % 8) * 0.04,
+        );
+        tl.to(s, { opacity: 0, duration: 0.3 }, 1.3 + (i % 8) * 0.04);
+      });
+      tl.fromTo("#s1-kicker", { opacity: 0, scaleX: 1.8 }, { opacity: 1, scaleX: 1, duration: 0.7, ease: "power3.out" }, 0.1);
+      tl.fromTo("#year-wrap", { scale: 0.3, opacity: 0, filter: "blur(30px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "expo.out" }, 0.2);
+
+      const yearEls = ["#year", "#year-r", "#year-c"].map((q) => document.querySelector(q));
+      const yr = counter(2026, (v) => yearEls.forEach((e) => (e.textContent = Math.round(v))));
+      tl.to(yr, { v: 2030, duration: 1.0, ease: "power2.inOut" }, 0.75);
+      // chromatic glitch jitter during the jump
+      [0.8, 0.95, 1.1, 1.25, 1.4, 1.55, 1.7].forEach((t, i) => {
+        const d = i % 2 ? -1 : 1;
+        tl.to("#year-r", { x: 14 * d, y: -6 * d, duration: 0.07, ease: "none" }, t);
+        tl.to("#year-c", { x: -14 * d, y: 6 * d, duration: 0.07, ease: "none" }, t);
+      });
+      tl.to(["#year-r", "#year-c"], { x: 0, y: 0, opacity: 0, duration: 0.2 }, 1.8);
+      tl.fromTo("#year", { scale: 1 }, { scale: 1.12, duration: 0.25, yoyo: true, repeat: 1, ease: "power2.out" }, 1.75);
+      tl.fromTo("#s1-sub", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.9);
+      tl.fromTo("#s1-handle", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 1.05);
+      // exit: push-through
+      tl.to("#s1-center", { scale: 3.2, opacity: 0, filter: "blur(20px)", duration: 0.45, ease: "power3.in" }, 2.1);
+      tl.to("#flash", { opacity: 0.85, duration: 0.12, ease: "power1.in" }, 2.18);
+      tl.to("#flash", { opacity: 0, duration: 0.45, ease: "power2.out" }, 2.3);
+
+      // ---------- SCENE 2 (2.2 – 6.1) ----------
+      tl.fromTo("#s2-title", { opacity: 0, y: -40 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 2.35);
+      tl.fromTo(
+        "#card",
+        { opacity: 0, scale: 0.7, rotationX: 35, y: 200, transformPerspective: 1600 },
+        { opacity: 1, scale: 1, rotationX: 0, y: 0, duration: 0.8, ease: "expo.out" },
+        2.25,
+      );
+      tl.fromTo("#avatar-wrap", { scale: 0 }, { scale: 1, duration: 0.7, ease: "back.out(2)" }, 2.5);
+      tl.fromTo("#avatar-ring", { rotation: 0 }, { rotation: 540, duration: 3.8, ease: "none" }, 2.3);
+      tl.fromTo(["#name-row", "#role"], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power3.out" }, 2.75);
+      tl.fromTo("#stats > div", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: "power3.out" }, 2.9);
+      tl.fromTo(["#growth", "#growth-cap"], { opacity: 0 }, { opacity: 1, duration: 0.4 }, 3.0);
+      tl.fromTo("#card-shine", { x: 0 }, { x: 1700, duration: 1.1, ease: "power2.inOut" }, 3.0);
+      tl.fromTo("#card-shine", { x: 0 }, { immediateRender: false, x: 1700, duration: 1.0, ease: "power2.inOut" }, 5.0);
+
+      const folEl = document.getElementById("num-followers"),
+        postsEl = document.getElementById("num-posts"),
+        pctEl = document.getElementById("growth-pct");
+      const fol = counter(1947, (v) => (folEl.textContent = fmt(v))),
+        posts = counter(31, (v) => (postsEl.textContent = fmt(v))),
+        pct = counter(0, (v) => (pctEl.textContent = "+" + fmt(v) + "%"));
+      tl.to(fol, { v: 1000000, duration: 2.2, ease: "expo.in" }, 3.1);
+      tl.to(posts, { v: 1250, duration: 2.2, ease: "power2.in" }, 3.1);
+      tl.to(pct, { v: 51260, duration: 2.2, ease: "expo.in" }, 3.1);
+      tl.fromTo("#growth-fill", { scaleX: 0.02 }, { scaleX: 1, duration: 2.2, ease: "expo.in" }, 3.1);
+      tl.fromTo("#stat-followers", { scale: 1 }, { scale: 1.18, duration: 2.2, ease: "expo.in" }, 3.1);
+      tl.to("#stat-followers", { scale: 1.05, duration: 0.4, ease: "elastic.out(1,0.4)" }, 5.3);
+      tl.to("#card", { boxShadow: "0 0 180px rgba(255,45,149,.9), inset 0 0 90px rgba(40,240,255,.3)", duration: 0.3, yoyo: true, repeat: 1 }, 5.25);
+
+      [
+        ["#n4", 3.3, 80],
+        ["#n1", 3.7, -80],
+        ["#n2", 4.2, 80],
+        ["#n3", 4.7, -80],
+      ].forEach(([q, t, dx]) => {
+        tl.fromTo(q, { opacity: 0, scale: 0.4, x: dx }, { opacity: 1, scale: 1, x: 0, duration: 0.5, ease: "back.out(2.2)" }, t);
+        tl.to(q, { y: -30, duration: 6.1 - t, ease: "sine.inOut" }, t + 0.5);
+      });
+      // exit — tilt the card away
+      tl.to("#s2", { scale: 0.6, opacity: 0, rotationY: -40, transformPerspective: 1800, duration: 0.45, ease: "power3.in" }, 5.65);
+
+      // ---------- SCENE 3 (5.8 – 8.4) ----------
+      tl.fromTo("#s3-title", { opacity: 0, scale: 1.8, filter: "blur(16px)" }, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 0.5, ease: "expo.out" }, 5.85);
+      const vbEl = document.getElementById("views-big");
+      const vb = counter(0, (v) => (vbEl.textContent = fmtM(v)));
+      tl.to(vb, { v: 50000000, duration: 1.8, ease: "power3.out" }, 5.95);
+
+      const line = document.getElementById("line");
+      const len = line.getTotalLength();
+      line.style.strokeDasharray = len;
+      tl.fromTo(line, { strokeDashoffset: len }, { strokeDashoffset: 0, duration: 1.3, ease: "power2.inOut" }, 6.0);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.8 }, 6.4);
+      tl.fromTo("#peak", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.4, ease: "back.out(3)" }, 7.25);
+      tl.to("#peak", { opacity: 0.4, duration: 0.2, yoyo: true, repeat: 3 }, 7.6);
+
+      [
+        ["#t1", -18, 6.05, 12400000, "#v1"],
+        ["#t2", 0, 6.2, 25100000, "#v2"],
+        ["#t3", 18, 6.35, 8700000, "#v3"],
+      ].forEach(([q, ry, t, target, vq]) => {
+        tl.fromTo(q, { opacity: 0, y: 500, rotationY: ry * 3, rotationX: 30 }, { opacity: 1, y: q === "#t2" ? -30 : 20, rotationY: ry, rotationX: 0, duration: 0.7, ease: "expo.out" }, t);
+        tl.to(q, { y: q === "#t2" ? -60 : 0, duration: 1.3, ease: "sine.inOut" }, t + 0.7);
+        const el = document.querySelector(vq),
+          st = counter(0, (v) => (el.textContent = fmtM(v)));
+        tl.to(st, { v: target, duration: 1.4, ease: "power3.out" }, t + 0.2);
+      });
+      tl.fromTo(".viral", { scale: 0, rotation: -20 }, { scale: 1, rotation: 0, duration: 0.4, stagger: 0.12, ease: "back.out(3)" }, 7.0);
+      // exit — zoom punch into the center
+      tl.to("#s3", { scale: 2.4, opacity: 0, filter: "blur(18px)", duration: 0.4, ease: "power3.in" }, 7.95);
+      tl.to("#flash", { opacity: 0.7, duration: 0.1 }, 8.1);
+      tl.to("#flash", { opacity: 0, duration: 0.5, ease: "power2.out" }, 8.2);
+
+      // ---------- SCENE 4 (8.1 – 10) ----------
+      tl.fromTo("#bloom", { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.8, ease: "expo.out" }, 8.1);
+      tl.to("#bloom", { rotation: 30, duration: 1.9, ease: "none" }, 8.1);
+      tl.fromTo("#f-avatar", { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: 0.7, ease: "back.out(1.8)" }, 8.15);
+      sparks.forEach((s, i) => {
+        tl.fromTo(
+          s,
+          { x: 0, y: 0, scale: +s.dataset.sc, opacity: 1 },
+          { x: +s.dataset.x, y: +s.dataset.y, scale: 0, opacity: 0, duration: 1.2, ease: "expo.out" },
+          8.2 + (i % 4) * 0.03,
+        );
+      });
+      tl.fromTo("#f-num", { scale: 3, opacity: 0, filter: "blur(20px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, 8.4);
+      tl.fromTo("#f-label", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 8.6);
+      tl.fromTo("#f-handle", { opacity: 0, scaleX: 1.6 }, { opacity: 1, scaleX: 1, duration: 0.6, ease: "power3.out" }, 8.75);
+      tl.fromTo("#f-tag", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 8.95);
+      // slow camera lean-in to hold
+      tl.fromTo("#s4", { scale: 1 }, { scale: 1.05, duration: 1.9, ease: "sine.out" }, 8.1);
+
+      tl.seek(0);
+    </script>
+  </body>
+</html>
