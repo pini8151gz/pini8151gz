@@ -143,18 +143,39 @@ class Studio:
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
         self.url = f'http://127.0.0.1:{self.httpd.server_address[1]}/index.html?bot=1'
 
-    def render(self, opts):
+        self._pw = self._browser = self._page = None
+
+    # The browser stays open between jobs (launching it costs seconds every time).
+    # Playwright's sync API is single-threaded: always call from the worker thread.
+    def warm(self):
+        if self._page:
+            return
         from playwright.sync_api import sync_playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch(args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'])
+        self._pw = sync_playwright().start()
+        self._browser = self._pw.chromium.launch(args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
+                                                       '--disable-extensions', '--mute-audio'])
+        self._page = self._browser.new_page(viewport={'width': 420, 'height': 860})
+        self._page.goto(self.url, wait_until='load', timeout=60000)
+        self._page.wait_for_function('() => typeof window.__botRender === "function"', timeout=30000)
+        self._page.evaluate('() => document.fonts.ready')
+
+    def close(self):
+        for x in (self._browser, self._pw):
             try:
-                page = browser.new_page(viewport={'width': 420, 'height': 860})
-                page.goto(self.url, wait_until='load', timeout=60000)
-                page.wait_for_function('() => typeof window.__botRender === "function"', timeout=30000)
-                page.wait_for_timeout(600)
-                return page.evaluate('o => window.__botRender(o)', opts)
-            finally:
-                browser.close()
+                x and (x.close() if x is self._browser else x.stop())
+            except Exception:
+                pass
+        self._pw = self._browser = self._page = None
+
+    def render(self, opts):
+        for attempt in (1, 2):
+            try:
+                self.warm()
+                return self._page.evaluate('o => window.__botRender(o)', opts)
+            except Exception:
+                self.close()
+                if attempt == 2:
+                    raise
 
 
 class _QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -186,7 +207,9 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
         return out, 'image', {'theme': res.get('theme'), 'format': fmt, 'W': res['W'], 'H': res['H']}
 
     # Video (or several clips / photos) -> MP4.
-    mw, mh = even(first['w']), even(first['h'])
+    # Work at roughly the output size: a 4K phone clip is scaled down once, early.
+    k = min(1.0, 1280 / max(first['w'], first['h']))
+    mw, mh = even(first['w'] * k), even(first['h'] * k)
     opts.update({'kind': 'video', 'mw': mw, 'mh': mh})
     progress('design')
     res = studio.render(opts)
@@ -202,12 +225,12 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
             cmd += ['-loop', '1', '-t', f"{it['dur']:.3f}", '-i', it['path']]
         else:
             cmd += ['-i', it['path']]
-    cmd += ['-loop', '1', '-i', overlay]
+    cmd += ['-i', overlay]
     n, ov = len(items), len(items)
 
     f = []
     for i, it in enumerate(items):
-        f.append(f"[{i}:v]scale={mw}:{mh}:force_original_aspect_ratio=increase,crop={mw}:{mh},setsar=1,fps={FPS},format=yuv420p,settb=AVTB[v{i}]")
+        f.append(f"[{i}:v]fps={FPS},scale={mw}:{mh}:force_original_aspect_ratio=increase:flags=fast_bilinear,crop={mw}:{mh},setsar=1,format=yuv420p,settb=AVTB[v{i}]")
         if it['audio']:
             f.append(f"[{i}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=0:{it['dur']:.3f},asetpts=PTS-STARTPTS[a{i}]")
         else:
@@ -220,14 +243,20 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
         off += items[i]['dur'] - XF
     total = sum(it['dur'] for it in items) - XF * (n - 1)
     gray = ',hue=s=0' if res.get('gray') else ''
-    f.append(f"[{vcur}]scale={dw}:{dh}{gray}[sv]")
-    f.append(f"color=c=black:s={W}x{H}:r={FPS}:d={total:.3f}[base]")
-    f.append(f"[base][sv]overlay=x={X}:y={Y}:eof_action=pass[b1]")
-    f.append(f"[b1][{ov}:v]overlay=0:0:shortest=1,format=yuv420p[out]")
+    # Only the visible part of the clip is kept (inside the media area and the frame), then padded
+    # to full size: one cheap crop+pad instead of blending over a full-size background.
+    x0, y0 = even(max(0, m['x'], X)), even(max(0, m['y'], Y))
+    x1, y1 = min(W, m['x'] + m['w'], X + dw), min(H, m['y'] + m['h'], Y + dh)
+    cw, ch = even(x1 - x0), even(y1 - y0)
+    f.append(f"[{vcur}]scale={dw}:{dh}:flags=fast_bilinear{gray},crop={cw}:{ch}:{x0 - X}:{y0 - Y},"
+             f"pad={W}:{H}:{x0}:{y0}:black,format=yuv420p[b1]")
+    # The design layer is converted once and repeated (not re-decoded per frame).
+    f.append(f"[{ov}:v]format=yuva420p,loop=loop=-1:size=1:start=0,setpts=N/{FPS}/TB[ovl]")
+    f.append(f"[b1][ovl]overlay=0:0:shortest=1:format=yuv420,format=yuv420p[out]")
 
     out = os.path.join(workdir, 'harabanit.mp4')
     cmd += ['-filter_complex', ';'.join(f), '-map', '[out]', '-map', f'[{acur}]',
-            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-maxrate', '6M', '-bufsize', '12M', '-threads', '2',
+            '-c:v', 'libx264', '-preset', 'superfast', '-crf', '23', '-maxrate', '7M', '-bufsize', '14M',
             '-pix_fmt', 'yuv420p', '-r', str(FPS), '-c:a', 'aac', '-b:a', '160k',
             '-t', f'{total:.3f}', '-movflags', '+faststart', out]
     progress('video', 0.0)

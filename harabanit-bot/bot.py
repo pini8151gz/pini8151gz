@@ -227,6 +227,12 @@ def enqueue(chat, items, caption):
 
 # ---------------------------------------------------------------- worker
 def worker():
+    # Open the studio in the browser once, right away, so the first job doesn't wait for it.
+    try:
+        studio.warm()
+        print('studio ready', flush=True)
+    except Exception:
+        traceback.print_exc()
     while True:
         job = jobs.get()
         try:
@@ -342,12 +348,25 @@ def polling():
             time.sleep(3)
 
 
+def keep_awake():
+    """Render's free plan sleeps after 15 idle minutes; a light ping every 10 minutes keeps replies instant."""
+    if not PUBLIC_URL or os.environ.get('KEEP_AWAKE', '1') == '0':
+        return
+    while True:
+        time.sleep(600)
+        try:
+            urllib.request.urlopen(PUBLIC_URL + '/', timeout=20).read()
+        except Exception:
+            pass
+
+
 def main():
     global studio
     if not TOKEN:
         raise SystemExit('BOT_TOKEN is missing')
     studio = engine.Studio(SITE_DIR)
     threading.Thread(target=worker, daemon=True).start()
+    threading.Thread(target=keep_awake, daemon=True).start()
     api('setMyCommands', {'commands': [
         {'command': 'start', 'description': 'הסבר קצר'},
         {'command': 'story', 'description': 'סטורי 9:16 כברירת מחדל'},
