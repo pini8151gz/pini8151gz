@@ -359,15 +359,6 @@ body.noscroll{overflow:hidden}
           <div class="kcustom"><input type="text" id="kCustom" placeholder="מילה משלכם, למשל: אלופים!" aria-label="מילת פתיחה משלכם"><button type="button" class="secondary" id="kCustomOk">הוספה</button></div>
         </div>
       </div>
-      <div class="qbar" id="qbar" role="group" aria-label="עריכה מהירה">
-        <button type="button" data-q="bigger" aria-label="הגדלת הכותרת">A+</button>
-        <button type="button" data-q="smaller" aria-label="הקטנת הכותרת">A−</button>
-        <button type="button" data-q="color">צבע הבא</button>
-        <button type="button" data-q="box">התיבה למטה</button>
-        <button type="button" data-q="align">יישור</button>
-        <button type="button" data-q="logo">לוגו לצד השני</button>
-        <button type="button" data-q="format">פוסט 4:5</button>
-      </div>
     </div>
     <div class="field">
       <label for="headIn">כותרת</label>
@@ -1449,7 +1440,7 @@ window.addEventListener('resize',()=>{ if(FULL.open){ sizeFull(); draw(); } });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&FULL.open) closeFull(); });
 
 /* ---- quick edit bar ---- */
-$('#qbar').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const A=S.adj, q=b.dataset.q;
+if($('#qbar')) $('#qbar').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const A=S.adj, q=b.dataset.q;
   if(q==='bigger') A.scale=Math.min(1.4,+(A.scale+.06).toFixed(2));
   else if(q==='smaller') A.scale=Math.max(.7,+(A.scale-.06).toFixed(2));
   else if(q==='box') A.boxPos=A.boxPos==='top'?'bottom':'top';
@@ -1458,7 +1449,7 @@ $('#qbar').addEventListener('click',e=>{ const b=e.target.closest('button'); if(
   else if(q==='color'){ const i=THEMES.findIndex(t=>t.id===S.theme), T=THEMES[(i+1)%THEMES.length]; S.theme=T.id; S.themeManual=true; loadLogo(T.id).then(draw); refreshUI(); }
   else if(q==='format'){ const other=document.querySelector(`#fmtSeg button[data-fmt="${S.format==='story'?'post':'story'}"]`); other&&other.click(); }
   syncQbar(); draw(); if(!$('#adj').hidden) syncAdj(); });
-function syncQbar(){ const q=k=>document.querySelector(`#qbar [data-q="${k}"]`); q('box').textContent=S.adj.boxPos==='top'?'התיבה למטה':'התיבה למעלה';
+function syncQbar(){ if(!$('#qbar')) return; const q=k=>document.querySelector(`#qbar [data-q="${k}"]`); q('box').textContent=S.adj.boxPos==='top'?'התיבה למטה':'התיבה למעלה';
   q('format').textContent=S.format==='story'?'פוסט 4:5':'סטורי 9:16'; q('align').textContent='יישור: '+({justify:'מלא',right:'ימין',center:'מרכז'}[S.adj.align]||'מלא'); }
 
 /* ---------- AI ---------- */
