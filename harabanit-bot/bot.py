@@ -288,8 +288,8 @@ def process(job):
                 eta = ''
                 if p > 0.04 and spent > 2:
                     left = int(spent * (1 - p) / p)
-                    eta = f' · עוד כ־{left} שנ׳' if left < 120 else f' · עוד כ־{round(left / 60)} דק׳'
-                status(f'🎬 מרכיב את הסרטון {bar} {pct}%{eta}')
+                    eta = f'\nעוד כ־{left} שנ׳' if left < 120 else f'\nעוד כ־{round(left / 60)} דק׳'
+                status(f'🎬 מרכיב את הסרטון\n{bar} {pct}%{eta}')
 
         out, kind, info = engine.make(studio, items, meta, work, progress)
         status('📤 שולח…', True)
