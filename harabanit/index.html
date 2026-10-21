@@ -715,11 +715,29 @@ function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
       cw+=(cur.length?sp:0)+w; cur.push({t,w});
     }
     if(cur.length) lines.push({words:cur,w:cw,last:true});
+    const bl=balanceLines(lines,sp,maxW); lines.length=0; lines.push(...bl);
     const lh=size*lhR; best={lines,size,lh,sp,h:lines.length*lh,font:headFont(size,light),over:false};
     if(best.h<=maxH && lines.length<=maxLines && lines.every(l=>l.w<=maxW+1)) break;
     best.over=true;
   }
   if(layoutCache.size>80) layoutCache.clear(); layoutCache.set(key,best); return best;
+}
+/* Re-break each paragraph into the same number of lines with the smallest possible longest line
+   (binary search on the width limit). Result: lines of near-equal length, no orphan word. */
+function balanceLines(lines,sp,maxW){
+  const paras=[]; let cur=[];
+  for(const ln of lines){ cur.push(ln); if(ln.hard||ln.last){ paras.push(cur); cur=[]; } } if(cur.length) paras.push(cur);
+  const out=[];
+  for(const para of paras){
+    const n=para.length, words=para.flatMap(l=>l.words), tail=para[n-1];
+    if(n<2||words.length<3){ out.push(...para); continue; }
+    const fit=lim=>{ const res=[]; let c=[], w=0; for(const t of words){ if(c.length&&w+sp+t.w>lim){ res.push({words:c,w}); c=[]; w=0; } w+=(c.length?sp:0)+t.w; c.push(t); } if(c.length) res.push({words:c,w}); return res; };
+    let lo=Math.max(...words.map(t=>t.w)), hi=maxW, best=null;
+    for(let k=0;k<22;k++){ const mid=(lo+hi)/2, r=fit(mid); if(r.length<=n){ best=r; hi=mid; } else lo=mid; }
+    best=fit(hi); if(best.length!==n){ out.push(...para); continue; }
+    best[best.length-1].last=!!tail.last; best[best.length-1].hard=!!tail.hard; out.push(...best);
+  }
+  return out;
 }
 function setLS(ctx){ if('letterSpacing' in ctx) ctx.letterSpacing=(S.adj.ls||0)+'px'; }
 function drawJustified(ctx,L,xRight,maxW,yTop,color,align,opt){
@@ -730,8 +748,10 @@ function drawJustified(ctx,L,xRight,maxW,yTop,color,align,opt){
     const base=yTop+i*L.lh+(L.lh-L.size)/2+L.size*.8;
     const sum=ln.words.reduce((a,w)=>a+w.w,0), n=ln.words.length;
     const justify=align==='justify' && !single && n>1 && !ln.hard && !(ln.last && ln.w<maxW*.62);
-    const gap=justify?(maxW-sum)/(n-1):L.sp;
-    let x = align==='center' ? xRight-(maxW-ln.w)/2 : xRight;
+    let gap=justify?(maxW-sum)/(n-1):L.sp, lw=ln.w;
+    if(align==='center' && !single && n>1){ const target=Math.max(...L.lines.map(l=>l.w)), extra=Math.min((target-ln.w)/(n-1), L.sp*.9);
+      if(extra>0){ gap=L.sp+extra; lw=sum+gap*(n-1); } }
+    let x = align==='center' ? xRight-(maxW-lw)/2 : xRight;
     const pos=[]; for(const w of ln.words){ pos.push({w,x,k:wi<kN}); x-=w.w+gap; wi++; }
     const ks=pos.filter(q=>q.k);
     if(ks.length && opt.kStyle==='pill'){ const pd=L.size*.2, r0=ks[0].x+pd, l1=ks.at(-1).x-ks.at(-1).w.w-pd;
