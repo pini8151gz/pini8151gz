@@ -1377,7 +1377,7 @@ function loadMB(){
     sc.onload=()=>res(window.Mediabunny||null); sc.onerror=()=>res(null); document.head.appendChild(sc); })),Promise.resolve(null)).then(m=>MB=m);
 }
 async function fastExport(bar){
-  if(S.media2) return null;
+  if(S.media2) return composeExport();
   const M=await loadMB(); if(!M||typeof VideoEncoder==='undefined'||!S.media.file) return null;
   const [W,H]=dims(); const out=document.createElement('canvas'); out.width=W; out.height=H; let src=null, sctx=null;
   const make=async(codec)=>{ const input=new M.Input({source:new M.BlobSource(S.media.file),formats:M.ALL_FORMATS});
@@ -1394,6 +1394,55 @@ async function fastExport(bar){
   job.conv.onProgress=pr=>setProg(pr);
   try{ await job.conv.execute(); }catch(e){ if(cancelled) return 'cancelled'; throw e; }
   return new Blob([job.output.target.buffer],{type:'video/mp4'});
+}
+/* two clips: decode both, compose the crossfade frame by frame, encode (no screen recording) */
+async function mixAudio(M,ins,d,s1,T){
+  const sr=48000, parts=[];
+  for(let i=0;i<ins.length;i++){ const at=await ins[i].getPrimaryAudioTrack().catch(()=>null); if(!at||!(await at.canDecode().catch(()=>false))){ parts.push(null); continue; }
+    const sink=new M.AudioBufferSink(at), bufs=[]; for await (const w of sink.buffers(0,d[i])) bufs.push(w); parts.push(bufs); }
+  if(parts.every(p=>!p||!p.length)) return null;
+  const ctx=new OfflineAudioContext(2,Math.max(1,Math.ceil(T*sr)),sr);
+  parts.forEach((bufs,i)=>{ if(!bufs) return; const g=ctx.createGain(); g.connect(ctx.destination); const start=i===0?0:s1;
+    if(i===0){ g.gain.setValueAtTime(1,0); g.gain.setValueAtTime(1,s1); g.gain.linearRampToValueAtTime(0,Math.max(s1+.01,d[0])); }
+    else { g.gain.setValueAtTime(0,0); g.gain.setValueAtTime(0,s1); g.gain.linearRampToValueAtTime(1,s1+XF); }
+    for(const w of bufs){ const src=ctx.createBufferSource(); src.buffer=w.buffer; src.connect(g); src.start(start+Math.max(0,w.timestamp)); } });
+  return ctx.startRendering();
+}
+async function composeExport(){
+  const M=await loadMB(); if(!M||typeof VideoEncoder==='undefined'||!S.media.file||!S.media2||!S.media2.file) return null;
+  const ins=[S.media.file,S.media2.file].map(f=>new M.Input({source:new M.BlobSource(f),formats:M.ALL_FORMATS}));
+  const vt=await Promise.all(ins.map(i=>i.getPrimaryVideoTrack())); if(vt.some(t=>!t)) return null;
+  if(!(await Promise.all(vt.map(t=>t.canDecode()))).every(Boolean)) return null;
+  const d=await Promise.all(vt.map(t=>t.computeDuration()));
+  const fps=30, s1=Math.max(0,d[0]-XF), T=s1+d[1], N=Math.max(1,Math.round(T*fps));
+  const [W,H]=dims(), out=document.createElement('canvas'); out.width=W; out.height=H;
+  const w0=vt[0].displayWidth, h0=vt[0].displayHeight, k=Math.min(1,1920/Math.max(w0,h0)), mw=Math.max(2,Math.round(w0*k/2)*2), mh=Math.max(2,Math.round(h0*k/2)*2);
+  const cm=document.createElement('canvas'); cm.width=mw; cm.height=mh; const cx=cm.getContext('2d');
+  const sinks=vt.map(t=>new M.CanvasSink(t,{width:mw,height:mh,fit:'cover',poolSize:3}));
+  const ts0=[], ts1=[]; for(let i=0;i<N;i++){ const t=i/fps; if(t<d[0]) ts0.push(Math.min(t,d[0]-.001)); if(t>=s1) ts1.push(Math.min(t-s1,d[1]-.001)); }
+  const it0=sinks[0].canvasesAtTimestamps(ts0)[Symbol.asyncIterator](), it1=sinks[1].canvasesAtTimestamps(ts1)[Symbol.asyncIterator]();
+  const fmt=new M.Mp4OutputFormat({fastStart:'in-memory'});
+  const vcodec=await M.getFirstEncodableVideoCodec(fmt.getSupportedVideoCodecs(),{width:W,height:H}); if(!vcodec) return null;
+  const output=new M.Output({format:fmt,target:new M.BufferTarget()});
+  const vsrc=new M.CanvasSource(out,{codec:vcodec,bitrate:M.QUALITY_HIGH}); output.addVideoTrack(vsrc,{frameRate:fps});
+  let abuf=null, asrc=null; try{ abuf=await mixAudio(M,ins,d,s1,T); }catch(e){ abuf=null; }
+  if(abuf){ const ac=await M.getFirstEncodableAudioCodec(fmt.getSupportedAudioCodecs(),{numberOfChannels:abuf.numberOfChannels,sampleRate:abuf.sampleRate}).catch(()=>null);
+    if(ac){ asrc=new M.AudioBufferSource({codec:ac,bitrate:M.QUALITY_HIGH}); output.addAudioTrack(asrc); } }
+  let cancelled=false; S.exporting={cancel:()=>{ cancelled=true; output.cancel().catch(()=>{}); }};
+  await output.start(); setProg(.02);
+  if(asrc){ const sr=abuf.sampleRate, ch=abuf.numberOfChannels;
+    for(let off=0;off<abuf.length;off+=sr){ if(cancelled) return 'cancelled'; const len=Math.min(sr,abuf.length-off), b=new AudioBuffer({length:len,numberOfChannels:ch,sampleRate:sr});
+      for(let c=0;c<ch;c++) b.copyToChannel(abuf.getChannelData(c).subarray(off,off+len),c); await asrc.add(b); } asrc.close(); }
+  let f0=null, f1=null;
+  for(let i=0;i<N;i++){ if(cancelled) return 'cancelled'; const t=i/fps;
+    if(t<d[0]){ const r=await it0.next(); if(!r.done&&r.value) f0=r.value.canvas; }
+    if(t>=s1){ const r=await it1.next(); if(!r.done&&r.value) f1=r.value.canvas; }
+    let mix=0; const inX=t>=s1&&t<d[0]; if(inX){ const m=(t-s1)/XF; mix=Math.min(1,m*m*(3-2*m)); }
+    const first=t<d[0]?f0:f1; if(first){ cx.globalAlpha=1; cx.drawImage(first,0,0,mw,mh); }
+    if(inX&&f1&&mix>0){ const z=1.04-.04*mix; cx.globalAlpha=mix; cx.save(); cx.translate(mw/2,mh/2); cx.scale(z,z); cx.translate(-mw/2,-mh/2); cx.drawImage(f1,0,0,mw,mh); cx.restore(); cx.globalAlpha=1; }
+    renderTo(out,1,cm); await vsrc.add(t,1/fps); setProg(.03+.95*(i+1)/N); }
+  vsrc.close(); await output.finalize();
+  return new Blob([output.target.buffer],{type:'video/mp4'});
 }
 async function exportVideo(){
   stopPlay();
