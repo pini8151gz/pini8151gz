@@ -298,6 +298,11 @@ body.noscroll{overflow:hidden}
 .linkchip{display:inline-flex;align-items:center;gap:6px;flex:none;border:1px solid var(--line);background:var(--accent-soft);color:var(--accent);font:600 13px/1 system-ui,sans-serif;padding:8px 11px;border-radius:999px}
 .linkchip:active{transform:scale(.97)}
 
+/* snap guides */
+.snapg{position:absolute;z-index:5;pointer-events:none;opacity:0;transition:opacity 140ms var(--mi-ease,ease)}
+.snapg.on{opacity:1}
+.snapg-v{top:10px;bottom:10px;width:0;border-left:1.5px dashed rgba(255,214,0,.95);margin-left:-.75px;filter:drop-shadow(0 0 2px rgba(0,0,0,.5))}
+.snapg-h{left:10px;right:10px;height:0;border-top:1.5px dashed rgba(255,214,0,.95);margin-top:-.75px;filter:drop-shadow(0 0 2px rgba(0,0,0,.5))}
 /* ===================== Micro-interactions layer =====================
    Quiet, purposeful motion. All timings/easing live in these variables. */
 :root{--mi-ease:cubic-bezier(.22,1,.36,1);--mi-fast:180ms;--mi-mid:280ms;--mi-slow:380ms}
@@ -471,7 +476,6 @@ body.noscroll{overflow:hidden}
         <div class="ctl"><span class="ctl-head">צבע הטקסט</span><div class="pills row" data-k="ink"><button type="button" data-v="auto">אוטומטי</button><button type="button" data-v="dark">כהה</button><button type="button" data-v="white">לבן</button><button type="button" data-v="black">שחור</button></div></div>
         <div class="ctl"><span class="ctl-head">מילת הפתיחה</span><div class="pills row" data-k="kStyle"><button type="button" data-v="plain">כמו הכותרת</button><button type="button" data-v="strong">בצבע חזק</button><button type="button" data-v="pill">על רקע</button></div></div>
         <div class="ctl"><div class="ctl-head"><label for="a-scale">גודל הכותרת</label><output data-for="scale"></output></div><input type="range" id="a-scale" data-k="scale" min="0.7" max="1.4" step="0.05"></div>
-        <div class="ctl"><span class="ctl-head">יישור</span><div class="pills row" data-k="align"><button type="button" data-v="justify">לשני הצדדים</button><button type="button" data-v="right">לימין</button><button type="button" data-v="center">למרכז</button></div></div>
         <div class="ctl"><div class="ctl-head"><label for="a-lh">ריווח שורות</label><output data-for="lh"></output></div><input type="range" id="a-lh" data-k="lh" min="1.05" max="1.6" step="0.01"></div>
         <div class="ctl"><span class="ctl-head">מיקום התיבה</span><div class="pills row" data-k="boxPos"><button type="button" data-v="top">מעל התמונה</button><button type="button" data-v="bottom">מתחת לתמונה</button></div></div>
         <div class="ctl"><div class="ctl-head"><label for="a-boxM">שוליים מהצדדים</label><output data-for="boxM"></output></div><input type="range" id="a-boxM" data-k="boxM" min="0" max="80" step="2"></div>
@@ -630,7 +634,7 @@ const S={format:'story',media:null,cut:null,isExample:true,kit:loadKit(),logos:{
   theme:null,themeManual:false,kicker:'auto',ai:null,analysis:null,adj:defaultAdj(),drag:false,
   sample:null,imagesOk:false,downloads:null,playing:false,live:0,exporting:null};
 
-function defaultAdj(){ return {scale:1,align:'justify',lh:1.22,boxPos:'top',boxM:8,
+function defaultAdj(){ return {scale:1,align:'center',lh:1.22,boxPos:'top',boxM:8,
   weight:'auto',boxStyle:'light',ink:'auto',kStyle:'plain',ls:0,radius:16,pad:24,boxOff:0,extraScale:.78,
   mFill:'auto',frame:'none',zoom:1,fx:.5,fy:null,
   cutStyle:'auto',cutScale:1,cutZoom:1,cutFx:.5,cutFy:.3,cutSel:'main',cutEdge:0,cutFeather:0,cutLine:'none',cutLineW:3,cutShadow:'soft',cutFade:0,cutBg:'none',cutBgCol:'#ffffff',cutBlur:14,cutLight:0,cutContrast:0,cutBW:'off',cutCrop:'full',cutFlip:'off',cutSide:'auto',cutX:0,cutY:0,
@@ -1774,9 +1778,41 @@ const pv=$('#pv'); const ptrs=new Map(); let dragT=null, pinch0=null, rafQ=0;
 function queueDraw(){ if(rafQ) return; rafQ=requestAnimationFrame(()=>{ rafQ=0; draw(); if(!$('#adj').hidden) syncAdj(); }); }
 function ptPos(e){ const r=pv.getBoundingClientRect(); const k=dims()[0]/r.width; return {x:(e.clientX-r.left)*k,y:(e.clientY-r.top)*k}; }
 const inR=(p,r)=>r&&p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
+/* ---- magnet: while dragging, elements click into corners, centre lines and their home spot ---- */
+let SN=null;
+const SNAP_GUIDES=(()=>{ const st=document.querySelector('.stage'), mk=c=>{ const d=document.createElement('div'); d.className='snapg '+c; d.setAttribute('aria-hidden','true'); st.appendChild(d); return d; }; return {v:mk('snapg-v'),h:mk('snapg-h')}; })();
+function snapStart(){ const r=lastInfo[dragT]; if(!r) { SN=null; return; } const A=S.adj;
+  const d0 = dragT==='logo'?{x:A.logoX,y:A.logoY} : dragT==='cut'?{x:A.cutX,y:A.cutY} : dragT==='box'?{x:0,y:A.boxOff} : {x:A.fx,y:A.fy!=null?A.fy:S.analysis.fy};
+  SN={t:dragT,r0:{x:r.x,y:r.y,w:r.w,h:r.h},d0,raw:{x:d0.x,y:d0.y},on:{x:false,y:false}}; }
+function nearestT(v,list,th){ let best=null, bd=th; for(const t of list){ const d=Math.abs(v-t); if(d<bd){ bd=d; best=t; } } return best; }
+function showGuide(axis,css){ const g=SNAP_GUIDES[axis]; if(css==null){ g.classList.remove('on'); return; } if(axis==='v') g.style.left=css+'px'; else g.style.top=css+'px'; g.classList.add('on'); }
+function snapFeedback(ax,on){ if(SN.on[ax]===on) return; SN.on[ax]=on; if(on&&navigator.vibrate) try{ navigator.vibrate(8); }catch(e){} }
+function snapMove(dx,dy,s){ const A=S.adj, [W,H]=dims(), story=S.format==='story', r0=SN.r0, TH=34*s, k=pv.offsetWidth/W;
+  const toX=v=>pv.offsetLeft+v*k, toY=v=>pv.offsetTop+v*k;
+  if(SN.t==='logo'||SN.t==='cut'){ SN.raw.x+=dx/s; SN.raw.y-=dy/s;
+    const rx=r0.x+(SN.raw.x-SN.d0.x)*s, ry=r0.y-(SN.raw.y-SN.d0.y)*s, m=34*s, top=(story?210:40)*s, bot=(story?34:26)*s;
+    const hx=r0.x-SN.d0.x*s, hy=r0.y+SN.d0.y*s;   /* home position (no offset) */
+    const sx=nearestT(rx,[m,(W-r0.w)/2,W-r0.w-m,hx,0,W-r0.w],TH), sy=nearestT(ry,[top,(H-r0.h)/2,H-r0.h-bot,hy,H-r0.h],TH);
+    const kx=SN.t==='logo'?'logoX':'cutX', ky=SN.t==='logo'?'logoY':'cutY';
+    A[kx]= sx==null?SN.raw.x:SN.d0.x+(sx-r0.x)/s; A[ky]= sy==null?SN.raw.y:SN.d0.y-(sy-r0.y)/s;
+    snapFeedback('x',sx!=null); snapFeedback('y',sy!=null);
+    showGuide('v',sx==null?null:toX(Math.abs(sx-(W-r0.w)/2)<1?W/2:(sx<W/2?sx:sx+r0.w))); showGuide('h',sy==null?null:toY(Math.abs(sy-(H-r0.h)/2)<1?H/2:(sy<H/2?sy:sy+r0.h)));
+    return true; }
+  if(SN.t==='box'){ SN.raw.y+=dy/s; const ry=r0.y+(SN.raw.y-SN.d0.y)*s, hy=r0.y-SN.d0.y*s;
+    const sy=nearestT(ry,[hy,(story?196:30)*s,(H-r0.h)/2,H-r0.h-(story?40:30)*s],TH);
+    A.boxOff= sy==null?SN.raw.y:SN.d0.y+(sy-r0.y)/s; snapFeedback('y',sy!=null);
+    showGuide('h',sy==null?null:toY(Math.abs(sy-(H-r0.h)/2)<1?H/2:sy)); return true; }
+  if(SN.t==='media'){ const md=lastInfo.media; let any=false;
+    if(md.dw>md.w+1){ SN.raw.x=clamp01(SN.raw.x-dx/(md.dw-md.w)); const t=nearestT(SN.raw.x,[0,.5,1],.045); A.fx=t==null?SN.raw.x:t; snapFeedback('x',t!=null); any=true; }
+    if(md.dh>md.h+1){ SN.raw.y=clamp01(SN.raw.y-dy/(md.dh-md.h)); const t=nearestT(SN.raw.y,[0,.5,1,S.analysis.fy],.045); A.fy=t==null?SN.raw.y:t; snapFeedback('y',t!=null); any=true; }
+    return any; }
+  return false; }
+function snapEnd(){ SN=null; showGuide('v',null); showGuide('h',null); }
+
 pv.addEventListener('pointerdown',e=>{
   e.preventDefault(); try{ pv.setPointerCapture(e.pointerId); }catch(_){} const p=ptPos(e); ptrs.set(e.pointerId,p);
-  if(ptrs.size===1){ dragT = inR(p,lastInfo.logo)?'logo' : inR(p,lastInfo.cut)?'cut' : inR(p,lastInfo.box)?'box' : inR(p,lastInfo.media)?'media' : null; if(S.adj.fy==null) S.adj.fy=S.analysis.fy; }
+  if(ptrs.size===1){ dragT = inR(p,lastInfo.logo)?'logo' : inR(p,lastInfo.cut)?'cut' : inR(p,lastInfo.box)?'box' : inR(p,lastInfo.media)?'media' : null; if(S.adj.fy==null) S.adj.fy=S.analysis.fy; if(dragT) snapStart(); }
+  if(ptrs.size===2) snapEnd();
   if(ptrs.size===2 && dragT){ const [a,b]=[...ptrs.values()]; pinch0={d:Math.hypot(a.x-b.x,a.y-b.y),mid:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},
     v: dragT==='media'?S.adj.zoom:dragT==='logo'?S.adj.logoScale:dragT==='cut'?(lastInfo.cut&&lastInfo.cut.framed?S.adj.cutZoom:S.adj.cutScale):S.adj.scale}; }
 });
@@ -1788,6 +1824,7 @@ pv.addEventListener('pointermove',e=>{
     if(dragT==='media') S.adj.zoom=Math.max(1,Math.min(4,pinch0.v*r)); else if(dragT==='logo') S.adj.logoScale=Math.max(.5,Math.min(1.6,pinch0.v*r));
     else if(dragT==='cut'){ if(lastInfo.cut&&lastInfo.cut.framed) S.adj.cutZoom=Math.max(1,Math.min(4,pinch0.v*r)); else S.adj.cutScale=Math.max(.4,Math.min(1.8,pinch0.v*r)); } else S.adj.scale=Math.max(.7,Math.min(1.4,pinch0.v*r));
     const mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2}; dx=mid.x-pinch0.mid.x; dy=mid.y-pinch0.mid.y; pinch0.mid=mid; }
+  if(ptrs.size===1){ if(!SN) snapStart(); if(SN&&snapMove(dx,dy,s)){ queueDraw(); return; } }
   if(dragT==='logo'){ S.adj.logoX+=dx/s; S.adj.logoY-=dy/s; }
   else if(dragT==='cut'){ const c=lastInfo.cut;
     if(c&&c.framed&&ptrs.size>=2&&S.cut){ const [iw,ih]=srcSize(S.cut.img), sc=Math.max(c.w/iw,c.h/ih)*S.adj.cutZoom, ew=iw*sc-c.w, eh=ih*sc-c.h;
@@ -1797,7 +1834,7 @@ pv.addEventListener('pointermove',e=>{
   else { const md=lastInfo.media; if(md.dw>md.w+1) S.adj.fx=clamp01(S.adj.fx-dx/(md.dw-md.w)); if(md.dh>md.h+1) S.adj.fy=clamp01(S.adj.fy-dy/(md.dh-md.h)); }
   queueDraw();
 });
-['pointerup','pointercancel','pointerleave'].forEach(t=>pv.addEventListener(t,e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch0=null; if(!ptrs.size) dragT=null; }));
+['pointerup','pointercancel','pointerleave'].forEach(t=>pv.addEventListener(t,e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch0=null; if(ptrs.size===1){ SN=null; } if(!ptrs.size){ dragT=null; snapEnd(); } }));
 
 /* ---------- boot ---------- */
 async function boot(){

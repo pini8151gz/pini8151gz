@@ -300,7 +300,7 @@ class Hook(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.end_headers()
-        body = 'הרבנית סטודיו – הרובוט פעיל'
+        body = 'הרבנית סטודיו – הרובוט פעיל · גרסה ' + os.environ.get('RENDER_GIT_COMMIT', 'local')[:7]
         if self.path.startswith('/status'):
             info = api('getWebhookInfo').get('result', {})
             body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
