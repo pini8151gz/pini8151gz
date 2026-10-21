@@ -1001,7 +1001,7 @@ $('#cutIn').addEventListener('change',async e=>{
   const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
   try{ const im=await loadImageFile(f);
     const a=hasAlpha(im); S.cutSrc=null; Object.assign(S.adj,{cutZoom:1,cutFx:.5,cutFy:.3}); if(!a) loadRVM().catch(()=>{}); if(!a) S.adj.cutStyle='auto';
-    setCut(im,a,im,a?'גזורה, תשתלב בפינה':'צבטו על התמונה להגדלה, גררו להזזה');
+    setCut(im,a,im,a?'גזורה, תשתלב בפינה':'');
   }catch(err){ setStatus('התמונה לא נפתחה.',true); }
 });
 $('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; S.cutSrc=null; $('#cutEditBtn').hidden=true; $('#cutThumb').innerHTML=''; $('#cutSub').textContent=''; $('#cutClear').hidden=true; draw(); });
@@ -1295,7 +1295,7 @@ async function openCutout(img){
     thumb(r.c,L.n,async()=>{ closeSheets(); await nextFrame(); startLook(img,m,masks,L.p); if(!$('#adj').hidden) syncAdj(); draw(); });
     await nextFrame(); }
   LOOK_MAX=1200; S.cutSrc=saved; Object.assign(S.adj,savedAdj);
-  thumb(img,'בלי הסרת רקע',()=>{ S.cutSrc=null; setCut(img,false,img,'צבטו על התמונה להגדלה, גררו להזזה'); closeSheets(); });
+  thumb(img,'בלי הסרת רקע',()=>{ S.cutSrc=null; setCut(img,false,img,''); closeSheets(); });
   const g=$('#cutGrid'); g.innerHTML=''; g.appendChild(frag);
 }
 $('#cutAgain').onclick=()=>{ if(S.cut) openCutout(S.cut.orig||S.cut.img); };
