@@ -237,6 +237,10 @@ def worker():
         job = jobs.get()
         try:
             process(job)
+            try:
+                studio.warm()
+            except Exception:
+                pass
         except Exception as e:
             traceback.print_exc()
             msg = str(e)
@@ -268,13 +272,24 @@ def process(job):
         status('⬇️ מוריד את הקבצים…', True)
         items = [{'path': download(it['file_id'], work), 'kind': it['kind']} for it in job['items']]
 
+        t_video = [None]
+
         def progress(stage, p=None):
             if stage == 'design':
                 status('🎨 מעצב בשפת המותג…', True)
             elif stage == 'video':
-                pct = int((p or 0) * 100)
+                now = time.time()
+                if t_video[0] is None:
+                    t_video[0] = now
+                p = p or 0
+                pct = int(p * 100)
                 bar = '▰' * (pct // 10) + '▱' * (10 - pct // 10)
-                status(f'🎬 מרכיב את הסרטון {bar} {pct}%')
+                spent = int(now - t_video[0])
+                eta = ''
+                if p > 0.04 and spent > 2:
+                    left = int(spent * (1 - p) / p)
+                    eta = f' · עוד כ־{left} שנ׳' if left < 120 else f' · עוד כ־{round(left / 60)} דק׳'
+                status(f'🎬 מרכיב את הסרטון {bar} {pct}%{eta}')
 
         out, kind, info = engine.make(studio, items, meta, work, progress)
         status('📤 שולח…', True)

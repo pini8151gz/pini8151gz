@@ -19,6 +19,8 @@ import threading
 XF = 0.7          # crossfade between clips, seconds (same as the studio)
 PHOTO_SECS = 4.0  # how long a photo stays on screen inside a video
 FPS = 30
+# Video output width. 720 keeps memory and time low on a small server; set OUT_W=1080 on a bigger one.
+OUT_W = int(os.environ.get('OUT_W', '720'))
 
 # Longest first, so "צילום וידאו:" wins over "צילום:".
 CREDIT_TYPES = ['צילום וידאו:', 'צילום תמונה:', 'צילום:', 'בהפקת:', 'מפיק:', 'באדיבות:', 'קרדיט:', 'מתוך:']
@@ -153,7 +155,10 @@ class Studio:
         from playwright.sync_api import sync_playwright
         self._pw = sync_playwright().start()
         self._browser = self._pw.chromium.launch(args=['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu',
-                                                       '--disable-extensions', '--mute-audio'])
+                                                       '--disable-extensions', '--mute-audio', '--no-zygote',
+                                                       '--renderer-process-limit=1', '--disable-site-isolation-trials',
+                                                       '--disable-features=site-per-process,Translate,MediaRouter',
+                                                       '--js-flags=--max-old-space-size=160'])
         self._page = self._browser.new_page(viewport={'width': 420, 'height': 860})
         self._page.goto(self.url, wait_until='load', timeout=60000)
         self._page.wait_for_function('() => typeof window.__botRender === "function"', timeout=30000)
@@ -213,13 +218,19 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
     opts.update({'kind': 'video', 'mw': mw, 'mh': mh})
     progress('design')
     res = studio.render(opts)
+    # Free the browser's memory before ffmpeg starts (a small server can't hold both).
+    studio.close()
     overlay = save_data_url(res['png'], os.path.join(workdir, 'overlay.png'))
-    W, H, m = res['W'], res['H'], res['media']
+    # Everything below works at the output size (default 720 wide): the design layer is scaled once.
+    q = min(1.0, OUT_W / res['W'])
+    W, H = even(res['W'] * q), even(res['H'] * q)
+    m = {k2: res['media'][k2] * q for k2 in ('x', 'y', 'w', 'h', 'dw', 'dh')}
     dw, dh = even(m['dw']), even(m['dh'])
+    mw, mh = dw, dh   # clips are scaled straight to their final size, once
     X = round(m['x'] + (m['w'] - m['dw']) * res['fx'])
     Y = round(m['y'] + (m['h'] - m['dh']) * res['fy'])
 
-    cmd = ['ffmpeg', '-y', '-v', 'error', '-nostats', '-progress', 'pipe:1']
+    cmd = ['ffmpeg', '-y', '-v', 'error', '-nostats', '-progress', 'pipe:1', '-filter_complex_threads', '1']
     for it in items:
         if it['kind'] == 'image':
             cmd += ['-loop', '1', '-t', f"{it['dur']:.3f}", '-i', it['path']]
@@ -251,12 +262,12 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
     f.append(f"[{vcur}]scale={dw}:{dh}:flags=fast_bilinear{gray},crop={cw}:{ch}:{x0 - X}:{y0 - Y},"
              f"pad={W}:{H}:{x0}:{y0}:black,format=yuv420p[b1]")
     # The design layer is converted once and repeated (not re-decoded per frame).
-    f.append(f"[{ov}:v]format=yuva420p,loop=loop=-1:size=1:start=0,setpts=N/{FPS}/TB[ovl]")
+    f.append(f"[{ov}:v]scale={W}:{H}:flags=lanczos,format=yuva420p,loop=loop=-1:size=1:start=0,setpts=N/{FPS}/TB[ovl]")
     f.append(f"[b1][ovl]overlay=0:0:shortest=1:format=yuv420,format=yuv420p[out]")
 
     out = os.path.join(workdir, 'harabanit.mp4')
     cmd += ['-filter_complex', ';'.join(f), '-map', '[out]', '-map', f'[{acur}]',
-            '-c:v', 'libx264', '-preset', 'superfast', '-crf', '23', '-maxrate', '7M', '-bufsize', '14M',
+            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '22', '-threads', '2', '-maxrate', '7M', '-bufsize', '14M',
             '-pix_fmt', 'yuv420p', '-r', str(FPS), '-c:a', 'aac', '-b:a', '160k',
             '-t', f'{total:.3f}', '-movflags', '+faststart', out]
     progress('video', 0.0)
