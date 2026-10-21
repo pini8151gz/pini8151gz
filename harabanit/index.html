@@ -281,7 +281,6 @@ body.dockmode .themes,body.dockmode .actions{display:none}
     <label class="drop round small-gap" for="cutIn">
       <div class="thumb" id="cutThumb"></div>
       <div class="meta"><strong>תמונה בפינה (לא חובה)</strong><span id="cutSub">PNG גזור משתלב כמו בעמוד</span></div>
-      <button type="button" class="x bgx" id="cutBg" hidden>הסרת רקע</button>
       <button type="button" class="x" id="cutClear" hidden>הסרה</button>
     </label>
     <input type="file" id="cutIn" accept="image/*" hidden>
@@ -887,10 +886,10 @@ $('#cutIn').addEventListener('change',async e=>{
     setCut(im,a,im,a?'גזורה, תשתלב בפינה':'צבטו על התמונה להגדלה, גררו להזזה');
   }catch(err){ setStatus('התמונה לא נפתחה.',true); }
 });
-$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; $('#cutBg').hidden=true; draw(); });
+$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; draw(); });
 
 function setCut(img,transparent,orig,label){ S.cut={img,transparent,orig:orig||img};
-  thumbInto($('#cutThumb'),img,88); $('#cutSub').textContent=label; $('#cutClear').hidden=false; $('#cutBg').hidden=false; if(!$('#adj').hidden) syncAdj(); draw(); }
+  thumbInto($('#cutThumb'),img,88); $('#cutSub').textContent=label; $('#cutClear').hidden=false; if(!$('#adj').hidden) syncAdj(); draw(); }
 
 /* ---------- background removal for the corner photo ----------
    Claude marks where the figure is, then an on-device pass snaps the edge to the real outline. */
@@ -1071,7 +1070,6 @@ async function openCutout(img){
     g.appendChild(b); });
 }
 $('#cutAgain').onclick=()=>{ if(S.cut) openCutout(S.cut.orig||S.cut.img); };
-$('#cutBg').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); if(S.cut) openCutout(S.cut.orig||S.cut.img); });
 
 /* video preview playback */
 const PLAY_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>', PAUSE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>';
