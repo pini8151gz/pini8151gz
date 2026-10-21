@@ -6,12 +6,7 @@ services:
     dockerfilePath: ./harabanit-bot/Dockerfile
     dockerContext: .
     healthCheckPath: /
-    autoDeploy: true
-    buildFilter:
-      paths:
-        - harabanit/**
-        - harabanit-bot/**
-        - render.yaml
+    autoDeployTrigger: commit
     envVars:
       - key: BOT_TOKEN
         sync: false
