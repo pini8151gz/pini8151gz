@@ -172,6 +172,27 @@ body.dockmode .savebar{display:none}
 .copt canvas{max-width:100%;max-height:100%;display:block}
 .copt span{font-size:14px;font-weight:600}
 .copt[aria-pressed="true"]{outline:3px solid var(--accent);outline-offset:2px}
+.cutwait{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0 10px}
+.cw-stage{position:relative;border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.18);background:repeating-conic-gradient(#e6e2f0 0 25%,#f7f6fb 0 50%) 0 0/18px 18px}
+.cw-stage canvas{display:block;max-width:72vw;transition:filter .5s}
+.cw-check{position:absolute;inset:0;background:repeating-conic-gradient(rgba(255,255,255,.55) 0 25%,transparent 0 50%) 0 0/18px 18px;opacity:0;animation:cwChk 1.8s ease-in-out infinite;will-change:opacity}
+.cw-scan{position:absolute;left:-10%;right:-10%;top:0;height:34%;background:linear-gradient(180deg,transparent,rgba(124,77,255,.28) 70%,rgba(255,255,255,.95) 96%,transparent);animation:cwScan 1.5s cubic-bezier(.45,.05,.55,.95) infinite;will-change:transform;transform:translateY(-110%)}
+.cw-dots i{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 10px 2px var(--accent);opacity:0;animation:cwDot 1.8s ease-in-out infinite;will-change:transform,opacity}
+.cw-dots i:nth-child(1){left:22%;top:20%}.cw-dots i:nth-child(2){left:70%;top:28%;animation-delay:.3s}.cw-dots i:nth-child(3){left:40%;top:55%;animation-delay:.6s}
+.cw-dots i:nth-child(4){left:78%;top:68%;animation-delay:.9s}.cw-dots i:nth-child(5){left:18%;top:78%;animation-delay:1.2s}.cw-dots i:nth-child(6){left:55%;top:12%;animation-delay:1.5s}
+.cw-stage.done .cw-scan,.cw-stage.done .cw-check,.cw-stage.done .cw-dots{display:none}
+.cw-stage.done canvas{animation:cwPop .5s cubic-bezier(.2,.8,.2,1)}
+.cw-step{font-weight:800;font-size:16px;color:var(--ink)}.cw-step.in{animation:cwIn .35s ease}
+.cw-bar{width:min(240px,64vw);height:6px;border-radius:3px;background:var(--accent-soft);overflow:hidden}
+.cw-bar i{display:block;width:38%;height:100%;border-radius:3px;background:var(--accent);animation:cwBar 1.1s ease-in-out infinite;will-change:transform}
+.copt.pop{animation:cwIn .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cwScan{0%{transform:translateY(-110%)}100%{transform:translateY(310%)}}
+@keyframes cwChk{0%,100%{opacity:0}50%{opacity:.6}}
+@keyframes cwDot{0%{opacity:0;transform:scale(.3)}40%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.3)}}
+@keyframes cwBar{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
+@keyframes cwPop{0%{transform:scale(.96);opacity:.4}100%{transform:scale(1);opacity:1}}
+@keyframes cwIn{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.cw-scan,.cw-dots i,.cw-check,.cw-bar i{animation-duration:3s}}
 .cwait{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;padding:28px 0;color:var(--muted);font-size:15px}
 .lfill{position:relative;width:min(56vw,220px);aspect-ratio:640/607;margin:6px auto 34px}
 .lfill img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -1101,6 +1122,8 @@ function softBlur(src,w,h,amt){ const k=Math.max(2,amt/2), t=document.createElem
 function lineCut(cut,color,r){ const c=document.createElement('canvas'); c.width=cut.width+r*2; c.height=cut.height+r*2;
   const t=document.createElement('canvas'); t.width=cut.width; t.height=cut.height; const tx=t.getContext('2d'); tx.drawImage(cut,0,0); tx.globalCompositeOperation='source-in'; tx.fillStyle=color; tx.fillRect(0,0,t.width,t.height);
   const x=c.getContext('2d'); for(let i=0;i<28;i++){ const a=i/28*Math.PI*2; x.drawImage(t,r+Math.cos(a)*r,r+Math.sin(a)*r); } x.drawImage(cut,r,r); return c; }
+let LOOK_MAX=1200;
+const nextFrame=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
 function buildLook(){
   const C=S.cutSrc, A=S.adj, img=C.img, {w,h}=C.m, [iw,ih]=srcSize(img), a=curAlpha();
   let x0=w,y0=h,x1=-1,y1=-1; for(let i=0;i<w*h;i++) if(a[i]>.08){ const x=i%w,y=(i-x)/w; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
@@ -1109,7 +1132,7 @@ function buildLook(){
   if(bg!=='none'){ const px=(x1-x0)*.14, py=(y1-y0)*.08; x0=Math.max(0,x0-px); x1=Math.min(w-1,x1+px); y0=Math.max(0,y0-py); y1=Math.min(h-1,y1+py*.4); }
   if(A.cutCrop!=='full'){ const bh=y1-y0, bw=x1-x0; const keep=A.cutCrop==='hs'?Math.max(bw*.95,bh*.56):bh*.62; y1=Math.min(y1,y0+keep); }
   const k=iw/w, pad=2, bx=Math.max(0,Math.floor((x0-pad)*k)), by=Math.max(0,Math.floor((y0-pad)*k)), bw=Math.min(iw,Math.ceil((x1+pad+1)*k))-bx, bh=Math.min(ih,Math.ceil((y1+pad+1)*k))-by;
-  const sc=Math.min(1,1200/Math.max(bw,bh)), W=Math.max(2,Math.round(bw*sc)), H=Math.max(2,Math.round(bh*sc));
+  const sc=Math.min(1,LOOK_MAX/Math.max(bw,bh)), W=Math.max(2,Math.round(bw*sc)), H=Math.max(2,Math.round(bh*sc));
   /* the figure */
   const fig=document.createElement('canvas'); fig.width=W; fig.height=H; const fx=fig.getContext('2d'); fx.imageSmoothingQuality='high'; fx.drawImage(img,bx,by,bw,bh,0,0,W,H);
   tone(fx,W,H,+A.cutLight,+A.cutContrast,A.cutBW==='on');
@@ -1175,19 +1198,26 @@ function loadTF(){ if(TFP) return TFP; TFP=new Promise((ok,bad)=>{ if(window.tf)
   const urls=['https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js','https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js'];
   const next=i=>{ if(i>=urls.length) return bad(new Error('tf')); const sc=document.createElement('script'); sc.src=urls[i]; sc.onload=()=>ok(window.tf); sc.onerror=()=>next(i+1); document.head.appendChild(sc); }; next(0); });
   TFP.catch(()=>{TFP=null;}); return TFP; }
-async function loadRVM(){ if(RVM) return RVM; const tf=await loadTF(); try{ await tf.setBackend('webgl'); }catch(e){} await tf.ready();
-  RVM=await tf.loadGraphModel('models/rvm.json'); return RVM; }
+let RVMP=null;
+function loadRVM(){ if(RVM) return Promise.resolve(RVM); if(RVMP) return RVMP;
+  RVMP=(async()=>{ const tf=await loadTF(); try{ tf.env().set('WEBGL_USE_SHAPES_UNIFORMS',true); }catch(e){} try{ await tf.setBackend('webgl'); }catch(e){} await tf.ready();
+    const m=await tf.loadGraphModel('models/rvm.json'); await nextFrame();
+    /* compile the shaders once on a tiny frame */
+    try{ const z=tf.zeros([1,144,96,3]), r=tf.scalar(.5), s0=tf.scalar(0); const o=await m.executeAsync({src:z,'r1i':s0,'r2i':s0,'r3i':s0,'r4i':s0,'downsample_ratio':r},['pha']); (Array.isArray(o)?o:[o]).forEach(t=>t.dispose()); z.dispose(); r.dispose(); s0.dispose(); }catch(e){}
+    RVM=m; return m; })();
+  RVMP.catch(()=>{ RVMP=null; }); return RVMP; }
 /* alpha matte of the people in the photo, at working size */
 async function aiMatte(img){
   const tf=await loadTF(), model=await loadRVM();
   const [iw,ih]=srcSize(img), sc=Math.min(1,768/Math.max(iw,ih)), w=Math.round(iw*sc), h=Math.round(ih*sc);
   const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+  await nextFrame();
   const src=tf.tidy(()=>tf.browser.fromPixels(c).expandDims(0).toFloat().div(255));
   const ratio=tf.scalar(Math.min(1,448/Math.max(w,h)));
   let rec=[tf.scalar(0),tf.scalar(0),tf.scalar(0),tf.scalar(0)], pha=null;
   for(let k=0;k<2;k++){ /* a few passes let the recurrent state settle on a still photo */
     const out=await model.executeAsync({src,'r1i':rec[0],'r2i':rec[1],'r3i':rec[2],'r4i':rec[3],'downsample_ratio':ratio},['pha','r1o','r2o','r3o','r4o']);
-    rec.forEach(t=>t.dispose()); if(pha) pha.dispose(); pha=out[0]; rec=out.slice(1); }
+    rec.forEach(t=>t.dispose()); if(pha) pha.dispose(); pha=out[0]; rec=out.slice(1); await nextFrame(); }
   const a=await pha.data(); pha.dispose(); rec.forEach(t=>t.dispose()); src.dispose(); ratio.dispose();
   return {a:Float32Array.from(a),w,h};
 }
@@ -1238,32 +1268,44 @@ function cutFromMatte(img,m,alpha,soft){
   const k=iw/w, pad=2, bx=Math.max(0,Math.floor((x0-pad)*k)), by=Math.max(0,Math.floor((y0-pad)*k)), bw=Math.min(iw,Math.ceil((x1+pad+1)*k))-bx, bh=Math.min(ih,Math.ceil((y1+pad+1)*k))-by;
   const sc=Math.min(1,1400/Math.max(bw,bh)), o=document.createElement('canvas'); o.width=Math.round(bw*sc); o.height=Math.round(bh*sc);
   const ox=o.getContext('2d'); ox.imageSmoothingQuality='high'; ox.drawImage(c,bx,by,bw,bh,0,0,o.width,o.height); return o; }
+function cutWaitUI(img){ const g=$('#cutGrid');
+  g.innerHTML='<div class="cutwait"><div class="cw-stage" id="cwStage"><canvas id="cwC"></canvas><div class="cw-check"></div><div class="cw-scan"></div><div class="cw-dots"><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="cw-step" id="cwStep">מזהה את הדמות…</div><div class="cw-bar"><i></i></div></div>';
+  const cv=$('#cwC'), [w,h]=srcSize(img), sc=Math.min(260/w,300/h,1); cv.width=Math.round(w*sc); cv.height=Math.round(h*sc); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); }
+function cwStep(t){ const e=$('#cwStep'); if(e){ e.classList.remove('in'); void e.offsetWidth; e.textContent=t; e.classList.add('in'); } }
+function cwReveal(img,m,mask){ const cv=$('#cwC'); if(!cv) return; const x=cv.getContext('2d'), W=cv.width, H=cv.height;
+  const mc=document.createElement('canvas'); mc.width=m.w; mc.height=m.h; const mx=mc.getContext('2d'), id=mx.createImageData(m.w,m.h); for(let i=0;i<m.w*m.h;i++) id.data[i*4+3]=Math.round(mask[i]*255); mx.putImageData(id,0,0);
+  const f=document.createElement('canvas'); f.width=W; f.height=H; const fx=f.getContext('2d'); fx.drawImage(img,0,0,W,H); fx.globalCompositeOperation='destination-in'; fx.drawImage(mc,0,0,W,H);
+  x.clearRect(0,0,W,H); x.drawImage(f,0,0); $('#cwStage').classList.add('done'); }
 async function openCutout(img){
-  const g=$('#cutGrid'); g.innerHTML='<div class="cwait"><span class="spin"></span>מזהה את הדמות…</div>'; $('#cutNote').textContent='';
-  openSheet('#cutSheet');
+  cutWaitUI(img); $('#cutNote').textContent=''; openSheet('#cutSheet'); await nextFrame(); await nextFrame();
   let m=null, masks=null;
   try{
-    m=await aiMatte(img); const f=figures(m); if(!f.best) throw new Error('none');
-    const sel=splitMain(m,f); masks={main:matteMask(m,f,true,sel)};
-    masks.blob=sel?matteMask(m,f,true):null; masks.all=f.count>1?matteMask(m,f,false):null;
+    m=await aiMatte(img); cwStep('מפריד את הדמות מהרקע…'); await nextFrame();
+    const f=figures(m); if(!f.best) throw new Error('none'); await nextFrame();
+    const sel=splitMain(m,f); await nextFrame();
+    masks={main:matteMask(m,f,true,sel)}; cwReveal(img,m,masks.main); cwStep('מחדד קצוות…'); await nextFrame();
+    masks.blob=sel?matteMask(m,f,true):null; await nextFrame(); masks.all=f.count>1?matteMask(m,f,false):null;
   }catch(e){
-    try{ const seg=segment(img,ellipsePoly(.5,.55,.3,.42)); m={a:seg.q,w:seg.w,h:seg.h}; masks={main:seg.q}; }catch(_){ m=null; }
+    try{ await nextFrame(); const seg=segment(img,ellipsePoly(.5,.55,.3,.42)); m={a:seg.q,w:seg.w,h:seg.h}; masks={main:seg.q}; cwReveal(img,m,masks.main); }catch(_){ m=null; }
   }
+  cwStep('מכין אפשרויות…'); await nextFrame();
   const looks=[];
   if(m){ looks.push({n:'עם מסגרת לבנה',p:{cutLine:'white'}},{n:'חיתוך מדויק',p:{}},{n:'רקע מטושטש',p:{cutBg:'blur'}},{n:'ראש וכתפיים',p:{cutCrop:'hs'}},{n:'רקע בצבע המותג',p:{cutBg:'brand'}},{n:'דמות בשחור־לבן',p:{cutBW:'on',cutLine:'white'}});
     if(masks.blob) looks.push({n:'עם הצמודים אליה',p:{cutSel:'blob'}}); if(masks.all) looks.push({n:'כל האנשים',p:{cutSel:'all'}}); }
-  g.innerHTML='';
-  const saved=S.cutSrc, savedAdj=Object.assign({},S.adj);
-  const thumb=(c,n,onPick)=>{ const b=document.createElement('button'); b.type='button'; b.className='copt';
+  /* build small previews off-screen, a frame apart, then swap them in */
+  const saved=S.cutSrc, savedAdj=Object.assign({},S.adj), frag=document.createDocumentFragment();
+  const thumb=(c,n,onPick)=>{ const b=document.createElement('button'); b.type='button'; b.className='copt pop';
     const box=document.createElement('span'); box.className='chk'; const cv=document.createElement('canvas'); const [w,h]=srcSize(c); const k=Math.min(1,360/Math.max(w,h)); cv.width=Math.round(w*k); cv.height=Math.round(h*k);
-    cv.getContext('2d').drawImage(c,0,0,cv.width,cv.height); box.appendChild(cv); const t=document.createElement('span'); t.textContent=n; b.append(box,t); b.onclick=onPick; g.appendChild(b); };
+    cv.getContext('2d').drawImage(c,0,0,cv.width,cv.height); box.appendChild(cv); const t=document.createElement('span'); t.textContent=n; b.append(box,t); b.onclick=onPick; frag.appendChild(b); };
+  LOOK_MAX=360;
   for(const L of looks){
     S.cutSrc={img,m,masks,edit:null,editSel:null,ver:0,key:''}; Object.assign(S.adj,{cutSel:'main',cutEdge:0,cutFeather:0,cutLine:'none',cutLineW:3,cutFade:0,cutBg:'none',cutBlur:14,cutLight:0,cutContrast:0,cutBW:'off',cutCrop:'full',cutFlip:'off'},L.p);
     let r; try{ r=buildLook(); }catch(e){ continue; }
-    thumb(r.c,L.n,()=>{ startLook(img,m,masks,L.p); closeSheets(); if(!$('#adj').hidden) syncAdj(); draw(); });
-    await new Promise(q=>setTimeout(q,0)); }
-  S.cutSrc=saved; Object.assign(S.adj,savedAdj);
+    thumb(r.c,L.n,async()=>{ closeSheets(); await nextFrame(); startLook(img,m,masks,L.p); if(!$('#adj').hidden) syncAdj(); draw(); });
+    await nextFrame(); }
+  LOOK_MAX=1200; S.cutSrc=saved; Object.assign(S.adj,savedAdj);
   thumb(img,'בלי הסרת רקע',()=>{ S.cutSrc=null; setCut(img,false,img,'צבטו על התמונה להגדלה, גררו להזזה'); closeSheets(); });
+  const g=$('#cutGrid'); g.innerHTML=''; g.appendChild(frag);
 }
 $('#cutAgain').onclick=()=>{ if(S.cut) openCutout(S.cut.orig||S.cut.img); };
 
