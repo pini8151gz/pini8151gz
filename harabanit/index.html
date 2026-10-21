@@ -344,7 +344,7 @@ body.noscroll{overflow:hidden}
     <input type="file" id="media2In" accept="video/*" hidden>
     <div class="drop round small-gap" id="cutRow" role="button" tabindex="0">
       <div class="thumb" id="cutThumb"></div>
-      <div class="meta"><strong>תמונה בפינה (לא חובה)</strong><span id="cutSub">PNG גזור משתלב כמו בעמוד</span></div>
+      <div class="meta"><strong>תמונה בפינה (לא חובה)</strong><span id="cutSub"></span></div>
       <button type="button" class="xe" id="cutEditBtn" hidden>עריכה</button><button type="button" class="x" id="cutClear" hidden>הסרה</button><span class="more" aria-hidden="true">⋯</span>
     </div>
     <input type="file" id="cutIn" accept="image/*" hidden>
@@ -1004,7 +1004,7 @@ $('#cutIn').addEventListener('change',async e=>{
     setCut(im,a,im,a?'גזורה, תשתלב בפינה':'צבטו על התמונה להגדלה, גררו להזזה');
   }catch(err){ setStatus('התמונה לא נפתחה.',true); }
 });
-$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; S.cutSrc=null; $('#cutEditBtn').hidden=true; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; draw(); });
+$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; S.cutSrc=null; $('#cutEditBtn').hidden=true; $('#cutThumb').innerHTML=''; $('#cutSub').textContent=''; $('#cutClear').hidden=true; draw(); });
 
 function setCut(img,transparent,orig,label){ S.cut={img,transparent,orig:orig||img};
   thumbInto($('#cutThumb'),img,88); $('#cutSub').textContent=label; $('#cutClear').hidden=false; $('#cutEditBtn').hidden=false; if(!$('#adj').hidden) syncAdj(); draw(); }
