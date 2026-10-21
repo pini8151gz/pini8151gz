@@ -12,6 +12,7 @@ Environment:
                   Without it the bot uses long polling (handy on a home computer).
   SITE_DIR        folder of the studio (default: ../harabanit)
 """
+import hashlib
 import json
 import mimetypes
 import os
@@ -34,7 +35,9 @@ TOKEN = os.environ.get('BOT_TOKEN', '').strip()
 API = f'https://api.telegram.org/bot{TOKEN}/'
 FILE_API = f'https://api.telegram.org/file/bot{TOKEN}/'
 ALLOWED = {int(x) for x in re.findall(r'\d+', os.environ.get('ALLOWED_IDS', ''))}
-SECRET = os.environ.get('WEBHOOK_SECRET', '').strip()
+_RAW_SECRET = os.environ.get('WEBHOOK_SECRET', '').strip()
+# Telegram only accepts A-Z a-z 0-9 _ - in secret tokens, so derive a safe one.
+SECRET = hashlib.sha256(_RAW_SECRET.encode()).hexdigest() if _RAW_SECRET else ''
 PUBLIC_URL = os.environ.get('RENDER_EXTERNAL_URL', '').rstrip('/')
 PORT = int(os.environ.get('PORT', '10000'))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -291,7 +294,12 @@ class Hook(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.end_headers()
-        self.wfile.write('הרבנית סטודיו – הרובוט פעיל'.encode())
+        body = 'הרבנית סטודיו – הרובוט פעיל'
+        if self.path.startswith('/status'):
+            info = api('getWebhookInfo').get('result', {})
+            body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
+            body += f"\nallowed users: {len(ALLOWED)}"
+        self.wfile.write(body.encode())
 
     def do_HEAD(self):
         self.send_response(200)
@@ -349,8 +357,11 @@ def main():
         r = api('setWebhook', {'url': PUBLIC_URL + '/tg', 'secret_token': SECRET or None,
                                'allowed_updates': ['message'], 'max_connections': 10})
         print('webhook:', r, flush=True)
-        ThreadingHTTPServer(('0.0.0.0', PORT), Hook).serve_forever()
-    else:
+        if r.get('ok'):
+            ThreadingHTTPServer(('0.0.0.0', PORT), Hook).serve_forever()
+            return
+        print('webhook failed, falling back to polling', flush=True)
+    if True:
         threading.Thread(target=lambda: ThreadingHTTPServer(('0.0.0.0', PORT), Hook).serve_forever(), daemon=True).start()
         print('polling mode', flush=True)
         polling()
