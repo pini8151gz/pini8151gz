@@ -701,12 +701,11 @@ function wordsOf(text){ const out=[]; text.split('\n').forEach((ln,i)=>{ if(i&&o
 
 const layoutCache=new Map();
 function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
-  const key=[words.join(' '),maxW,maxH,maxSize,minSize,lhR,maxLines,light?1:0,S.kit.headFont,S.adj.weight,S.adj.ls,document.fonts.status].join('|');
+  const key=[words.join(' '),maxW,maxH,maxSize,minSize,lhR,maxLines,light?1:0,S.kit.headFont,S.adj.weight,S.adj.ls,document.fonts.status,'fill2'].join('|');
   setLS(ctx);
   const hit=layoutCache.get(key); if(hit) return hit;
-  let best=null;
-  for(let size=Math.round(maxSize); size>=minSize; size-=1){
-    ctx.font=headFont(size,light); const sp=ctx.measureText(' ').width;
+  /* break the words at one font size: greedy, then balanced so the lines are about the same length */
+  const mk=size=>{ ctx.font=headFont(size,light); const sp=ctx.measureText(' ').width;
     const lines=[]; let cur=[], cw=0;
     for(const t of words){
       if(t==='\n'){ if(cur.length) lines.push({words:cur,w:cw,hard:true}); cur=[]; cw=0; continue; }
@@ -715,10 +714,17 @@ function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
       cw+=(cur.length?sp:0)+w; cur.push({t,w});
     }
     if(cur.length) lines.push({words:cur,w:cw,last:true});
-    const bl=balanceLines(lines,sp,maxW); lines.length=0; lines.push(...bl);
-    const lh=size*lhR; best={lines,size,lh,sp,h:lines.length*lh,font:headFont(size,light),over:false};
-    if(best.h<=maxH && lines.length<=maxLines && lines.every(l=>l.w<=maxW+1)) break;
-    best.over=true;
+    const bl=balanceLines(lines,sp,maxW); const lh=size*lhR;
+    return {lines:bl,size,lh,sp,h:bl.length*lh,font:headFont(size,light),over:false}; };
+  const ok=L=>L.h<=maxH && L.lines.length<=maxLines && L.lines.every(l=>l.w<=maxW+1);
+  let best=null;
+  for(let size=Math.round(maxSize); size>=minSize; size-=1){ best=mk(size); if(ok(best)) break; best.over=true; }
+  /* headline fills the box: grow the font (same number of lines) until the longest line reaches the full width */
+  if(!light && best && !best.over){
+    const longest=Math.max(...best.lines.map(l=>l.w)), n=best.lines.length;
+    const top=Math.min(Math.round(maxSize*2), Math.floor(best.size*maxW/Math.max(1,longest)));
+    for(let size=top; size>best.size; size-=1){ const L=mk(size); if(ok(L)&&L.lines.length===n){ best=L; break; } }
+    best.fill=true;
   }
   if(layoutCache.size>80) layoutCache.clear(); layoutCache.set(key,best); return best;
 }
@@ -749,10 +755,18 @@ function drawJustified(ctx,L,xRight,maxW,yTop,color,align,opt){
     const sum=ln.words.reduce((a,w)=>a+w.w,0), n=ln.words.length;
     const justify=align==='justify' && !single && n>1 && !ln.hard && !(ln.last && ln.w<maxW*.62);
     let gap=justify?(maxW-sum)/(n-1):L.sp, lw=ln.w;
-    if(align==='center' && !single && n>1){ const target=Math.max(...L.lines.map(l=>l.w)), extra=Math.min((target-ln.w)/(n-1), L.sp*.9);
-      if(extra>0){ gap=L.sp+extra; lw=sum+gap*(n-1); } }
+    let lsx=0;   /* extra letter spacing for this line, px */
+    if(align==='center' && (n>1||L.fill)){
+      /* every line reaches the full width (L.fill) or the longest line. The extra room is shared:
+         a little letter spacing first (reads evenly in Hebrew), then wider word gaps, both capped. */
+      const target=L.fill?maxW:Math.max(...L.lines.map(l=>l.w)), need=target-ln.w;
+      if(need>0){ const chars=ln.words.reduce((a,w)=>a+[...w.t].length,0);
+        lsx=Math.min(need*(n>1?.55:1)/Math.max(1,chars), L.size*(L.fill?.07:.03));
+        const left=need-lsx*chars; const extra=n>1?Math.min(left/(n-1), L.sp*(L.fill?1.6:.9)):0;
+        gap=L.sp+Math.max(0,extra); lw=sum+lsx*chars+gap*Math.max(0,n-1); } }
+    if(lsx&&'letterSpacing' in ctx) ctx.letterSpacing=((S.adj.ls||0)+lsx)+'px'; else if(!lsx) setLS(ctx);
     let x = align==='center' ? xRight-(maxW-lw)/2 : xRight;
-    const pos=[]; for(const w of ln.words){ pos.push({w,x,k:wi<kN}); x-=w.w+gap; wi++; }
+    const pos=[]; for(const w of ln.words){ const ww=w.w+(lsx?lsx*[...w.t].length:0); pos.push({w:{t:w.t,w:ww},x,k:wi<kN}); x-=ww+gap; wi++; }
     const ks=pos.filter(q=>q.k);
     if(ks.length && opt.kStyle==='pill'){ const pd=L.size*.2, r0=ks[0].x+pd, l1=ks.at(-1).x-ks.at(-1).w.w-pd;
       ctx.save(); ctx.shadowColor='transparent'; ctx.fillStyle=opt.kFill; rr(ctx,l1,base-L.size*.86,r0-l1,L.size*1.14,L.size*.2); ctx.fill(); ctx.restore(); }
