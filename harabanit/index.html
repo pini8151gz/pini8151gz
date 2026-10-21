@@ -233,6 +233,9 @@ body.dockmode .themes,body.dockmode .actions{display:none}
   .pip{transition:none}
   .w-logo img,.welcome{transition:none}
   .kbtn{transition:none}.spin{animation-duration:2.4s}.progress i{transition:none}}
+.bwrap{display:flex;justify-content:center;touch-action:none}.bwrap canvas{border-radius:12px;touch-action:none;max-width:100%}
+.brow{display:flex;gap:10px}.brow>*{flex:1}
+#cutEdit{display:flex;flex-direction:column;gap:14px}
 .out-acts{display:flex;gap:10px;margin-top:12px}.out-acts>*{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
 .w-url{margin-top:18px;border:0;background:transparent;color:var(--muted);font:600 15px/1 system-ui,sans-serif;letter-spacing:.3px;padding:8px 12px;border-radius:999px}
 .w-url:active{background:var(--accent-soft)}
@@ -365,8 +368,25 @@ body.dockmode .themes,body.dockmode .actions{display:none}
 
       <div class="adj-group" data-group="cut" hidden>
         <p class="hint" id="cutHint">קודם מוסיפים תמונה בפינה בטופס שמתחת.</p>
-        <p class="hint">על התצוגה: צביטה בשתי אצבעות מגדילה את התמונה בתוך המסגרת ומזיזה אותה. גרירה באצבע אחת מזיזה את כל המסגרת.</p>
-        <button type="button" class="secondary" id="cutAgain" hidden>הסרת רקע מהתמונה בפינה</button>
+                <button type="button" class="secondary" id="cutAgain" hidden>הסרת רקע מהתמונה בפינה</button>
+        <div id="cutEdit" hidden>
+          <button type="button" class="secondary" id="cutBrushBtn">תיקון ידני במברשת</button>
+          <div class="ctl"><span class="ctl-head">מי בתמונה</span><div class="pills row" data-k="cutSel"><button type="button" data-v="main">הדמות הראשית</button><button type="button" data-v="blob">עם הצמודים</button><button type="button" data-v="all">כל האנשים</button></div></div>
+          <div class="ctl"><div class="ctl-head"><label for="a-cutEdge">הרחבה או צמצום של הקצה</label><output data-for="cutEdge"></output></div><input type="range" id="a-cutEdge" dir="ltr" data-k="cutEdge" min="-6" max="6" step="0.5"></div>
+          <div class="ctl"><div class="ctl-head"><label for="a-cutFeather">ריכוך הקצה</label><output data-for="cutFeather"></output></div><input type="range" id="a-cutFeather" data-k="cutFeather" min="0" max="12" step="0.5"></div>
+          <div class="ctl"><span class="ctl-head">קו מתאר</span><div class="pills row" data-k="cutLine"><button type="button" data-v="none">בלי</button><button type="button" data-v="white">לבן</button><button type="button" data-v="black">שחור</button><button type="button" data-v="brand">צבע המותג</button></div></div>
+          <div class="ctl"><div class="ctl-head"><label for="a-cutLineW">עובי קו המתאר</label><output data-for="cutLineW"></output></div><input type="range" id="a-cutLineW" data-k="cutLineW" min="1" max="8" step="0.5"></div>
+          <div class="ctl"><span class="ctl-head">צל</span><div class="pills row" data-k="cutShadow"><button type="button" data-v="none">בלי</button><button type="button" data-v="soft">עדין</button><button type="button" data-v="strong">חזק</button><button type="button" data-v="glow">זוהר</button></div></div>
+          <div class="ctl"><span class="ctl-head">רקע מאחורי הדמות</span><div class="pills row" data-k="cutBg"><button type="button" data-v="none">שקוף</button><button type="button" data-v="blur">מטושטש</button><button type="button" data-v="bw">שחור־לבן</button><button type="button" data-v="dim">מוחשך</button><button type="button" data-v="brand">צבע המותג</button><button type="button" data-v="color">צבע לבחירה</button></div></div>
+          <div class="ctl" id="cutBgColRow" hidden><span class="ctl-head">צבע הרקע</span><input type="color" id="cutBgColIn" value="#ffffff" aria-label="צבע הרקע"></div>
+          <div class="ctl" id="cutBlurRow" hidden><div class="ctl-head"><label for="a-cutBlur">עוצמת הטשטוש</label><output data-for="cutBlur"></output></div><input type="range" id="a-cutBlur" data-k="cutBlur" min="4" max="40" step="1"></div>
+          <div class="ctl"><div class="ctl-head"><label for="a-cutLight">בהירות הדמות</label><output data-for="cutLight"></output></div><input type="range" id="a-cutLight" dir="ltr" data-k="cutLight" min="-40" max="40" step="1"></div>
+          <div class="ctl"><div class="ctl-head"><label for="a-cutContrast">ניגודיות הדמות</label><output data-for="cutContrast"></output></div><input type="range" id="a-cutContrast" dir="ltr" data-k="cutContrast" min="-40" max="40" step="1"></div>
+          <div class="ctl"><span class="ctl-head">צבע הדמות</span><div class="pills row" data-k="cutBW"><button type="button" data-v="off">מקורי</button><button type="button" data-v="on">שחור־לבן</button></div></div>
+          <div class="ctl"><span class="ctl-head">חיתוך</span><div class="pills row" data-k="cutCrop"><button type="button" data-v="full">דמות מלאה</button><button type="button" data-v="half">חצי גוף</button><button type="button" data-v="hs">ראש וכתפיים</button></div></div>
+          <div class="ctl"><div class="ctl-head"><label for="a-cutFade">דהייה בתחתית</label><output data-for="cutFade"></output></div><input type="range" id="a-cutFade" data-k="cutFade" min="0" max="1" step="0.05"></div>
+          <div class="ctl"><span class="ctl-head">כיוון</span><div class="pills row" data-k="cutFlip"><button type="button" data-v="off">רגיל</button><button type="button" data-v="on">הפוך</button></div></div>
+        </div>
         <div class="ctl"><div class="ctl-head"><label for="a-cutZoom">זום בתוך המסגרת</label><output data-for="cutZoom"></output></div><input type="range" id="a-cutZoom" data-k="cutZoom" min="1" max="4" step="0.05"></div>
         <div class="ctl"><span class="ctl-head">סגנון</span><div class="pills row" data-k="cutStyle"><button type="button" data-v="auto">אוטומטי</button><button type="button" data-v="cut">ללא מסגרת</button><button type="button" data-v="rounded">מלבן מעוגל</button><button type="button" data-v="circle">עיגול עם מסגרת</button><button type="button" data-v="circle-plain">עיגול נקי</button></div></div>
         <div class="ctl"><div class="ctl-head"><label for="a-cutScale">גודל</label><output data-for="cutScale"></output></div><input type="range" id="a-cutScale" data-k="cutScale" min="0.4" max="1.8" step="0.05"></div>
@@ -415,6 +435,16 @@ body.dockmode .themes,body.dockmode .actions{display:none}
   </div>
 </div>
 
+<div class="sheet" id="brushSheet" hidden dir="rtl" lang="he" role="dialog" aria-label="תיקון ידני">
+  <div class="sheet-in">
+    <div class="sheet-head"><h3>תיקון ידני</h3><button type="button" class="primary" id="brushDone">סיום</button></div>
+    <div class="pills row" id="brushMode"><button type="button" data-v="erase" aria-pressed="true">מחיקה</button><button type="button" data-v="restore" aria-pressed="false">החזרה</button></div>
+    <div class="bwrap"><canvas id="brushC"></canvas></div>
+    <div class="ctl"><div class="ctl-head"><label for="brushSize">גודל המברשת</label><output id="brushSizeOut"></output></div><input type="range" id="brushSize" min="6" max="80" step="1" value="26"></div>
+    <div class="brow"><button type="button" class="secondary" id="brushUndo">ביטול פעולה</button><button type="button" class="secondary" id="brushReset">חזרה לחיתוך המקורי</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -455,7 +485,7 @@ const S={format:'story',media:null,cut:null,isExample:true,kit:loadKit(),logos:{
 function defaultAdj(){ return {scale:1,align:'justify',lh:1.22,boxPos:'top',boxM:8,
   weight:'auto',boxStyle:'light',ink:'auto',kStyle:'plain',ls:0,radius:16,pad:24,boxOff:0,extraScale:.78,
   mFill:'auto',frame:'none',zoom:1,fx:.5,fy:null,
-  cutStyle:'auto',cutScale:1,cutZoom:1,cutFx:.5,cutFy:.3,cutSide:'auto',cutX:0,cutY:0,
+  cutStyle:'auto',cutScale:1,cutZoom:1,cutFx:.5,cutFy:.3,cutSel:'main',cutEdge:0,cutFeather:0,cutLine:'none',cutLineW:3,cutShadow:'soft',cutFade:0,cutBg:'none',cutBgCol:'#ffffff',cutBlur:14,cutLight:0,cutContrast:0,cutBW:'off',cutCrop:'full',cutFlip:'off',cutSide:'auto',cutX:0,cutY:0,
   logoShow:'on',logoScale:1,side:'auto',logoX:0,logoY:0}; }
 function loadKit(){ try{ const r=localStorage.getItem(KIT_KEY); if(r) return Object.assign({},DEFAULT_KIT,JSON.parse(r)); }catch(e){} return Object.assign({},DEFAULT_KIT); }
 function saveKit(){ try{ localStorage.setItem(KIT_KEY,JSON.stringify(S.kit)); }catch(e){ try{ localStorage.setItem(KIT_KEY,JSON.stringify(Object.assign({},S.kit,{fontData:null}))); }catch(_){} } }
@@ -693,7 +723,7 @@ function drawCutout(ctx,W,H,s,corner,color){
   if(style==='cut'){
     let h=H*(story?.27:.32)*k, w=h*iw/ih; if(w>W*.6*k){ w=W*.6*k; h=w*ih/iw; }
     const x=(corner==='right'?W-w:0)+dx, y=H-h+dy;
-    ctx.save(); if(S.cut.transparent){ ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=24*s; } ctx.drawImage(im,x,y,w,h); ctx.restore();
+    ctx.save(); if(S.cut.transparent){ const sh=S.cutSrc?A.cutShadow:'soft'; if(sh==='soft'){ ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=24*s; } else if(sh==='strong'){ ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=38*s; ctx.shadowOffsetY=10*s; } else if(sh==='glow'){ ctx.shadowColor=color; ctx.shadowBlur=46*s; } } ctx.drawImage(im,x,y,w,h); ctx.restore();
     return {x,y,w,h,framed:false};
   }
   if(style==='rounded'){
@@ -732,6 +762,7 @@ if('IntersectionObserver' in window){
 
 const PV_SCALE=.5;
 function draw(){
+  try{ refreshCut(); }catch(e){}
   const v=S.media.type==='video'&&S.playing?S.media.video:null;
   renderTo($('#pv'),PV_SCALE,v);
   drawPip();
@@ -882,11 +913,11 @@ function hasAlpha(im){
 $('#cutIn').addEventListener('change',async e=>{
   const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
   try{ const im=await loadImageFile(f);
-    const a=hasAlpha(im); Object.assign(S.adj,{cutZoom:1,cutFx:.5,cutFy:.3}); if(!a) loadRVM().catch(()=>{}); if(!a) S.adj.cutStyle='auto';
+    const a=hasAlpha(im); S.cutSrc=null; Object.assign(S.adj,{cutZoom:1,cutFx:.5,cutFy:.3}); if(!a) loadRVM().catch(()=>{}); if(!a) S.adj.cutStyle='auto';
     setCut(im,a,im,a?'גזורה, תשתלב בפינה':'צבטו על התמונה להגדלה, גררו להזזה');
   }catch(err){ setStatus('התמונה לא נפתחה.',true); }
 });
-$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; draw(); });
+$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; S.cutSrc=null; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; draw(); });
 
 function setCut(img,transparent,orig,label){ S.cut={img,transparent,orig:orig||img};
   thumbInto($('#cutThumb'),img,88); $('#cutSub').textContent=label; $('#cutClear').hidden=false; if(!$('#adj').hidden) syncAdj(); draw(); }
@@ -977,6 +1008,93 @@ function outlined(cut){ const r=Math.max(6,Math.round(cut.width*.018)); const c=
 function headShoulders(cut){ if(cut.height<cut.width*1.15) return null; const h=Math.round(Math.max(cut.width*.95,cut.height*.56));
   const c=document.createElement('canvas'); c.width=cut.width; c.height=h; const x=c.getContext('2d'); x.drawImage(cut,0,0);
   const g=x.createLinearGradient(0,h*.86,0,h); g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.globalCompositeOperation='destination-in'; x.fillStyle=g; x.fillRect(0,0,c.width,h); return c; }
+/* ---- editable cut-out: one matte, many looks ---- */
+function sdfAlpha(a,w,h,edge,feather){ const n=w*h, bin=new Uint8Array(n), inv=new Uint8Array(n); for(let i=0;i<n;i++){ bin[i]=a[i]>=.5?1:0; inv[i]=1-bin[i]; }
+  const dIn=chamfer(bin,w,h), dOut=chamfer(inv,w,h), f=Math.max(.75,feather), o=new Float32Array(n);
+  for(let i=0;i<n;i++){ const sd=bin[i]?dIn[i]-.5:-(dOut[i]-.5); let v=(sd+edge)/f+.5; v=v<0?0:v>1?1:v;
+    o[i]= (!feather && Math.abs(sd+edge)>1.5) ? v : (feather? v : Math.min(1,Math.max(0, edge>=0?Math.max(a[i],v):Math.min(a[i],v)))); }
+  return o; }
+function curAlpha(){ const C=S.cutSrc, A=S.adj; let a=(C.edit&&C.editSel===A.cutSel)?C.edit:(C.masks[A.cutSel]||C.masks.main);
+  if(+A.cutEdge||+A.cutFeather) a=sdfAlpha(a,C.m.w,C.m.h,+A.cutEdge,+A.cutFeather); return a; }
+function tone(ctx,w,h,light,contrast,bw){ if(!light&&!contrast&&!bw) return; const d=ctx.getImageData(0,0,w,h), p=d.data, c=(100+contrast)/100, l=light*2.55;
+  for(let i=0;i<p.length;i+=4){ let r=p[i],g=p[i+1],b=p[i+2]; if(bw){ const y=.299*r+.587*g+.114*b; r=g=b=y; }
+    p[i]=(r-128)*c+128+l; p[i+1]=(g-128)*c+128+l; p[i+2]=(b-128)*c+128+l; } ctx.putImageData(d,0,0); }
+function softBlur(src,w,h,amt){ const k=Math.max(2,amt/2), t=document.createElement('canvas'); t.width=Math.max(4,Math.round(w/k)); t.height=Math.max(4,Math.round(h/k));
+  const tx=t.getContext('2d'); tx.imageSmoothingQuality='high'; tx.drawImage(src,0,0,t.width,t.height);
+  const t2=document.createElement('canvas'); t2.width=Math.max(2,Math.round(t.width/2)); t2.height=Math.max(2,Math.round(t.height/2)); t2.getContext('2d').drawImage(t,0,0,t2.width,t2.height);
+  const o=document.createElement('canvas'); o.width=w; o.height=h; const ox=o.getContext('2d'); ox.imageSmoothingQuality='high'; ox.drawImage(t2,0,0,w,h); return o; }
+function lineCut(cut,color,r){ const c=document.createElement('canvas'); c.width=cut.width+r*2; c.height=cut.height+r*2;
+  const t=document.createElement('canvas'); t.width=cut.width; t.height=cut.height; const tx=t.getContext('2d'); tx.drawImage(cut,0,0); tx.globalCompositeOperation='source-in'; tx.fillStyle=color; tx.fillRect(0,0,t.width,t.height);
+  const x=c.getContext('2d'); for(let i=0;i<28;i++){ const a=i/28*Math.PI*2; x.drawImage(t,r+Math.cos(a)*r,r+Math.sin(a)*r); } x.drawImage(cut,r,r); return c; }
+function buildLook(){
+  const C=S.cutSrc, A=S.adj, img=C.img, {w,h}=C.m, [iw,ih]=srcSize(img), a=curAlpha();
+  let x0=w,y0=h,x1=-1,y1=-1; for(let i=0;i<w*h;i++) if(a[i]>.08){ const x=i%w,y=(i-x)/w; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  if(x1<0) return {c:img,transparent:false};
+  const bg=A.cutBg;
+  if(bg!=='none'){ const px=(x1-x0)*.14, py=(y1-y0)*.08; x0=Math.max(0,x0-px); x1=Math.min(w-1,x1+px); y0=Math.max(0,y0-py); y1=Math.min(h-1,y1+py*.4); }
+  if(A.cutCrop!=='full'){ const bh=y1-y0, bw=x1-x0; const keep=A.cutCrop==='hs'?Math.max(bw*.95,bh*.56):bh*.62; y1=Math.min(y1,y0+keep); }
+  const k=iw/w, pad=2, bx=Math.max(0,Math.floor((x0-pad)*k)), by=Math.max(0,Math.floor((y0-pad)*k)), bw=Math.min(iw,Math.ceil((x1+pad+1)*k))-bx, bh=Math.min(ih,Math.ceil((y1+pad+1)*k))-by;
+  const sc=Math.min(1,1200/Math.max(bw,bh)), W=Math.max(2,Math.round(bw*sc)), H=Math.max(2,Math.round(bh*sc));
+  /* the figure */
+  const fig=document.createElement('canvas'); fig.width=W; fig.height=H; const fx=fig.getContext('2d'); fx.imageSmoothingQuality='high'; fx.drawImage(img,bx,by,bw,bh,0,0,W,H);
+  tone(fx,W,H,+A.cutLight,+A.cutContrast,A.cutBW==='on');
+  const mc=document.createElement('canvas'); mc.width=w; mc.height=h; const mx=mc.getContext('2d'), id=mx.createImageData(w,h); for(let i=0;i<w*h;i++) id.data[i*4+3]=Math.round(a[i]*255); mx.putImageData(id,0,0);
+  fx.globalCompositeOperation='destination-in'; fx.imageSmoothingEnabled=true; fx.drawImage(mc,bx/k,by/k,bw/k,bh/k,0,0,W,H); fx.globalCompositeOperation='source-over';
+  const fade=A.cutCrop!=='full'?Math.max(.18,+A.cutFade):+A.cutFade;
+  const fadeIt=cv=>{ if(fade<=0) return; const g=cv.getContext('2d'), gr=g.createLinearGradient(0,cv.height*(1-fade*.6),0,cv.height); gr.addColorStop(0,'rgba(0,0,0,1)'); gr.addColorStop(1,'rgba(0,0,0,0)'); g.globalCompositeOperation='destination-in'; g.fillStyle=gr; g.fillRect(0,0,cv.width,cv.height); g.globalCompositeOperation='source-over'; };
+  let out, transparent=true;
+  if(bg!=='none'){ out=document.createElement('canvas'); out.width=W; out.height=H; const ox=out.getContext('2d');
+    if(bg==='brand'||bg==='color'){ ox.fillStyle=bg==='brand'?themeById(S.theme).c:A.cutBgCol; ox.fillRect(0,0,W,H); }
+    else { const src=document.createElement('canvas'); src.width=W; src.height=H; src.getContext('2d').drawImage(img,bx,by,bw,bh,0,0,W,H);
+      const b=bg==='blur'?softBlur(src,W,H,+A.cutBlur):src; ox.drawImage(b,0,0); if(bg==='bw') tone(ox,W,H,0,0,true); if(bg==='dim'){ ox.fillStyle='rgba(0,0,0,.55)'; ox.fillRect(0,0,W,H); } }
+    ox.drawImage(fig,0,0); fadeIt(out); transparent=false;
+  } else { fadeIt(fig); out=fig;
+    if(A.cutLine!=='none'){ const col=A.cutLine==='white'?'#FFFFFF':A.cutLine==='black'?'#111111':themeById(S.theme).c; out=lineCut(fig,col,Math.max(2,Math.round(Math.max(W,H)*(+A.cutLineW)/400))); } }
+  if(A.cutFlip==='on'){ const f=document.createElement('canvas'); f.width=out.width; f.height=out.height; const g=f.getContext('2d'); g.translate(f.width,0); g.scale(-1,1); g.drawImage(out,0,0); out=f; }
+  return {c:out,transparent};
+}
+const LOOK_KEYS=['cutSel','cutEdge','cutFeather','cutLine','cutLineW','cutFade','cutBg','cutBgCol','cutBlur','cutLight','cutContrast','cutBW','cutCrop','cutFlip'];
+function refreshCut(force){ const C=S.cutSrc; if(!C||!S.cut) return; const A=S.adj;
+  const key=LOOK_KEYS.map(k=>A[k]).join('|')+'|'+(A.cutBg==='brand'||A.cutLine==='brand'?S.theme:'')+'|'+C.ver;
+  if(!force&&key===C.key) return; C.key=key; const r=buildLook(); S.cut.img=r.c; S.cut.transparent=r.transparent; }
+function startLook(img,m,masks,preset){ S.cutSrc={img,m,masks,edit:null,editSel:null,ver:0,key:''};
+  const A=S.adj; Object.assign(A,{cutSel:'main',cutEdge:0,cutFeather:0,cutLine:'none',cutLineW:3,cutShadow:'soft',cutFade:0,cutBg:'none',cutBlur:14,cutLight:0,cutContrast:0,cutBW:'off',cutCrop:'full',cutFlip:'off',cutStyle:'auto'},preset||{});
+  if(!masks[A.cutSel]) A.cutSel='main'; const r=buildLook(); S.cutSrc.key='';
+  setCut(r.c,r.transparent,img,'הרקע הוסר'); }
+
+/* ---- manual brush ---- */
+const BR={mode:'erase',undo:[],drawing:false,last:null,disp:null};
+function brushOpen(){ const C=S.cutSrc; if(!C) return; const A=S.adj;
+  if(!(C.edit&&C.editSel===A.cutSel)){ C.edit=Float32Array.from(C.masks[A.cutSel]||C.masks.main); C.editSel=A.cutSel; }
+  BR.undo=[Float32Array.from(C.edit)]; closeSheets(); openSheet('#brushSheet'); requestAnimationFrame(brushRender); $('#brushSizeOut').textContent=$('#brushSize').value; }
+function brushRender(){ const C=S.cutSrc; if(!C) return; const cv=$('#brushC'), wrap=cv.parentElement, [iw,ih]=srcSize(C.img);
+  const maxW=wrap.clientWidth||340, maxH=Math.max(220,window.innerHeight*.52), sc=Math.min(maxW/iw,maxH/ih), dw=Math.round(iw*sc), dh=Math.round(ih*sc), dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv.width!==Math.round(dw*dpr)){ cv.width=Math.round(dw*dpr); cv.height=Math.round(dh*dpr); cv.style.width=dw+'px'; cv.style.height=dh+'px'; }
+  BR.disp={dw,dh}; const x=cv.getContext('2d'), W=cv.width, H=cv.height; x.clearRect(0,0,W,H);
+  const t=14*dpr; for(let yy=0;yy<H;yy+=t) for(let xx=0;xx<W;xx+=t){ x.fillStyle=((xx/t+yy/t)&1)?'#d9d4e6':'#f4f2f9'; x.fillRect(xx,yy,t,t); }
+  x.globalAlpha=.28; x.drawImage(C.img,0,0,W,H); x.globalAlpha=1;
+  const {w,h}=C.m, mc=document.createElement('canvas'); mc.width=w; mc.height=h; const mx=mc.getContext('2d'), id=mx.createImageData(w,h); for(let i=0;i<w*h;i++) id.data[i*4+3]=Math.round(C.edit[i]*255); mx.putImageData(id,0,0);
+  const f=document.createElement('canvas'); f.width=W; f.height=H; const fx=f.getContext('2d'); fx.drawImage(C.img,0,0,W,H); fx.globalCompositeOperation='destination-in'; fx.drawImage(mc,0,0,W,H); x.drawImage(f,0,0); }
+function brushAt(e){ const C=S.cutSrc, cv=$('#brushC'), r=cv.getBoundingClientRect(), {w,h}=C.m; const px=(e.clientX-r.left)/r.width*w, py=(e.clientY-r.top)/r.height*h;
+  const rad=(+$('#brushSize').value/2)/r.width*w, er=BR.mode==='erase';
+  const pts=[]; if(BR.last){ const d=Math.hypot(px-BR.last.x,py-BR.last.y), n=Math.max(1,Math.ceil(d/(rad*.35))); for(let i=1;i<=n;i++) pts.push({x:BR.last.x+(px-BR.last.x)*i/n,y:BR.last.y+(py-BR.last.y)*i/n}); } else pts.push({x:px,y:py});
+  for(const q of pts){ const x0=Math.max(0,Math.floor(q.x-rad)), x1=Math.min(w-1,Math.ceil(q.x+rad)), y0=Math.max(0,Math.floor(q.y-rad)), y1=Math.min(h-1,Math.ceil(q.y+rad));
+    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){ const d=Math.hypot(x-q.x,y-q.y)/rad; if(d>1) continue; const fall=d<.65?1:1-(d-.65)/.35, i=y*w+x;
+      C.edit[i]= er ? C.edit[i]*(1-fall) : Math.max(C.edit[i],fall); } }
+  BR.last={x:px,y:py}; }
+(function(){ const cv=$('#brushC'); let raf=0; const paint=()=>{ if(raf) return; raf=requestAnimationFrame(()=>{ raf=0; brushRender(); }); };
+  cv.addEventListener('pointerdown',e=>{ e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(_){} BR.drawing=true; BR.last=null; brushAt(e); paint(); });
+  cv.addEventListener('pointermove',e=>{ if(!BR.drawing) return; e.preventDefault(); brushAt(e); paint(); });
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,()=>{ if(!BR.drawing) return; BR.drawing=false; BR.last=null; BR.undo.push(Float32Array.from(S.cutSrc.edit)); if(BR.undo.length>20) BR.undo.splice(1,1); }));
+  $('#brushMode').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; BR.mode=b.dataset.v; $('#brushMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); });
+  $('#brushSize').addEventListener('input',()=>{ $('#brushSizeOut').textContent=$('#brushSize').value; });
+  $('#brushUndo').onclick=()=>{ if(BR.undo.length>1) BR.undo.pop(); S.cutSrc.edit=Float32Array.from(BR.undo[BR.undo.length-1]); brushRender(); };
+  $('#brushReset').onclick=()=>{ const C=S.cutSrc; C.edit=Float32Array.from(C.masks[C.editSel]||C.masks.main); BR.undo.push(Float32Array.from(C.edit)); brushRender(); };
+  $('#brushDone').onclick=()=>{ const C=S.cutSrc; C.ver++; closeSheets(); refreshCut(true); thumbInto($('#cutThumb'),S.cut.img,88); draw(); };
+})();
+$('#cutBrushBtn').addEventListener('click',brushOpen);
+$('#cutBgColIn').addEventListener('input',e=>{ S.adj.cutBgCol=e.target.value; S.adj.cutBg='color'; draw(); syncAdj(); });
+
 let TFP=null, RVM=null;
 function loadTF(){ if(TFP) return TFP; TFP=new Promise((ok,bad)=>{ if(window.tf) return ok(window.tf);
   const urls=['https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js','https://unpkg.com/@tensorflow/tfjs@4.22.0/dist/tf.min.js'];
@@ -1048,26 +1166,29 @@ function cutFromMatte(img,m,alpha,soft){
 async function openCutout(img){
   const g=$('#cutGrid'); g.innerHTML='<div class="cwait"><span class="spin"></span>מזהה את הדמות…</div>'; $('#cutNote').textContent='';
   openSheet('#cutSheet');
-  const opts=[];
+  let m=null, masks=null;
   try{
-    const m=await aiMatte(img), f=figures(m);
-    if(!f.best) throw new Error('none');
-    const sel=splitMain(m,f), main=cutFromMatte(img,m,matteMask(m,f,true,sel));
-    if(main){ opts.push({n:'עם מסגרת לבנה',c:outlined(main)},{n:'חיתוך מדויק',c:main});
-      const hs=headShoulders(main); if(hs) opts.push({n:'ראש וכתפיים',c:hs});
-      if(sel){ const blob=cutFromMatte(img,m,matteMask(m,f,true)); if(blob) opts.push({n:'הדמות עם הצמודים אליה',c:blob}); }
-      if(f.count>1){ const all=cutFromMatte(img,m,matteMask(m,f,false)); if(all) opts.push({n:'כל האנשים',c:all}); } }
+    m=await aiMatte(img); const f=figures(m); if(!f.best) throw new Error('none');
+    const sel=splitMain(m,f); masks={main:matteMask(m,f,true,sel)};
+    masks.blob=sel?matteMask(m,f,true):null; masks.all=f.count>1?matteMask(m,f,false):null;
   }catch(e){
-    /* no AI on this device: fall back to the on-device edge pass around the centre */
-    try{ const seg=segment(img,ellipsePoly(.5,.55,.3,.42)), t=buildCut(img,seg,.32,.68); opts.push({n:'עם מסגרת לבנה',c:outlined(t)},{n:'חיתוך מדויק',c:t}); }catch(_){}
+    try{ const seg=segment(img,ellipsePoly(.5,.55,.3,.42)); m={a:seg.q,w:seg.w,h:seg.h}; masks={main:seg.q}; }catch(_){ m=null; }
   }
-  opts.push({n:'בלי הסרת רקע',c:img,orig:true});
+  const looks=[];
+  if(m){ looks.push({n:'עם מסגרת לבנה',p:{cutLine:'white'}},{n:'חיתוך מדויק',p:{}},{n:'רקע מטושטש',p:{cutBg:'blur'}},{n:'ראש וכתפיים',p:{cutCrop:'hs'}},{n:'רקע בצבע המותג',p:{cutBg:'brand'}},{n:'דמות בשחור־לבן',p:{cutBW:'on',cutLine:'white'}});
+    if(masks.blob) looks.push({n:'עם הצמודים אליה',p:{cutSel:'blob'}}); if(masks.all) looks.push({n:'כל האנשים',p:{cutSel:'all'}}); }
   g.innerHTML='';
-  opts.forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.className='copt';
-    const box=document.createElement('span'); box.className='chk'; const cv=document.createElement('canvas'); const [w,h]=srcSize(o.c); const k=Math.min(1,360/Math.max(w,h)); cv.width=Math.round(w*k); cv.height=Math.round(h*k);
-    cv.getContext('2d').drawImage(o.c,0,0,cv.width,cv.height); box.appendChild(cv); const t=document.createElement('span'); t.textContent=o.n; b.append(box,t);
-    b.onclick=()=>{ setCut(o.c,!o.orig,img,o.orig?'צבטו על התמונה להגדלה, גררו להזזה':'רקע הוסר: '+o.n); if(!o.orig) S.adj.cutStyle='auto'; closeSheets(); };
-    g.appendChild(b); });
+  const saved=S.cutSrc, savedAdj=Object.assign({},S.adj);
+  const thumb=(c,n,onPick)=>{ const b=document.createElement('button'); b.type='button'; b.className='copt';
+    const box=document.createElement('span'); box.className='chk'; const cv=document.createElement('canvas'); const [w,h]=srcSize(c); const k=Math.min(1,360/Math.max(w,h)); cv.width=Math.round(w*k); cv.height=Math.round(h*k);
+    cv.getContext('2d').drawImage(c,0,0,cv.width,cv.height); box.appendChild(cv); const t=document.createElement('span'); t.textContent=n; b.append(box,t); b.onclick=onPick; g.appendChild(b); };
+  for(const L of looks){
+    S.cutSrc={img,m,masks,edit:null,editSel:null,ver:0,key:''}; Object.assign(S.adj,{cutSel:'main',cutEdge:0,cutFeather:0,cutLine:'none',cutLineW:3,cutFade:0,cutBg:'none',cutBlur:14,cutLight:0,cutContrast:0,cutBW:'off',cutCrop:'full',cutFlip:'off'},L.p);
+    let r; try{ r=buildLook(); }catch(e){ continue; }
+    thumb(r.c,L.n,()=>{ startLook(img,m,masks,L.p); closeSheets(); if(!$('#adj').hidden) syncAdj(); draw(); });
+    await new Promise(q=>setTimeout(q,0)); }
+  S.cutSrc=saved; Object.assign(S.adj,savedAdj);
+  thumb(img,'בלי הסרת רקע',()=>{ S.cutSrc=null; setCut(img,false,img,'צבטו על התמונה להגדלה, גררו להזזה'); closeSheets(); });
 }
 $('#cutAgain').onclick=()=>{ if(S.cut) openCutout(S.cut.orig||S.cut.img); };
 
@@ -1112,7 +1233,7 @@ Use "sector" when the story connects a celebrity to the Haredi or Hasidic world.
 
 /* ---------- sheets ---------- */
 function openSheet(id){ $('#backdrop').hidden=false; $(id).hidden=false; }
-function closeSheets(){ ['#outSheet','#cutSheet'].forEach(id=>$(id).hidden=true); $('#backdrop').hidden=true; if(S.exporting) S.exporting.cancel(); }
+function closeSheets(){ ['#outSheet','#cutSheet','#brushSheet'].forEach(id=>$(id).hidden=true); $('#backdrop').hidden=true; if(S.exporting) S.exporting.cancel(); }
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheets);
 $('#backdrop').onclick=()=>{ if(!S.exporting) closeSheets(); };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#kFold').hidden) closeKicker(); else if(!$('#adj').hidden) closeDock(); else if(!S.exporting) closeSheets(); } });
@@ -1253,12 +1374,13 @@ document.querySelectorAll('.adj-tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.adj-tabs button').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
   document.querySelectorAll('.adj-group').forEach(g=>g.hidden=g.dataset.group!==b.dataset.tab); syncAdj(); });
 const FMT={ls:v=>v.toFixed(1),pad:v=>Math.round(v)+'',radius:v=>Math.round(v)+'',boxOff:v=>Math.round(v)+'',extraScale:v=>Math.round(v*100)+'%',scale:v=>Math.round(v*100)+'%',lh:v=>v.toFixed(2),boxM:v=>Math.round(v)+'',zoom:v=>'×'+v.toFixed(2),fx:v=>Math.round(v*100)+'%',fy:v=>Math.round(v*100)+'%',
-  cutScale:v=>Math.round(v*100)+'%',cutZoom:v=>Math.round(v*100)+'%',cutX:v=>Math.round(v)+'',cutY:v=>Math.round(v)+'',logoScale:v=>Math.round(v*100)+'%',logoX:v=>Math.round(v)+'',logoY:v=>Math.round(v)+''};
+  cutScale:v=>Math.round(v*100)+'%',cutEdge:v=>(v>0?'+':'')+v,cutFeather:v=>v+'',cutLineW:v=>v+'',cutBlur:v=>v+'',cutLight:v=>(v>0?'+':'')+v,cutContrast:v=>(v>0?'+':'')+v,cutFade:v=>Math.round(v*100)+'%',cutZoom:v=>Math.round(v*100)+'%',cutX:v=>Math.round(v)+'',cutY:v=>Math.round(v)+'',logoScale:v=>Math.round(v*100)+'%',logoX:v=>Math.round(v)+'',logoY:v=>Math.round(v)+''};
 function adjVal(k){ return k==='fy' && S.adj.fy==null ? S.analysis.fy : S.adj[k]; }
 function syncAdj(){
   document.querySelectorAll('.adj input[type=range][data-k]').forEach(i=>{ const k=i.dataset.k; i.value=adjVal(k); const o=document.querySelector(`.adj output[data-for="${k}"]`); if(o) o.textContent=FMT[k]?FMT[k](+adjVal(k)):adjVal(k); });
   document.querySelectorAll('.adj .pills[data-k]').forEach(p=>{ const v=S.adj[p.dataset.k]; p.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v))); });
-  $('#cutHint').hidden=!!S.cut; $('#cutAgain').hidden=!S.cut;
+  $('#cutHint').hidden=!!S.cut; $('#cutAgain').hidden=!S.cut; const C=S.cutSrc; $('#cutEdit').hidden=!C;
+  if(C){ document.querySelectorAll('[data-k="cutSel"] button').forEach(b=>b.hidden=!C.masks[b.dataset.v]); $('#cutBgColRow').hidden=S.adj.cutBg!=='color'; $('#cutBlurRow').hidden=S.adj.cutBg!=='blur'; $('#cutBgColIn').value=S.adj.cutBgCol; }
   const md=lastInfo.media; const h=$('#mediaHint');
   if(md){ const canX=md.dw>md.w+1, canY=md.dh>md.h+1;
     h.textContent = canX||canY ? (canX&&canY?'אפשר להזיז את התמונה לכל הכיוונים.':canX?'אפשר להזיז את התמונה לצדדים. להזזה למעלה ולמטה, הגדילו את הזום.':'אפשר להזיז את התמונה למעלה ולמטה. להזזה לצדדים, הגדילו את הזום.')
