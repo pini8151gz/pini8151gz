@@ -242,8 +242,18 @@ body.dockmode .themes,body.dockmode .actions{display:none}
 .tlbtn{flex:none;width:38px;height:38px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;padding:0}
 .tlbtn svg{width:20px;height:20px}#muteBtn{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
 .drop .xe{flex:none;border:0;background:var(--accent-soft);color:var(--accent);font:700 13px/1 inherit;padding:8px 12px;border-radius:999px;margin-inline-start:6px}
-.trim-pv{display:flex;justify-content:center}.trim-pv canvas{border-radius:12px;background:#000;max-width:100%}
-.trim-len{text-align:center;font-weight:700;color:var(--muted)}
+.trim-pv{position:relative;display:flex;justify-content:center}.trim-pv canvas{border-radius:14px;background:#000;max-width:100%}
+.tplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;display:grid;place-items:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.tplay svg{width:28px;height:28px}
+.strip{position:relative;height:60px;margin:4px 14px;border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none;background:#111}
+.strip canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:10px}
+.strip .dim{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.6)}.strip .dim-l{left:0;border-radius:10px 0 0 10px}.strip .dim-r{right:0;border-radius:0 10px 10px 0}
+.strip .sel{position:absolute;top:-4px;bottom:-4px;border:4px solid #fff;border-left-width:16px;border-right-width:16px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.35);pointer-events:none;margin:0 -16px}
+.strip .hd{position:absolute;top:0;bottom:0;width:16px;display:grid;place-items:center}.strip .hd-l{left:-16px}.strip .hd-r{right:-16px}
+.strip .hd i{display:block;width:4px;height:20px;border-radius:2px;background:#333}
+.strip .ph{position:absolute;top:-8px;bottom:-8px;width:4px;margin-left:-2px;border-radius:2px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.5);pointer-events:none}
+.trim-times{display:flex;justify-content:space-between;align-items:center;padding:0 14px;font:600 13px/1 system-ui,sans-serif;color:var(--muted);font-variant-numeric:tabular-nums}
+.trim-times b{color:var(--ink);font-size:15px}
 .tl{display:flex;align-items:center;gap:10px;margin:10px 4px 0;font:600 13px/1 system-ui,sans-serif;color:var(--muted)}
 .tl input{flex:1;accent-color:var(--accent);height:28px}
 .tl-t{min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
@@ -481,13 +491,17 @@ body.noscroll{overflow:hidden}
   </div>
 </div>
 
-<div class="sheet" id="trimSheet" hidden dir="rtl" lang="he" role="dialog" aria-label="עריכת סרטון">
+<div class="sheet trimsheet" id="trimSheet" hidden dir="rtl" lang="he" role="dialog" aria-label="עריכת סרטון">
   <div class="sheet-in">
     <div class="sheet-head"><h3 id="trimTitle">עריכת הסרטון</h3><button type="button" class="primary" id="trimDone">סיום</button></div>
-    <div class="trim-pv"><canvas id="trimC"></canvas></div>
-    <div class="trim-len" id="trimLen"></div>
-    <div class="ctl"><div class="ctl-head"><label for="trimIn">חיתוך מההתחלה</label><output id="trimInOut"></output></div><input type="range" id="trimIn" dir="ltr" min="0" max="10" step="0.1" value="0"></div>
-    <div class="ctl"><div class="ctl-head"><label for="trimOut">חיתוך מהסוף</label><output id="trimOutOut"></output></div><input type="range" id="trimOut" min="0" max="10" step="0.1" value="0"></div>
+    <div class="trim-pv"><canvas id="trimC"></canvas><button type="button" class="tplay" id="trimPlay" aria-label="הפעלת הקטע"></button></div>
+    <div class="strip" id="strip" dir="ltr">
+      <canvas id="stripC"></canvas>
+      <div class="dim dim-l" id="dimL"></div><div class="dim dim-r" id="dimR"></div>
+      <div class="sel" id="sel"><span class="hd hd-l"><i></i></span><span class="hd hd-r"><i></i></span></div>
+      <div class="ph" id="ph"></div>
+    </div>
+    <div class="trim-times" dir="ltr"><span id="tA">0:00.0</span><b id="tLen"></b><span id="tB">0:00.0</span></div>
     <div class="brow"><button type="button" class="secondary" id="trimReset">ביטול החיתוך</button><button type="button" class="secondary" id="trimFrame">מיקום וזום</button></div>
   </div>
 </div>
@@ -1311,28 +1325,55 @@ $('#media2In').addEventListener('change',async e=>{ const f=e.target.files&&e.ta
   catch(err){ setStatus('הסרטון הנוסף לא נפתח. נסו סרטון MP4.',true); } });
 $('#media2Clear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); stopPlay(); S.media2=null; $('#media2Thumb').innerHTML=''; $('#media2Sub').textContent='יתנגן מיד אחרי הסרטון הראשון'; $('#media2Clear').hidden=true; $('#media2Edit').hidden=true; resetSeq(); draw(); });
 
-/* ---- trim a clip ---- */
-const TRIM={i:0};
-function fmtS(v){ return (Math.round(v*10)/10).toFixed(1)+' שנ׳'; }
-function trimShow(at){ const m=clipMeta(TRIM.i), v=m.video, cv=$('#trimC'); const [w,h]=srcSize(v); if(!w) return;
-  const maxH=Math.min(300,window.innerHeight*.34), sc=Math.min(1,maxH/h, (cv.parentElement.clientWidth||320)/w); cv.width=Math.round(w*sc); cv.height=Math.round(h*sc);
-  const paint=()=>cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);
-  if(at==null){ paint(); return; } const want=Math.max(0,Math.min((v.duration||0)-.05,at)); if(Math.abs(v.currentTime-want)<.03){ paint(); return; }
-  v.addEventListener('seeked',paint,{once:true}); v.currentTime=want; }
-function trimSync(){ const m=clipMeta(TRIM.i), d=m.video.duration||0, a=+$('#trimIn').value, b=+$('#trimOut').value;
-  $('#trimInOut').textContent=fmtS(a); $('#trimOutOut').textContent=fmtS(b); $('#trimLen').textContent='אורך אחרי החיתוך: '+fmtS(Math.max(0,d-a-b))+' מתוך '+fmtS(d); }
-function openTrim(i){ const m=clipMeta(i); if(!m||!m.video) return; stopPlay(); TRIM.i=i; const d=m.video.duration||0;
-  $('#trimTitle').textContent=i===0?'עריכת הסרטון':'עריכת הסרטון הנוסף'; $('#trimFrame').hidden=i!==0;
-  ['#trimIn','#trimOut'].forEach(id=>{ $(id).max=String(Math.max(.1,d-.5)); });
-  $('#trimIn').value=String(m.tIn||0); $('#trimOut').value=String(m.tOut!=null?Math.max(0,d-m.tOut):0);
-  trimSync(); openSheet('#trimSheet'); requestAnimationFrame(()=>trimShow(m.tIn||0)); }
-function trimApply(){ const m=clipMeta(TRIM.i), d=m.video.duration||0; let a=+$('#trimIn').value, b=+$('#trimOut').value;
-  if(d-a-b<.5){ if(document.activeElement===$('#trimIn')) a=Math.max(0,d-b-.5); else b=Math.max(0,d-a-.5); $('#trimIn').value=String(a); $('#trimOut').value=String(b); }
-  m.tIn=a>0?a:0; m.tOut=b>0?d-b:null; trimSync(); }
-$('#trimIn').addEventListener('input',()=>{ trimApply(); trimShow(+$('#trimIn').value); });
-$('#trimOut').addEventListener('input',()=>{ trimApply(); const m=clipMeta(TRIM.i); trimShow((m.video.duration||0)-(+$('#trimOut').value)-.05); });
-$('#trimReset').onclick=()=>{ $('#trimIn').value='0'; $('#trimOut').value='0'; trimApply(); trimShow(0); };
-$('#trimDone').onclick=()=>{ closeSheets(); SEQ.t=0; SEQ.cur=0; SEQ.live=false; updTL(); setMediaUI(); const m2=S.media2; if(m2) $('#media2Sub').textContent=m2.name+' · '+Math.round(clipLen(1))+' שנ׳'; seekSeq(0); };
+/* ---- trim a clip: filmstrip with handles ---- */
+const TRIM={i:0,a:0,b:0,d:0,ph:0,drag:null,playing:false,raf:0};
+const fmtP=t=>{ t=Math.max(0,t); const m=Math.floor(t/60), x=t-m*60; return m+':'+(x<10?'0':'')+x.toFixed(1); };
+function trimV(){ return clipMeta(TRIM.i).video; }
+function trimPaint(){ const v=trimV(), cv=$('#trimC'); if(cv.width) cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height); }
+function trimSeek(t){ const v=trimV(), want=Math.max(0,Math.min(TRIM.d-.03,t)); if(Math.abs(v.currentTime-want)<.03){ trimPaint(); return; }
+  if(TRIM.seeking){ TRIM.next=want; return; } TRIM.seeking=true;
+  v.addEventListener('seeked',()=>{ TRIM.seeking=false; trimPaint(); if(TRIM.next!=null){ const n=TRIM.next; TRIM.next=null; trimSeek(n); } },{once:true}); v.currentTime=want; }
+function trimLayout(){ const d=TRIM.d||1, L=TRIM.a/d*100, Rr=(1-TRIM.b/d)*100;
+  $('#sel').style.left=L+'%'; $('#sel').style.right=Rr+'%'; $('#dimL').style.width=L+'%'; $('#dimR').style.width=Rr+'%';
+  $('#ph').style.left=(TRIM.ph/d*100)+'%';
+  $('#tA').textContent=fmtP(TRIM.a); $('#tB').textContent=fmtP(TRIM.b); $('#tLen').textContent=(TRIM.b-TRIM.a).toFixed(1)+' שנ׳'; }
+async function buildStrip(){ const m=clipMeta(TRIM.i), v=m.video, box=$('#strip'), cv=$('#stripC'), W=box.clientWidth||340, H=box.clientHeight||56, dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); const x=cv.getContext('2d'); x.fillStyle='#222'; x.fillRect(0,0,cv.width,cv.height);
+  const [vw,vh]=srcSize(v); const cellW=Math.max(28,H*(vw/vh||.56)), n=Math.max(4,Math.ceil(W/cellW)), cw=cv.width/n;
+  if(m.strip&&m.strip.n===n&&m.strip.w===cv.width){ x.drawImage(m.strip.c,0,0); return; }
+  const tv=document.createElement('video'); tv.muted=true; tv.playsInline=true; tv.setAttribute('playsinline',''); tv.preload='auto'; tv.src=v.currentSrc||v.src;
+  await new Promise(r=>{ tv.onloadeddata=r; tv.onerror=r; setTimeout(r,4000); });
+  const id=TRIM.build=(TRIM.build||0)+1;
+  for(let k=0;k<n;k++){ if(id!==TRIM.build) return; const t=Math.min((tv.duration||TRIM.d)-.05,(k+.5)/n*(tv.duration||TRIM.d));
+    await new Promise(r=>{ tv.onseeked=r; setTimeout(r,1500); tv.currentTime=t; });
+    try{ x.save(); x.beginPath(); x.rect(k*cw,0,cw+1,cv.height); x.clip(); drawCover(x,tv,k*cw,0,cw+1,cv.height,.5); x.restore(); }catch(e){} }
+  const c=document.createElement('canvas'); c.width=cv.width; c.height=cv.height; c.getContext('2d').drawImage(cv,0,0); m.strip={c,n,w:cv.width};
+  tv.removeAttribute('src'); tv.load(); }
+function openTrim(i){ const m=clipMeta(i); if(!m||!m.video) return; stopPlay(); trimStop(); TRIM.i=i; TRIM.d=m.video.duration||0;
+  TRIM.a=m.tIn||0; TRIM.b=m.tOut!=null?m.tOut:TRIM.d; TRIM.ph=TRIM.a;
+  $('#trimTitle').textContent=i===0?'עריכת הסרטון':'עריכת הסרטון הנוסף'; $('#trimFrame').hidden=i!==0; $('#trimPlay').innerHTML=PLAY_ICON;
+  openSheet('#trimSheet');
+  requestAnimationFrame(()=>{ const v=m.video, cv=$('#trimC'), [w,h]=srcSize(v); const maxH=Math.min(360,window.innerHeight*.4), sc=Math.min(maxH/h,($('.trim-pv').clientWidth||320)/w);
+    cv.width=Math.round(w*sc); cv.height=Math.round(h*sc); trimLayout(); trimSeek(TRIM.a); buildStrip(); }); }
+function trimCommit(){ const m=clipMeta(TRIM.i); m.tIn=TRIM.a>.05?TRIM.a:0; m.tOut=TRIM.b<TRIM.d-.05?TRIM.b:null; }
+function trimStop(){ TRIM.playing=false; cancelAnimationFrame(TRIM.raf); try{ trimV()&&trimV().pause(); }catch(e){} $('#trimPlay').innerHTML=PLAY_ICON; }
+$('#trimPlay').onclick=()=>{ if(TRIM.playing) return trimStop(); const v=trimV(); if(TRIM.ph<TRIM.a||TRIM.ph>=TRIM.b-.1) TRIM.ph=TRIM.a;
+  v.muted=!S.sound; v.currentTime=TRIM.ph; playSafe(v); TRIM.playing=true; $('#trimPlay').innerHTML=PAUSE_ICON;
+  const loop=()=>{ if(!TRIM.playing) return; TRIM.ph=v.currentTime; if(TRIM.ph>=TRIM.b-.03){ v.currentTime=TRIM.a; TRIM.ph=TRIM.a; } trimPaint(); trimLayout(); TRIM.raf=requestAnimationFrame(loop); }; TRIM.raf=requestAnimationFrame(loop); };
+(function(){ const box=$('#strip'); const tAt=e=>{ const r=box.getBoundingClientRect(); return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*TRIM.d; };
+  box.addEventListener('pointerdown',e=>{ e.preventDefault(); try{ box.setPointerCapture(e.pointerId); }catch(_){} const r=box.getBoundingClientRect(), px=e.clientX-r.left;
+    const xa=TRIM.a/TRIM.d*r.width, xb=TRIM.b/TRIM.d*r.width, tol=26;
+    TRIM.drag = Math.abs(px-xa)<=tol&&Math.abs(px-xa)<=Math.abs(px-xb) ? 'a' : Math.abs(px-xb)<=tol ? 'b' : 'ph';
+    if(TRIM.playing) trimStop(); box.classList.add('dragging'); move(e); });
+  const move=e=>{ if(!TRIM.drag) return; const t=tAt(e), minL=.5;
+    if(TRIM.drag==='a'){ TRIM.a=Math.min(t,TRIM.b-minL); TRIM.ph=TRIM.a; trimSeek(TRIM.a); }
+    else if(TRIM.drag==='b'){ TRIM.b=Math.max(t,TRIM.a+minL); TRIM.ph=TRIM.b; trimSeek(TRIM.b); }
+    else { TRIM.ph=Math.max(TRIM.a,Math.min(TRIM.b,t)); trimSeek(TRIM.ph); }
+    trimLayout(); };
+  box.addEventListener('pointermove',e=>{ if(TRIM.drag){ e.preventDefault(); move(e); } });
+  ['pointerup','pointercancel'].forEach(t=>box.addEventListener(t,()=>{ if(!TRIM.drag) return; TRIM.drag=null; box.classList.remove('dragging'); trimCommit(); })); })();
+$('#trimReset').onclick=()=>{ trimStop(); TRIM.a=0; TRIM.b=TRIM.d; TRIM.ph=0; trimCommit(); trimLayout(); trimSeek(0); };
+$('#trimDone').onclick=()=>{ trimStop(); trimCommit(); closeSheets(); SEQ.t=0; SEQ.cur=0; SEQ.live=false; updTL(); setMediaUI(); const m2=S.media2; if(m2) $('#media2Sub').textContent=m2.name+' · '+Math.round(clipLen(1))+' שנ׳'; seekSeq(0); };
 $('#trimFrame').onclick=()=>{ closeSheets(); seekSeq(0); openDockTab('media'); };
 function openDockTab(tab){ if($('#adj').hidden) openDock(); const b=document.querySelector(`.adj-tabs button[data-tab="${tab}"]`); b&&b.click(); window.scrollTo({top:0,behavior:'smooth'}); }
 const stopIt=e=>{ e.preventDefault(); e.stopPropagation(); };
@@ -1408,7 +1449,7 @@ Use "sector" when the story connects a celebrity to the Haredi or Hasidic world.
 
 /* ---------- sheets ---------- */
 function openSheet(id){ $('#backdrop').hidden=false; $(id).hidden=false; }
-function closeSheets(){ ['#outSheet','#cutSheet','#brushSheet','#trimSheet','#rowSheet'].forEach(id=>$(id).hidden=true); $('#backdrop').hidden=true; if(S.exporting) S.exporting.cancel(); }
+function closeSheets(){ try{ trimStop(); }catch(e){} ['#outSheet','#cutSheet','#brushSheet','#trimSheet','#rowSheet'].forEach(id=>$(id).hidden=true); $('#backdrop').hidden=true; if(S.exporting) S.exporting.cancel(); }
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheets);
 $('#backdrop').onclick=()=>{ if(!S.exporting) closeSheets(); };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#kFold').hidden) closeKicker(); else if(!$('#adj').hidden) closeDock(); else if(!S.exporting) closeSheets(); } });
