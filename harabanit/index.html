@@ -38,7 +38,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top{display:flex;align-items:center;justify-content:center;gap:12px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand img{width:46px;height:auto;display:block}
 .brand-name{font-weight:900;font-size:22px;line-height:1.05}
@@ -236,6 +236,21 @@ body.dockmode .themes,body.dockmode .actions{display:none}
 .bwrap{display:flex;justify-content:center;touch-action:none}.bwrap canvas{border-radius:12px;touch-action:none;max-width:100%}
 .brow{display:flex;gap:10px}.brow>*{flex:1}
 #cutEdit{display:flex;flex-direction:column;gap:14px}
+.tl{display:flex;align-items:center;gap:10px;margin:10px 4px 0;font:600 13px/1 system-ui,sans-serif;color:var(--muted)}
+.tl input{flex:1;accent-color:var(--accent);height:28px}
+.tl-t{min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
+.qbar{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.qbar::-webkit-scrollbar{display:none}
+.qbar button{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:999px;padding:9px 14px;font:700 14px/1 inherit;white-space:nowrap}
+.qbar button:active{transform:scale(.96);background:var(--accent-soft)}
+.savebar-in{display:flex;gap:10px}.savebar-in>button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.savebar-in>#pvBtn{flex:0 0 auto;padding-inline:16px}
+.fullpv{position:fixed;inset:0;z-index:70;background:#000;display:flex;align-items:center;justify-content:center}
+.fullpv canvas{display:block;max-width:100vw;max-height:100vh}
+.fullx{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:2;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+body.noscroll{overflow:hidden}
+.pip{cursor:pointer}
+.pip-x{position:absolute;top:4px;right:4px;z-index:2;width:24px;height:24px;border-radius:50%;border:0;background:#111;color:#fff;font-size:12px;line-height:24px;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .out-acts{display:flex;gap:10px;margin-top:12px}.out-acts>*{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
 .w-url{margin-top:18px;border:0;background:transparent;color:var(--muted);font:600 15px/1 system-ui,sans-serif;letter-spacing:.3px;padding:8px 12px;border-radius:999px}
 .w-url:active{background:var(--accent-soft)}
@@ -254,7 +269,7 @@ body.dockmode .themes,body.dockmode .actions{display:none}
 <div class="app" dir="rtl" lang="he" hidden>
   <header class="top">
     <div class="brand"><img id="brandLogo" alt="" src="logos/sky.webp">
-      <div><div class="brand-name">הרבנית סטודיו</div><div class="brand-sub">פוסטים וסטוריז בשפת המותג</div></div></div>
+      <div class="brand-name">הרבנית סטודיו</div></div>
   </header>
 
   <section class="card" aria-label="תצוגה מקדימה">
@@ -267,6 +282,7 @@ body.dockmode .themes,body.dockmode .actions{display:none}
       <span class="tag-ex" id="exTag">דוגמה</span>
       <button type="button" class="play" id="playBtn" hidden aria-label="הפעלת הסרטון"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></button>
     </div>
+    <div class="tl" id="tl" dir="ltr" hidden><span class="tl-t" id="tlCur">0:00</span><input type="range" id="tlRange" min="0" max="1" step="0.01" value="0" aria-label="ציר זמן של הסרטון"><span class="tl-t" id="tlDur">0:00</span></div>
     <div class="themes" id="themes" role="group" aria-label="צבע ולוגו"></div>
     <div class="actions">
       <button type="button" class="secondary" id="adjBtn" aria-expanded="false">עריכת עיצוב</button>
@@ -281,6 +297,12 @@ body.dockmode .themes,body.dockmode .actions{display:none}
       <div class="meta"><strong id="mediaTitle">בחרו תמונה או סרטון</strong><span id="mediaSub">מהגלריה בטלפון</span></div><span class="x" aria-hidden="true">החלפה</span>
     </label>
     <input type="file" id="mediaIn" accept="image/*,video/*" hidden>
+    <label class="drop round small-gap" for="media2In" id="media2Drop" hidden>
+      <div class="thumb" id="media2Thumb"></div>
+      <div class="meta"><strong>סרטון נוסף (לא חובה)</strong><span id="media2Sub">יתנגן מיד אחרי הסרטון הראשון</span></div>
+      <button type="button" class="x" id="media2Clear" hidden>הסרה</button>
+    </label>
+    <input type="file" id="media2In" accept="video/*" hidden>
     <label class="drop round small-gap" for="cutIn">
       <div class="thumb" id="cutThumb"></div>
       <div class="meta"><strong>תמונה בפינה (לא חובה)</strong><span id="cutSub">PNG גזור משתלב כמו בעמוד</span></div>
@@ -297,6 +319,15 @@ body.dockmode .themes,body.dockmode .actions{display:none}
           <div class="kchips" id="kGrid" role="group" aria-label="מילות פתיחה"></div>
           <div class="kcustom"><input type="text" id="kCustom" placeholder="מילה משלכם, למשל: אלופים!" aria-label="מילת פתיחה משלכם"><button type="button" class="secondary" id="kCustomOk">הוספה</button></div>
         </div>
+      </div>
+      <div class="qbar" id="qbar" role="group" aria-label="עריכה מהירה">
+        <button type="button" data-q="bigger" aria-label="הגדלת הכותרת">A+</button>
+        <button type="button" data-q="smaller" aria-label="הקטנת הכותרת">A−</button>
+        <button type="button" data-q="color">צבע הבא</button>
+        <button type="button" data-q="box">התיבה למטה</button>
+        <button type="button" data-q="align">יישור</button>
+        <button type="button" data-q="logo">לוגו לצד השני</button>
+        <button type="button" data-q="format">פוסט 4:5</button>
       </div>
     </div>
     <div class="field">
@@ -408,9 +439,10 @@ body.dockmode .themes,body.dockmode .actions{display:none}
   </div>
 </section>
 
-<div class="savebar" id="savebar" hidden><div class="savebar-in"><button type="button" class="primary" id="saveBtn">שמירה</button></div></div>
+<div class="savebar" id="savebar" hidden><div class="savebar-in"><button type="button" class="secondary" id="pvBtn"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>תצוגה מקדימה</button><button type="button" class="primary" id="saveBtn">שמירה</button></div></div>
+<div class="fullpv" id="fullPv" hidden role="dialog" aria-label="תצוגה מקדימה"><button type="button" class="fullx" id="fullX" aria-label="סגירת התצוגה המקדימה">✕</button><canvas id="fullC"></canvas></div>
 
-<button type="button" class="pip" id="pip" hidden aria-label="תצוגה מקדימה צפה. הקשה מגדילה או מקטינה"><canvas id="pipC"></canvas></button>
+<div class="pip" id="pip" hidden><button type="button" class="pip-x" id="pipX" aria-label="סגירת התצוגה הצפה">✕</button><canvas id="pipC" role="button" tabindex="0" aria-label="תצוגה מקדימה צפה. הקשה מגדילה או מקטינה"></canvas></div>
 
 <div class="backdrop" id="backdrop" hidden></div>
 
@@ -749,22 +781,23 @@ function renderTo(canvas,scale,src){
 }
 
 /* ---------- preview + UI sync ---------- */
-let pipOn=false;
+let pipOn=false, pipClosed=false;
 function drawPip(){
   if(!pipOn) return; const src=$('#pv'), c=$('#pipC'); const w=Math.round(($('#pip').classList.contains('big')?260:104)*Math.min(2,window.devicePixelRatio||1));
   const h=Math.round(w*src.height/src.width); if(c.width!==w) c.width=w; if(c.height!==h) c.height=h;
   const x=c.getContext('2d'); x.drawImage(src,0,0,w,h);
 }
-function setPip(on){ on=on&&!$('.app').hidden&&!document.body.classList.contains('dockmode'); if(on===pipOn) return; pipOn=on; $('#pip').hidden=!on; if(on) drawPip(); }
+function setPip(on){ on=on&&!pipClosed&&!$('.app').hidden&&!document.body.classList.contains('dockmode'); if(on===pipOn) return; pipOn=on; $('#pip').hidden=!on; if(on) drawPip(); }
 if('IntersectionObserver' in window){
-  new IntersectionObserver(es=>es.forEach(e=>setPip(e.intersectionRatio<0.3)),{threshold:[0,0.3,0.6,1]}).observe(document.querySelector('.stage'));
+  new IntersectionObserver(es=>es.forEach(e=>{ if(e.intersectionRatio>=0.3) pipClosed=false; setPip(e.intersectionRatio<0.3); }),{threshold:[0,0.3,0.6,1]}).observe(document.querySelector('.stage'));
 }
 
 const PV_SCALE=.5;
 function draw(){
   try{ refreshCut(); }catch(e){}
-  const v=S.media.type==='video'&&S.playing?S.media.video:null;
+  const v=S.media.type==='video'&&(S.playing||SEQ.live)?seqSrc():null;
   renderTo($('#pv'),PV_SCALE,v);
+  if(FULL.open) renderTo($('#fullC'),FULL.scale,v);
   drawPip();
   const w=$('#warn');
   if(lastInfo.over||lastInfo.lines>lastInfo.maxLines){ w.textContent='הכותרת ארוכה מדי לגודל הרגיל ומוצגת בגופן קטן. מומלץ לקצר.'; w.className='status warn'; }
@@ -802,6 +835,7 @@ function renderThemes(){
     if(b.dataset.id===rec && !has){ const r=document.createElement('i'); r.className='rec'; r.textContent='מומלץ'; b.appendChild(r); } else if(b.dataset.id!==rec && has) has.remove(); });
 }
 function refreshUI(){
+  try{ syncQbar(); }catch(e){}
   S.analysis=analyze();
   if(!S.theme) S.theme=recommendedTheme();
   setKColors(); syncKicker(); renderThemes();
@@ -826,7 +860,8 @@ function closeKicker(){
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){ f.hidden=true; return; }
   f.classList.add('closing'); setTimeout(()=>{ f.hidden=true; f.classList.remove('closing'); },190);
 }
-$('#pip').onclick=()=>{ $('#pip').classList.toggle('big'); drawPip(); };
+$('#pipC').onclick=()=>{ $('#pip').classList.toggle('big'); drawPip(); };
+$('#pipX').onclick=e=>{ e.stopPropagation(); pipClosed=true; setPip(false); };
 $('#kBtn').onclick=()=>{ $('#kFold').hidden ? openKicker() : closeKicker(); };
 $('#kCustomOk').onclick=()=>{ let v=$('#kCustom').value.trim(); if(!v) return; if(!/[!?:]$/.test(v)) v+='!'; S.kicker=v; $('#kCustom').value=''; closeKicker(); refreshUI(); draw(); };
 $('#kCustom').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#kCustomOk').click(); } });
@@ -900,7 +935,7 @@ $('#mediaIn').addEventListener('change',async e=>{
   try{
     if(f.type.startsWith('video')){ const {v,poster}=await loadVideoFile(f); S.media={type:'video',video:v,still:poster,name:f.name,file:f}; }
     else { const im=await loadImageFile(f); S.media={type:'image',still:im,name:f.name}; }
-    S.media.corners=corners(S.media.still); S.isExample=false; S.ai=null; Object.assign(S.adj,{fy:null,fx:.5,zoom:1}); setMediaUI(); setStatus('');
+    S.media.corners=corners(S.media.still); S.isExample=false; S.ai=null; Object.assign(S.adj,{fy:null,fx:.5,zoom:1}); setMediaUI(); resetSeq(); setStatus('');
     refreshUI(); draw(); if(onWelcome) enterStudio(); else window.scrollTo({top:0,behavior:'smooth'});
     if(S.sample) runAI();
   }catch(err){ setStatus('הקובץ לא נפתח. נסו תמונה JPG/PNG או סרטון MP4.',true);
@@ -1194,12 +1229,74 @@ $('#cutAgain').onclick=()=>{ if(S.cut) openCutout(S.cut.orig||S.cut.img); };
 
 /* video preview playback */
 const PLAY_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>', PAUSE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>';
-function stopPlay(){ S.playing=false; cancelAnimationFrame(S.live); if(S.media&&S.media.type==='video'&&!S.exporting){ try{S.media.video.pause();}catch(e){} } $('#playBtn').innerHTML=PLAY_ICON; $('#playBtn').setAttribute('aria-label','הפעלת הסרטון'); }
-$('#playBtn').onclick=()=>{
-  if(S.playing){ stopPlay(); draw(); return; }
-  const v=S.media.video; v.muted=true; v.loop=true; v.play().catch(()=>{}); S.playing=true; $('#playBtn').innerHTML=PAUSE_ICON; $('#playBtn').setAttribute('aria-label','עצירת הסרטון');
-  const loop=()=>{ if(v.readyState>=2) draw(); S.live=requestAnimationFrame(loop); }; S.live=requestAnimationFrame(loop);
-};
+/* ---- video sequence: main clip, then an optional second clip with a crossfade ---- */
+const XF=.7, MIX=document.createElement('canvas'), SEQ={t:0,cur:0,live:false,done:false,seeking:false};
+function clips(){ const a=[]; if(S.media&&S.media.type==='video'){ a.push(S.media.video); if(S.media2) a.push(S.media2.video); } return a; }
+function clipStart(i){ const c=clips(); return i===0?0:Math.max(0,(c[0].duration||0)-XF); }
+function seqDur(){ const c=clips(); if(!c.length) return 0; return c.length>1?clipStart(1)+(c[1].duration||0):(c[0].duration||0); }
+function seqState(t){ const c=clips(); if(c.length<2) return {a:0,ta:t,b:-1,mix:0}; const s1=clipStart(1), d0=c[0].duration||0;
+  if(t<s1) return {a:0,ta:t,b:-1,mix:0}; if(t<d0){ const m=(t-s1)/XF; return {a:0,ta:t,b:1,tb:t-s1,mix:m*m*(3-2*m)}; } return {a:1,ta:t-s1,b:-1,mix:0}; }
+function seqSrc(st){ const c=clips(); if(!c.length) return null; if(c.length<2) return c[0].readyState>=2?c[0]:null;
+  const [w,h]=srcSize(c[0]); if(!w) return null; if(MIX.width!==w||MIX.height!==h){ MIX.width=w; MIX.height=h; }
+  const x=MIX.getContext('2d'); st=st||seqState(SEQ.t); const A=c[st.a];
+  if(A.readyState>=2){ x.globalAlpha=1; drawCover(x,A,0,0,w,h,.5); }
+  if(st.b>=0&&st.mix>0&&c[st.b].readyState>=2){ const B=c[st.b], z=1.04-.04*st.mix; x.globalAlpha=st.mix; x.save(); x.translate(w/2,h/2); x.scale(z,z); x.translate(-w/2,-h/2); drawCover(x,B,0,0,w,h,.5); x.restore(); x.globalAlpha=1; }
+  return MIX; }
+function fmtT(t){ t=Math.max(0,t||0); const m=Math.floor(t/60), sec=Math.floor(t%60); return m+':'+String(sec).padStart(2,'0'); }
+let tlDrag=false, tlWasPlaying=false;
+function updTL(){ const T=seqDur(), r=$('#tlRange'); r.max=String(T||1); if(!tlDrag) r.value=String(SEQ.t); $('#tlCur').textContent=fmtT(SEQ.t); $('#tlDur').textContent=fmtT(T); r.style.setProperty('--p',((T?SEQ.t/T:0)*100)+'%'); }
+function playIcons(on){ const b=$('#playBtn'); b.innerHTML=on?PAUSE_ICON:PLAY_ICON; b.setAttribute('aria-label',on?'עצירת הסרטון':'הפעלת הסרטון'); }
+function stopPlay(){ S.playing=false; cancelAnimationFrame(S.live); if(!S.exporting) clips().forEach(v=>{ try{v.pause();}catch(e){} }); playIcons(false); }
+function seekSeq(t,cb){ const c=clips(); if(!c.length) return; SEQ.t=Math.max(0,Math.min(seqDur(),t)); const st=seqState(SEQ.t); SEQ.cur=st.a; SEQ.seeking=true;
+  let pending=0; const fin=()=>{ if(--pending>0) return; SEQ.seeking=false; SEQ.live=true; draw(); cb&&cb(); };
+  const seekV=(v,tt)=>{ pending++; const want=Math.max(0,Math.min((v.duration||0)-.05,tt)); if(Math.abs(v.currentTime-want)<.02){ setTimeout(fin,0); return; } v.addEventListener('seeked',fin,{once:true}); v.currentTime=want; };
+  seekV(c[st.a],st.ta); if(st.b>=0) seekV(c[st.b],st.tb); else if(c[1]&&st.a===0) seekV(c[1],0);
+  updTL(); }
+function tickSeq(exporting){ if(SEQ.seeking) return; const c=clips(); if(!c.length) return; const s1=c.length>1?clipStart(1):Infinity;
+  if(SEQ.cur===0){ SEQ.t=c[0].currentTime;
+    if(c[1]&&SEQ.t>=s1&&c[1].paused){ c[1].play().catch(()=>{}); }
+    if(c[0].ended||SEQ.t>=(c[0].duration||0)-.04){ if(c[1]){ SEQ.cur=1; try{c[0].pause();}catch(e){} } else return endSeq(exporting); } }
+  else { SEQ.t=s1+c[1].currentTime; if(c[1].ended||c[1].currentTime>=(c[1].duration||0)-.04) return endSeq(exporting); }
+  updTL(); }
+function endSeq(exporting){ if(exporting){ SEQ.done=true; return; }
+  clips().forEach(v=>{ try{v.pause();}catch(e){} }); seekSeq(0,()=>{ if(S.playing) clips()[0].play().catch(()=>{}); }); }
+function startPlay(){ const c=clips(); if(!c.length) return; c.forEach(v=>{ v.muted=true; v.loop=false; });
+  if(SEQ.t>=seqDur()-.06) SEQ.t=0; S.playing=true; playIcons(true);
+  seekSeq(SEQ.t,()=>{ if(!S.playing) return; const st=seqState(SEQ.t); c[st.a].play().catch(()=>{}); if(st.b>=0) c[st.b].play().catch(()=>{}); });
+  cancelAnimationFrame(S.live); const loop=()=>{ if(!S.playing) return; tickSeq(false); draw(); S.live=requestAnimationFrame(loop); }; S.live=requestAnimationFrame(loop); }
+$('#playBtn').onclick=()=>{ if(S.playing){ stopPlay(); draw(); } else startPlay(); };
+$('#tlRange').addEventListener('input',()=>{ if(!tlDrag){ tlDrag=true; tlWasPlaying=S.playing; if(S.playing) stopPlay(); } seekSeq(+$('#tlRange').value); });
+$('#tlRange').addEventListener('change',()=>{ tlDrag=false; seekSeq(+$('#tlRange').value,()=>{ if(tlWasPlaying) startPlay(); }); });
+function resetSeq(){ stopPlay(); SEQ.t=0; SEQ.cur=0; SEQ.live=false; const isV=S.media&&S.media.type==='video'; $('#tl').hidden=!isV; $('#media2Drop').hidden=!isV; if(isV) updTL(); }
+$('#media2In').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return; stopPlay();
+  try{ const {v,poster}=await loadVideoFile(f); S.media2={video:v,still:poster,name:f.name,file:f};
+    thumbInto($('#media2Thumb'),poster,112); $('#media2Sub').textContent=f.name+' · '+Math.round(v.duration||0)+' שנ׳'; $('#media2Clear').hidden=false; resetSeq(); draw(); toast('הסרטון הנוסף יתנגן מיד אחרי הראשון'); }
+  catch(err){ setStatus('הסרטון הנוסף לא נפתח. נסו סרטון MP4.',true); } });
+$('#media2Clear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); stopPlay(); S.media2=null; $('#media2Thumb').innerHTML=''; $('#media2Sub').textContent='יתנגן מיד אחרי הסרטון הראשון'; $('#media2Clear').hidden=true; resetSeq(); draw(); });
+
+/* ---- full-screen preview ---- */
+const FULL={open:false,scale:.5};
+function sizeFull(){ const [W,H]=dims(), vw=window.innerWidth, vh=window.innerHeight; const sc=Math.min(vw/W,(vh-8)/H), dpr=Math.min(2,window.devicePixelRatio||1), c=$('#fullC');
+  c.style.width=Math.round(W*sc)+'px'; c.style.height=Math.round(H*sc)+'px'; FULL.scale=Math.min(1,sc*dpr); }
+function openFull(){ FULL.open=true; $('#fullPv').hidden=false; document.body.classList.add('noscroll'); sizeFull(); draw(); if(S.media.type==='video'&&!S.playing) startPlay(); }
+function closeFull(){ FULL.open=false; $('#fullPv').hidden=true; document.body.classList.remove('noscroll'); }
+$('#pvBtn').onclick=openFull; $('#fullX').onclick=closeFull;
+$('#fullC').onclick=()=>{ if(S.media.type!=='video') return; if(S.playing){ stopPlay(); draw(); } else startPlay(); };
+window.addEventListener('resize',()=>{ if(FULL.open){ sizeFull(); draw(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&FULL.open) closeFull(); });
+
+/* ---- quick edit bar ---- */
+$('#qbar').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const A=S.adj, q=b.dataset.q;
+  if(q==='bigger') A.scale=Math.min(1.4,+(A.scale+.06).toFixed(2));
+  else if(q==='smaller') A.scale=Math.max(.7,+(A.scale-.06).toFixed(2));
+  else if(q==='box') A.boxPos=A.boxPos==='top'?'bottom':'top';
+  else if(q==='align') A.align={justify:'right',right:'center',center:'justify'}[A.align]||'justify';
+  else if(q==='logo'){ const L=lastInfo.logo, W=lastInfo.W||1080; A.side=L&&(L.x+L.w/2)<W/2?'right':'left'; A.logoX=0; }
+  else if(q==='color'){ const i=THEMES.findIndex(t=>t.id===S.theme), T=THEMES[(i+1)%THEMES.length]; S.theme=T.id; S.themeManual=true; loadLogo(T.id).then(draw); refreshUI(); }
+  else if(q==='format'){ const other=document.querySelector(`#fmtSeg button[data-fmt="${S.format==='story'?'post':'story'}"]`); other&&other.click(); }
+  syncQbar(); draw(); if(!$('#adj').hidden) syncAdj(); });
+function syncQbar(){ const q=k=>document.querySelector(`#qbar [data-q="${k}"]`); q('box').textContent=S.adj.boxPos==='top'?'התיבה למטה':'התיבה למעלה';
+  q('format').textContent=S.format==='story'?'פוסט 4:5':'סטורי 9:16'; q('align').textContent='יישור: '+({justify:'מלא',right:'ימין',center:'מרכז'}[S.adj.align]||'מלא'); }
 
 /* ---------- AI ---------- */
 function setStatus(t,err){ const s=$('#status'); s.textContent=t; s.classList.toggle('err',!!err); }
@@ -1272,7 +1369,6 @@ function pickMime(){
   for(const m of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm']){ try{ if(MediaRecorder.isTypeSupported(m)) return m; }catch(e){} }
   return '';
 }
-let audio=null;
 let MB=null;
 function loadMB(){
   if(MB||window.Mediabunny) return Promise.resolve(MB=MB||window.Mediabunny);
@@ -1281,6 +1377,7 @@ function loadMB(){
     sc.onload=()=>res(window.Mediabunny||null); sc.onerror=()=>res(null); document.head.appendChild(sc); })),Promise.resolve(null)).then(m=>MB=m);
 }
 async function fastExport(bar){
+  if(S.media2) return null;
   const M=await loadMB(); if(!M||typeof VideoEncoder==='undefined'||!S.media.file) return null;
   const [W,H]=dims(); const out=document.createElement('canvas'); out.width=W; out.height=H; let src=null, sctx=null;
   const make=async(codec)=>{ const input=new M.Input({source:new M.BlobSource(S.media.file),formats:M.ALL_FORMATS});
@@ -1310,31 +1407,37 @@ async function exportVideo(){
   if(fast instanceof Blob){ S.exporting=null; $('#outStop').hidden=true; $('#outSheet').hidden=true; $('#backdrop').hidden=true; await offer(fast,'mp4','video'); return; }
   S.exporting=null; return exportRealtime();
 }
+const AUD=new Map(); let audio=null;
+function audGain(v){ if(!audio){ const AC=window.AudioContext||window.webkitAudioContext; const ac=new AC(); audio={ac,dst:ac.createMediaStreamDestination()}; }
+  if(!AUD.has(v)){ const sn=audio.ac.createMediaElementSource(v), g=audio.ac.createGain(); sn.connect(g); g.connect(audio.dst); AUD.set(v,g); } return AUD.get(v); }
 async function exportRealtime(){
-  const mime=pickMime(), v=S.media.video;
+  const mime=pickMime(), c=clips();
   if(mime===null){ setStatus('הדפדפן הזה לא תומך בייצוא וידאו. נסו בכרום או בספארי מעודכן.',true); return; }
   stopPlay();
-  const c=document.createElement('canvas'); const [W,H]=dims(); c.width=W; c.height=H;
+  const cv=document.createElement('canvas'); const [W,H]=dims(); cv.width=W; cv.height=H;
   $('#outWrap').innerHTML=''; $('#outTitle').textContent='מייצא סרטון'; $('#outNote').textContent='';
   startProg(); $('#outStop').hidden=false; openSheet('#outSheet');
   let lock=null; try{ if(navigator.wakeLock) lock=await navigator.wakeLock.request('screen'); }catch(e){}
-  const stream=c.captureStream(30);
-  try{ if(!audio){ const AC=window.AudioContext||window.webkitAudioContext; const ac=new AC(); const sn=ac.createMediaElementSource(v); const dst=ac.createMediaStreamDestination(); sn.connect(dst); audio={ac,dst}; }
-    audio.ac.resume().catch(()=>{}); audio.dst.stream.getAudioTracks().forEach(t=>stream.addTrack(t)); }catch(e){}
+  const stream=cv.captureStream(30); let gains=[];
+  try{ gains=c.map(audGain); audio.ac.resume().catch(()=>{}); audio.dst.stream.getAudioTracks().forEach(t=>stream.addTrack(t)); }catch(e){ gains=[]; }
   let rec; try{ rec=new MediaRecorder(stream,Object.assign({videoBitsPerSecond:8e6},mime?{mimeType:mime}:{})); }catch(e){ $('#outNote').textContent='לא הצלחתי להתחיל ייצוא בדפדפן הזה.'; return; }
   const chunks=[]; rec.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
   let cancelled=false, raf=0; const done=new Promise(r=>rec.onstop=r);
-  S.exporting={cancel:()=>{ cancelled=true; try{v.pause();}catch(e){} if(rec.state!=='inactive') rec.stop(); }};
+  S.exporting={cancel:()=>{ cancelled=true; c.forEach(v=>{ try{v.pause();}catch(e){} }); if(rec.state!=='inactive') rec.stop(); }};
   $('#outStop').onclick=()=>S.exporting&&S.exporting.cancel();
   const onHide=()=>{ if(document.hidden && S.exporting){ S.exporting.cancel(); toast('הייצוא נעצר כי המסך נסגר'); } };
   document.addEventListener('visibilitychange',onHide);
-  v.loop=false; v.muted=false; v.onseeked=null; v.currentTime=0;
-  const tick=()=>{ renderTo(c,1,v); setProg(v.currentTime/(v.duration||1)); raf=requestAnimationFrame(tick); };
-  v.onended=()=>{ if(rec.state!=='inactive') rec.stop(); };
-  const playing=v.play(); tick(); rec.start(500);
+  c.forEach(v=>{ v.loop=false; v.muted=false; try{v.pause();}catch(e){} });
+  await new Promise(r=>seekSeq(0,r)); SEQ.done=false; const T=seqDur()||1;
+  const tick=()=>{ tickSeq(true); const st=seqState(SEQ.t);
+    if(gains.length>1){ gains[0].gain.value=st.b>=0?1-st.mix:(st.a===0?1:0); gains[1].gain.value=st.b>=0?st.mix:(st.a===1?1:0); }
+    renderTo(cv,1,seqSrc(st)||S.media.still); setProg(SEQ.t/T);
+    if(SEQ.done){ if(rec.state!=='inactive') rec.stop(); return; } raf=requestAnimationFrame(tick); };
+  const playing=c[0].play(); tick(); rec.start(500);
   try{ await playing; }catch(e){ S.exporting.cancel(); }
-  await done; cancelAnimationFrame(raf); v.onended=null; v.muted=true; S.exporting=null; $('#outStop').hidden=true;
+  await done; cancelAnimationFrame(raf); c.forEach(v=>{ v.muted=true; try{v.pause();}catch(e){} }); gains.forEach(g=>g.gain.value=1); S.exporting=null; $('#outStop').hidden=true;
   document.removeEventListener('visibilitychange',onHide); try{ lock&&lock.release(); }catch(e){}
+  SEQ.t=0; SEQ.cur=0; updTL();
   if(cancelled){ closeSheets(); toast('הייצוא נעצר'); return; }
   const type=rec.mimeType||mime||'video/webm'; const blob=new Blob(chunks,{type:type.split(';')[0]});
   $('#outSheet').hidden=true; $('#backdrop').hidden=true;
