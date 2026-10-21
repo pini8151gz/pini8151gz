@@ -245,7 +245,8 @@ body.dockmode .themes,body.dockmode .actions{display:none}
 .trim-pv{position:relative;display:flex;justify-content:center}.trim-pv canvas{border-radius:14px;background:#000;max-width:100%}
 .tplay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:50%;border:0;background:rgba(0,0,0,.5);color:#fff;display:grid;place-items:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .tplay svg{width:28px;height:28px}
-.strip{position:relative;height:60px;margin:4px 14px;border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none;background:#111}
+.stripzone{padding:16px 30px;margin:0 -16px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.strip{position:relative;height:60px;margin:0;border-radius:10px;touch-action:none;user-select:none;-webkit-user-select:none;background:#111}
 .strip canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:10px}
 .strip .dim{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.6)}.strip .dim-l{left:0;border-radius:10px 0 0 10px}.strip .dim-r{right:0;border-radius:0 10px 10px 0}
 .strip .sel{position:absolute;top:-4px;bottom:-4px;border:4px solid #fff;border-left-width:16px;border-right-width:16px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.35);pointer-events:none;margin:0 -16px}
@@ -495,12 +496,12 @@ body.noscroll{overflow:hidden}
   <div class="sheet-in">
     <div class="sheet-head"><h3 id="trimTitle">עריכת הסרטון</h3><button type="button" class="primary" id="trimDone">סיום</button></div>
     <div class="trim-pv"><canvas id="trimC"></canvas><button type="button" class="tplay" id="trimPlay" aria-label="הפעלת הקטע"></button></div>
-    <div class="strip" id="strip" dir="ltr">
+    <div class="stripzone" id="stripZone" dir="ltr"><div class="strip" id="strip">
       <canvas id="stripC"></canvas>
       <div class="dim dim-l" id="dimL"></div><div class="dim dim-r" id="dimR"></div>
       <div class="sel" id="sel"><span class="hd hd-l"><i></i></span><span class="hd hd-r"><i></i></span></div>
       <div class="ph" id="ph"></div>
-    </div>
+    </div></div>
     <div class="trim-times" dir="ltr"><span id="tA">0:00.0</span><b id="tLen"></b><span id="tB">0:00.0</span></div>
     <div class="brow"><button type="button" class="secondary" id="trimReset">ביטול החיתוך</button><button type="button" class="secondary" id="trimFrame">מיקום וזום</button></div>
   </div>
@@ -1360,9 +1361,9 @@ function trimStop(){ TRIM.playing=false; cancelAnimationFrame(TRIM.raf); try{ tr
 $('#trimPlay').onclick=()=>{ if(TRIM.playing) return trimStop(); const v=trimV(); if(TRIM.ph<TRIM.a||TRIM.ph>=TRIM.b-.1) TRIM.ph=TRIM.a;
   v.muted=!S.sound; v.currentTime=TRIM.ph; playSafe(v); TRIM.playing=true; $('#trimPlay').innerHTML=PAUSE_ICON;
   const loop=()=>{ if(!TRIM.playing) return; TRIM.ph=v.currentTime; if(TRIM.ph>=TRIM.b-.03){ v.currentTime=TRIM.a; TRIM.ph=TRIM.a; } trimPaint(); trimLayout(); TRIM.raf=requestAnimationFrame(loop); }; TRIM.raf=requestAnimationFrame(loop); };
-(function(){ const box=$('#strip'); const tAt=e=>{ const r=box.getBoundingClientRect(); return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*TRIM.d; };
-  box.addEventListener('pointerdown',e=>{ e.preventDefault(); try{ box.setPointerCapture(e.pointerId); }catch(_){} const r=box.getBoundingClientRect(), px=e.clientX-r.left;
-    const xa=TRIM.a/TRIM.d*r.width, xb=TRIM.b/TRIM.d*r.width, tol=26;
+(function(){ const box=$('#strip'), zone=$('#stripZone'); const tAt=e=>{ const r=box.getBoundingClientRect(); return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*TRIM.d; };
+  zone.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); try{ zone.setPointerCapture(e.pointerId); }catch(_){} const r=box.getBoundingClientRect(), px=e.clientX-r.left;
+    const xa=TRIM.a/TRIM.d*r.width, xb=TRIM.b/TRIM.d*r.width, tol=38;
     TRIM.drag = Math.abs(px-xa)<=tol&&Math.abs(px-xa)<=Math.abs(px-xb) ? 'a' : Math.abs(px-xb)<=tol ? 'b' : 'ph';
     if(TRIM.playing) trimStop(); box.classList.add('dragging'); move(e); });
   const move=e=>{ if(!TRIM.drag) return; const t=tAt(e), minL=.5;
@@ -1370,8 +1371,9 @@ $('#trimPlay').onclick=()=>{ if(TRIM.playing) return trimStop(); const v=trimV()
     else if(TRIM.drag==='b'){ TRIM.b=Math.max(t,TRIM.a+minL); TRIM.ph=TRIM.b; trimSeek(TRIM.b); }
     else { TRIM.ph=Math.max(TRIM.a,Math.min(TRIM.b,t)); trimSeek(TRIM.ph); }
     trimLayout(); };
-  box.addEventListener('pointermove',e=>{ if(TRIM.drag){ e.preventDefault(); move(e); } });
-  ['pointerup','pointercancel'].forEach(t=>box.addEventListener(t,()=>{ if(!TRIM.drag) return; TRIM.drag=null; box.classList.remove('dragging'); trimCommit(); })); })();
+  zone.addEventListener('pointermove',e=>{ if(TRIM.drag){ e.preventDefault(); move(e); } });
+  zone.addEventListener('touchmove',e=>{ if(TRIM.drag) e.preventDefault(); },{passive:false});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>zone.addEventListener(t,()=>{ if(!TRIM.drag) return; TRIM.drag=null; box.classList.remove('dragging'); trimCommit(); })); })();
 $('#trimReset').onclick=()=>{ trimStop(); TRIM.a=0; TRIM.b=TRIM.d; TRIM.ph=0; trimCommit(); trimLayout(); trimSeek(0); };
 $('#trimDone').onclick=()=>{ trimStop(); trimCommit(); closeSheets(); SEQ.t=0; SEQ.cur=0; SEQ.live=false; updTL(); setMediaUI(); const m2=S.media2; if(m2) $('#media2Sub').textContent=m2.name+' · '+Math.round(clipLen(1))+' שנ׳'; seekSeq(0); };
 $('#trimFrame').onclick=()=>{ closeSheets(); seekSeq(0); openDockTab('media'); };
