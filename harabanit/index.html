@@ -1907,7 +1907,7 @@ window.__botRender=async(o)=>{
   const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('poster')); i.src=o.poster; });
   S.format=o.format==='post'?'post':'story'; S.isExample=false; S.ai=null; S.media2=null; S.cut=null; S.cutSrc=null;
   S.media={type:o.kind==='video'?'video':'image',still:img,name:'bot'}; S.media.corners=corners(img);
-  S.adj=defaultAdj(); S.kicker='auto';
+  S.adj=defaultAdj(); S.adj.align=o.align||'center'; S.kicker='auto';
   $('#headIn').value=((o.kicker?o.kicker.trim()+' ':'')+(o.head||'')).trim();
   $('#extraIn').value=o.extra||''; $('#extraField').hidden=!o.extra;
   const cr=o.credits||[]; [['#c1p','#c1n'],['#c2p','#c2n']].forEach(([p,n],i)=>{ const c=cr[i]; if(c&&CREDIT_TYPES.includes(c[0])) $(p).value=c[0]; $(n).value=c?c[1]:''; });
