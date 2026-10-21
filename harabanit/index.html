@@ -193,6 +193,7 @@ body.dockmode .savebar{display:none}
 @keyframes cwPop{0%{transform:scale(.96);opacity:.4}100%{transform:scale(1);opacity:1}}
 @keyframes cwIn{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){.cw-scan,.cw-dots i,.cw-check,.cw-bar i{animation-duration:3s}}
+.cutfail{grid-column:1/-1;display:flex;flex-direction:column;gap:10px;align-items:stretch;padding:10px 0;text-align:center}.cutfail p{margin:0 0 4px;font-weight:700}
 .cwait{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;padding:28px 0;color:var(--muted);font-size:15px}
 .lfill{position:relative;width:min(56vw,220px);aspect-ratio:640/607;margin:6px auto 34px}
 .lfill img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -1191,16 +1192,13 @@ function loadTF(){ if(TFP) return TFP; TFP=new Promise((ok,bad)=>{ if(window.tf)
   TFP.catch(()=>{TFP=null;}); return TFP; }
 let RVMP=null;
 function loadRVM(){ if(RVM) return Promise.resolve(RVM); if(RVMP) return RVMP;
-  RVMP=(async()=>{ const tf=await loadTF(); try{ tf.env().set('WEBGL_USE_SHAPES_UNIFORMS',true); }catch(e){} try{ await tf.setBackend('webgl'); }catch(e){} await tf.ready();
-    const m=await tf.loadGraphModel('models/rvm.json'); await nextFrame();
-    /* compile the shaders once on a tiny frame */
-    try{ const z=tf.zeros([1,144,96,3]), r=tf.scalar(.5), s0=tf.scalar(0); const o=await m.executeAsync({src:z,'r1i':s0,'r2i':s0,'r3i':s0,'r4i':s0,'downsample_ratio':r},['pha']); (Array.isArray(o)?o:[o]).forEach(t=>t.dispose()); z.dispose(); r.dispose(); s0.dispose(); }catch(e){}
-    RVM=m; return m; })();
+  RVMP=(async()=>{ const tf=await loadTF(); try{ await tf.setBackend('webgl'); }catch(e){} await tf.ready();
+    const m=await tf.loadGraphModel('models/rvm.json'); RVM=m; return m; })();
   RVMP.catch(()=>{ RVMP=null; }); return RVMP; }
 /* alpha matte of the people in the photo, at working size */
-async function aiMatte(img){
+async function aiMatte(img,maxSide){
   const tf=await loadTF(), model=await loadRVM();
-  const [iw,ih]=srcSize(img), sc=Math.min(1,768/Math.max(iw,ih)), w=Math.round(iw*sc), h=Math.round(ih*sc);
+  const [iw,ih]=srcSize(img), sc=Math.min(1,(maxSide||768)/Math.max(iw,ih)), w=Math.round(iw*sc), h=Math.round(ih*sc);
   const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
   await nextFrame();
   const src=tf.tidy(()=>tf.browser.fromPixels(c).expandDims(0).toFloat().div(255));
@@ -1270,15 +1268,20 @@ function cwReveal(img,m,mask){ const cv=$('#cwC'); if(!cv) return; const x=cv.ge
 async function openCutout(img){
   cutWaitUI(img); $('#cutNote').textContent=''; openSheet('#cutSheet'); await nextFrame(); await nextFrame();
   let m=null, masks=null;
+  let aiErr=null;
   try{
-    m=await aiMatte(img); cwStep('מפריד את הדמות מהרקע…'); await nextFrame();
+    try{ m=await aiMatte(img); }catch(e1){ aiErr=e1; await nextFrame(); m=await aiMatte(img,512); aiErr=null; }
+    cwStep('מפריד את הדמות מהרקע…'); await nextFrame();
     const f=figures(m); if(!f.best) throw new Error('none'); await nextFrame();
     const sel=splitMain(m,f); await nextFrame();
     masks={main:matteMask(m,f,true,sel)}; cwReveal(img,m,masks.main); cwStep('מחדד קצוות…'); await nextFrame();
     masks.blob=sel?matteMask(m,f,true):null; await nextFrame(); masks.all=f.count>1?matteMask(m,f,false):null;
-  }catch(e){
-    try{ await nextFrame(); const seg=segment(img,ellipsePoly(.5,.55,.3,.42)); m={a:seg.q,w:seg.w,h:seg.h}; masks={main:seg.q}; cwReveal(img,m,masks.main); }catch(_){ m=null; }
-  }
+  }catch(e){ m=null; masks=null; aiErr=aiErr||e; }
+  if(!m){ const g=$('#cutGrid'); const none=aiErr&&aiErr.message==='none';
+    g.innerHTML='<div class="cutfail"><p>'+(none?'לא נמצאה דמות של אדם בתמונה.':'זיהוי הדמות לא הצליח במכשיר הזה.')+'</p><button type="button" class="primary" id="cutRetry">לנסות שוב</button><button type="button" class="secondary" id="cutNone">להשתמש בתמונה בלי הסרת רקע</button></div>';
+    $('#cutRetry').onclick=()=>{ RVM=null; RVMP=null; openCutout(img); };
+    $('#cutNone').onclick=()=>{ S.cutSrc=null; setCut(img,false,img,''); closeSheets(); };
+    return; }
   cwStep('מכין אפשרויות…'); await nextFrame();
   const looks=[];
   if(m){ looks.push({n:'עם מסגרת לבנה',p:{cutLine:'white'}},{n:'חיתוך מדויק',p:{}},{n:'רקע מטושטש',p:{cutBg:'blur'}},{n:'ראש וכתפיים',p:{cutCrop:'hs'}},{n:'רקע בצבע המותג',p:{cutBg:'brand'}},{n:'דמות בשחור־לבן',p:{cutBW:'on',cutLine:'white'}});
