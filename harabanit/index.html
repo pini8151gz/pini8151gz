@@ -236,6 +236,9 @@ body.dockmode .themes,body.dockmode .actions{display:none}
 .bwrap{display:flex;justify-content:center;touch-action:none}.bwrap canvas{border-radius:12px;touch-action:none;max-width:100%}
 .brow{display:flex;gap:10px}.brow>*{flex:1}
 #cutEdit{display:flex;flex-direction:column;gap:14px}
+.drop .xe{flex:none;border:0;background:var(--accent-soft);color:var(--accent);font:700 13px/1 inherit;padding:8px 12px;border-radius:999px;margin-inline-start:6px}
+.trim-pv{display:flex;justify-content:center}.trim-pv canvas{border-radius:12px;background:#000;max-width:100%}
+.trim-len{text-align:center;font-weight:700;color:var(--muted)}
 .tl{display:flex;align-items:center;gap:10px;margin:10px 4px 0;font:600 13px/1 system-ui,sans-serif;color:var(--muted)}
 .tl input{flex:1;accent-color:var(--accent);height:28px}
 .tl-t{min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
@@ -294,19 +297,19 @@ body.noscroll{overflow:hidden}
     <div class="field media-group"><span class="lbl">מדיה</span>
     <label class="drop" for="mediaIn">
       <div class="thumb" id="mediaThumb"></div>
-      <div class="meta"><strong id="mediaTitle">בחרו תמונה או סרטון</strong><span id="mediaSub">מהגלריה בטלפון</span></div><span class="x" aria-hidden="true">החלפה</span>
+      <div class="meta"><strong id="mediaTitle">בחרו תמונה או סרטון</strong><span id="mediaSub">מהגלריה בטלפון</span></div><button type="button" class="xe" id="mediaEdit">עריכה</button><span class="x" aria-hidden="true">החלפה</span>
     </label>
     <input type="file" id="mediaIn" accept="image/*,video/*" hidden>
     <label class="drop round small-gap" for="media2In" id="media2Drop" hidden>
       <div class="thumb" id="media2Thumb"></div>
       <div class="meta"><strong>סרטון נוסף (לא חובה)</strong><span id="media2Sub">יתנגן מיד אחרי הסרטון הראשון</span></div>
-      <button type="button" class="x" id="media2Clear" hidden>הסרה</button>
+      <button type="button" class="xe" id="media2Edit" hidden>עריכה</button><button type="button" class="x" id="media2Clear" hidden>הסרה</button>
     </label>
     <input type="file" id="media2In" accept="video/*" hidden>
     <label class="drop round small-gap" for="cutIn">
       <div class="thumb" id="cutThumb"></div>
       <div class="meta"><strong>תמונה בפינה (לא חובה)</strong><span id="cutSub">PNG גזור משתלב כמו בעמוד</span></div>
-      <button type="button" class="x" id="cutClear" hidden>הסרה</button>
+      <button type="button" class="xe" id="cutEditBtn" hidden>עריכה</button><button type="button" class="x" id="cutClear" hidden>הסרה</button>
     </label>
     <input type="file" id="cutIn" accept="image/*" hidden>
     </div>
@@ -464,6 +467,17 @@ body.noscroll{overflow:hidden}
     <div class="preview-wrap" id="outWrap"></div>
     <div class="out-acts" id="outActs" hidden><button type="button" class="primary" id="outShare"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>שיתוף ושמירה</button><a class="secondary" id="outDl" download>הורדה</a></div>
     <button type="button" class="secondary" id="outStop" hidden>עצירה</button>
+  </div>
+</div>
+
+<div class="sheet" id="trimSheet" hidden dir="rtl" lang="he" role="dialog" aria-label="עריכת סרטון">
+  <div class="sheet-in">
+    <div class="sheet-head"><h3 id="trimTitle">עריכת הסרטון</h3><button type="button" class="primary" id="trimDone">סיום</button></div>
+    <div class="trim-pv"><canvas id="trimC"></canvas></div>
+    <div class="trim-len" id="trimLen"></div>
+    <div class="ctl"><div class="ctl-head"><label for="trimIn">חיתוך מההתחלה</label><output id="trimInOut"></output></div><input type="range" id="trimIn" dir="ltr" min="0" max="10" step="0.1" value="0"></div>
+    <div class="ctl"><div class="ctl-head"><label for="trimOut">חיתוך מהסוף</label><output id="trimOutOut"></output></div><input type="range" id="trimOut" min="0" max="10" step="0.1" value="0"></div>
+    <div class="brow"><button type="button" class="secondary" id="trimReset">ביטול החיתוך</button><button type="button" class="secondary" id="trimFrame">מיקום וזום</button></div>
   </div>
 </div>
 
@@ -913,7 +927,7 @@ function setMediaUI(){
   thumbInto($('#mediaThumb'),S.media.still,112);
   $('#exTag').hidden=!S.isExample; $('#playBtn').hidden=S.media.type!=='video';
   $('#mediaTitle').textContent = S.isExample ? 'בחרו תמונה או סרטון' : (S.media.type==='video'?'סרטון נבחר':'תמונה נבחרה');
-  $('#mediaSub').textContent = S.isExample ? 'כרגע מוצגת תמונת דוגמה' : S.media.name + (S.media.type==='video' ? ` · ${Math.round(S.media.video.duration||0)} שנ׳` : '');
+  $('#mediaSub').textContent = S.isExample ? 'כרגע מוצגת תמונת דוגמה' : S.media.name + (S.media.type==='video' ? ` · ${Math.round(clipLen(0))} שנ׳` : '');
 }
 function loadImageFile(file){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('img')); im.src=URL.createObjectURL(file); }); }
 function loadVideoFile(file){
@@ -952,10 +966,10 @@ $('#cutIn').addEventListener('change',async e=>{
     setCut(im,a,im,a?'גזורה, תשתלב בפינה':'צבטו על התמונה להגדלה, גררו להזזה');
   }catch(err){ setStatus('התמונה לא נפתחה.',true); }
 });
-$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; S.cutSrc=null; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; draw(); });
+$('#cutClear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); S.cut=null; S.cutSrc=null; $('#cutEditBtn').hidden=true; $('#cutThumb').innerHTML=''; $('#cutSub').textContent='PNG גזור משתלב כמו בעמוד'; $('#cutClear').hidden=true; draw(); });
 
 function setCut(img,transparent,orig,label){ S.cut={img,transparent,orig:orig||img};
-  thumbInto($('#cutThumb'),img,88); $('#cutSub').textContent=label; $('#cutClear').hidden=false; if(!$('#adj').hidden) syncAdj(); draw(); }
+  thumbInto($('#cutThumb'),img,88); $('#cutSub').textContent=label; $('#cutClear').hidden=false; $('#cutEditBtn').hidden=false; if(!$('#adj').hidden) syncAdj(); draw(); }
 
 /* ---------- background removal for the corner photo ----------
    Claude marks where the figure is, then an on-device pass snaps the edge to the real outline. */
@@ -1232,9 +1246,13 @@ const PLAY_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l
 /* ---- video sequence: main clip, then an optional second clip with a crossfade ---- */
 const XF=.7, MIX=document.createElement('canvas'), SEQ={t:0,cur:0,live:false,done:false,seeking:false};
 function clips(){ const a=[]; if(S.media&&S.media.type==='video'){ a.push(S.media.video); if(S.media2) a.push(S.media2.video); } return a; }
-function clipStart(i){ const c=clips(); return i===0?0:Math.max(0,(c[0].duration||0)-XF); }
-function seqDur(){ const c=clips(); if(!c.length) return 0; return c.length>1?clipStart(1)+(c[1].duration||0):(c[0].duration||0); }
-function seqState(t){ const c=clips(); if(c.length<2) return {a:0,ta:t,b:-1,mix:0}; const s1=clipStart(1), d0=c[0].duration||0;
+function clipMeta(i){ return i===0?S.media:S.media2; }
+function clipIn(i){ const m=clipMeta(i); return m&&m.tIn||0; }
+function clipOut(i){ const m=clipMeta(i), v=m&&m.video, d=v&&v.duration||0; return m&&m.tOut!=null?Math.min(d,m.tOut):d; }
+function clipLen(i){ return Math.max(.1,clipOut(i)-clipIn(i)); }
+function clipStart(i){ return i===0?0:Math.max(0,clipLen(0)-XF); }
+function seqDur(){ const c=clips(); if(!c.length) return 0; return c.length>1?clipStart(1)+clipLen(1):clipLen(0); }
+function seqState(t){ const c=clips(); if(c.length<2) return {a:0,ta:t,b:-1,mix:0}; const s1=clipStart(1), d0=clipLen(0);
   if(t<s1) return {a:0,ta:t,b:-1,mix:0}; if(t<d0){ const m=(t-s1)/XF; return {a:0,ta:t,b:1,tb:t-s1,mix:m*m*(3-2*m)}; } return {a:1,ta:t-s1,b:-1,mix:0}; }
 function seqSrc(st){ const c=clips(); if(!c.length) return null; if(c.length<2) return c[0].readyState>=2?c[0]:null;
   const [w,h]=srcSize(c[0]); if(!w) return null; if(MIX.width!==w||MIX.height!==h){ MIX.width=w; MIX.height=h; }
@@ -1249,14 +1267,14 @@ function playIcons(on){ const b=$('#playBtn'); b.innerHTML=on?PAUSE_ICON:PLAY_IC
 function stopPlay(){ S.playing=false; cancelAnimationFrame(S.live); if(!S.exporting) clips().forEach(v=>{ try{v.pause();}catch(e){} }); playIcons(false); }
 function seekSeq(t,cb){ const c=clips(); if(!c.length) return; SEQ.t=Math.max(0,Math.min(seqDur(),t)); const st=seqState(SEQ.t); SEQ.cur=st.a; SEQ.seeking=true;
   let pending=0; const fin=()=>{ if(--pending>0) return; SEQ.seeking=false; SEQ.live=true; draw(); cb&&cb(); };
-  const seekV=(v,tt)=>{ pending++; const want=Math.max(0,Math.min((v.duration||0)-.05,tt)); if(Math.abs(v.currentTime-want)<.02){ setTimeout(fin,0); return; } v.addEventListener('seeked',fin,{once:true}); v.currentTime=want; };
+  const seekV=(v,tt)=>{ pending++; const i=c.indexOf(v); tt+=clipIn(i); const want=Math.max(0,Math.min(clipOut(i)-.05,tt)); if(Math.abs(v.currentTime-want)<.02){ setTimeout(fin,0); return; } v.addEventListener('seeked',fin,{once:true}); v.currentTime=want; };
   seekV(c[st.a],st.ta); if(st.b>=0) seekV(c[st.b],st.tb); else if(c[1]&&st.a===0) seekV(c[1],0);
   updTL(); }
 function tickSeq(exporting){ if(SEQ.seeking) return; const c=clips(); if(!c.length) return; const s1=c.length>1?clipStart(1):Infinity;
-  if(SEQ.cur===0){ SEQ.t=c[0].currentTime;
+  if(SEQ.cur===0){ SEQ.t=Math.max(0,c[0].currentTime-clipIn(0));
     if(c[1]&&SEQ.t>=s1&&c[1].paused){ c[1].play().catch(()=>{}); }
-    if(c[0].ended||SEQ.t>=(c[0].duration||0)-.04){ if(c[1]){ SEQ.cur=1; try{c[0].pause();}catch(e){} } else return endSeq(exporting); } }
-  else { SEQ.t=s1+c[1].currentTime; if(c[1].ended||c[1].currentTime>=(c[1].duration||0)-.04) return endSeq(exporting); }
+    if(c[0].ended||c[0].currentTime>=clipOut(0)-.04){ if(c[1]){ SEQ.cur=1; try{c[0].pause();}catch(e){} } else return endSeq(exporting); } }
+  else { SEQ.t=s1+Math.max(0,c[1].currentTime-clipIn(1)); if(c[1].ended||c[1].currentTime>=clipOut(1)-.04) return endSeq(exporting); }
   updTL(); }
 function endSeq(exporting){ if(exporting){ SEQ.done=true; return; }
   clips().forEach(v=>{ try{v.pause();}catch(e){} }); seekSeq(0,()=>{ if(S.playing) clips()[0].play().catch(()=>{}); }); }
@@ -1270,9 +1288,38 @@ $('#tlRange').addEventListener('change',()=>{ tlDrag=false; seekSeq(+$('#tlRange
 function resetSeq(){ stopPlay(); SEQ.t=0; SEQ.cur=0; SEQ.live=false; const isV=S.media&&S.media.type==='video'; $('#tl').hidden=!isV; $('#media2Drop').hidden=!isV; if(isV) updTL(); }
 $('#media2In').addEventListener('change',async e=>{ const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return; stopPlay();
   try{ const {v,poster}=await loadVideoFile(f); S.media2={video:v,still:poster,name:f.name,file:f};
-    thumbInto($('#media2Thumb'),poster,112); $('#media2Sub').textContent=f.name+' · '+Math.round(v.duration||0)+' שנ׳'; $('#media2Clear').hidden=false; resetSeq(); draw(); toast('הסרטון הנוסף יתנגן מיד אחרי הראשון'); }
+    thumbInto($('#media2Thumb'),poster,112); $('#media2Sub').textContent=f.name+' · '+Math.round(v.duration||0)+' שנ׳'; $('#media2Clear').hidden=false; $('#media2Edit').hidden=false; resetSeq(); draw(); toast('הסרטון הנוסף יתנגן מיד אחרי הראשון'); }
   catch(err){ setStatus('הסרטון הנוסף לא נפתח. נסו סרטון MP4.',true); } });
-$('#media2Clear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); stopPlay(); S.media2=null; $('#media2Thumb').innerHTML=''; $('#media2Sub').textContent='יתנגן מיד אחרי הסרטון הראשון'; $('#media2Clear').hidden=true; resetSeq(); draw(); });
+$('#media2Clear').addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); stopPlay(); S.media2=null; $('#media2Thumb').innerHTML=''; $('#media2Sub').textContent='יתנגן מיד אחרי הסרטון הראשון'; $('#media2Clear').hidden=true; $('#media2Edit').hidden=true; resetSeq(); draw(); });
+
+/* ---- trim a clip ---- */
+const TRIM={i:0};
+function fmtS(v){ return (Math.round(v*10)/10).toFixed(1)+' שנ׳'; }
+function trimShow(at){ const m=clipMeta(TRIM.i), v=m.video, cv=$('#trimC'); const [w,h]=srcSize(v); if(!w) return;
+  const maxH=Math.min(300,window.innerHeight*.34), sc=Math.min(1,maxH/h, (cv.parentElement.clientWidth||320)/w); cv.width=Math.round(w*sc); cv.height=Math.round(h*sc);
+  const paint=()=>cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);
+  if(at==null){ paint(); return; } const want=Math.max(0,Math.min((v.duration||0)-.05,at)); if(Math.abs(v.currentTime-want)<.03){ paint(); return; }
+  v.addEventListener('seeked',paint,{once:true}); v.currentTime=want; }
+function trimSync(){ const m=clipMeta(TRIM.i), d=m.video.duration||0, a=+$('#trimIn').value, b=+$('#trimOut').value;
+  $('#trimInOut').textContent=fmtS(a); $('#trimOutOut').textContent=fmtS(b); $('#trimLen').textContent='אורך אחרי החיתוך: '+fmtS(Math.max(0,d-a-b))+' מתוך '+fmtS(d); }
+function openTrim(i){ const m=clipMeta(i); if(!m||!m.video) return; stopPlay(); TRIM.i=i; const d=m.video.duration||0;
+  $('#trimTitle').textContent=i===0?'עריכת הסרטון':'עריכת הסרטון הנוסף'; $('#trimFrame').hidden=i!==0;
+  ['#trimIn','#trimOut'].forEach(id=>{ $(id).max=String(Math.max(.1,d-.5)); });
+  $('#trimIn').value=String(m.tIn||0); $('#trimOut').value=String(m.tOut!=null?Math.max(0,d-m.tOut):0);
+  trimSync(); openSheet('#trimSheet'); requestAnimationFrame(()=>trimShow(m.tIn||0)); }
+function trimApply(){ const m=clipMeta(TRIM.i), d=m.video.duration||0; let a=+$('#trimIn').value, b=+$('#trimOut').value;
+  if(d-a-b<.5){ if(document.activeElement===$('#trimIn')) a=Math.max(0,d-b-.5); else b=Math.max(0,d-a-.5); $('#trimIn').value=String(a); $('#trimOut').value=String(b); }
+  m.tIn=a>0?a:0; m.tOut=b>0?d-b:null; trimSync(); }
+$('#trimIn').addEventListener('input',()=>{ trimApply(); trimShow(+$('#trimIn').value); });
+$('#trimOut').addEventListener('input',()=>{ trimApply(); const m=clipMeta(TRIM.i); trimShow((m.video.duration||0)-(+$('#trimOut').value)-.05); });
+$('#trimReset').onclick=()=>{ $('#trimIn').value='0'; $('#trimOut').value='0'; trimApply(); trimShow(0); };
+$('#trimDone').onclick=()=>{ closeSheets(); SEQ.t=0; SEQ.cur=0; SEQ.live=false; updTL(); setMediaUI(); const m2=S.media2; if(m2) $('#media2Sub').textContent=m2.name+' · '+Math.round(clipLen(1))+' שנ׳'; seekSeq(0); };
+$('#trimFrame').onclick=()=>{ closeSheets(); seekSeq(0); openDockTab('media'); };
+function openDockTab(tab){ if($('#adj').hidden) openDock(); const b=document.querySelector(`.adj-tabs button[data-tab="${tab}"]`); b&&b.click(); window.scrollTo({top:0,behavior:'smooth'}); }
+const stopIt=e=>{ e.preventDefault(); e.stopPropagation(); };
+$('#mediaEdit').addEventListener('click',e=>{ stopIt(e); if(S.media.type==='video') openTrim(0); else openDockTab('media'); });
+$('#media2Edit').addEventListener('click',e=>{ stopIt(e); if(S.media2) openTrim(1); });
+$('#cutEditBtn').addEventListener('click',e=>{ stopIt(e); openDockTab('cut'); });
 
 /* ---- full-screen preview ---- */
 const FULL={open:false,scale:.5};
@@ -1330,7 +1377,7 @@ Use "sector" when the story connects a celebrity to the Haredi or Hasidic world.
 
 /* ---------- sheets ---------- */
 function openSheet(id){ $('#backdrop').hidden=false; $(id).hidden=false; }
-function closeSheets(){ ['#outSheet','#cutSheet','#brushSheet'].forEach(id=>$(id).hidden=true); $('#backdrop').hidden=true; if(S.exporting) S.exporting.cancel(); }
+function closeSheets(){ ['#outSheet','#cutSheet','#brushSheet','#trimSheet'].forEach(id=>$(id).hidden=true); $('#backdrop').hidden=true; if(S.exporting) S.exporting.cancel(); }
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheets);
 $('#backdrop').onclick=()=>{ if(!S.exporting) closeSheets(); };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#kFold').hidden) closeKicker(); else if(!$('#adj').hidden) closeDock(); else if(!S.exporting) closeSheets(); } });
@@ -1355,7 +1402,7 @@ async function offer(blob,ext,kind){
   wrap.appendChild(el); $('#outTitle').textContent='מוכן'; $('#outProg').hidden=true; $('#outStop').hidden=true; $('#outNote').textContent='';
   const name=fileBase()+'.'+ext, file=new File([blob],name,{type:blob.type||(kind==='video'?'video/mp4':'image/jpeg')});
   const dl=$('#outDl'); dl.href=url; dl.download=name; $('#outActs').hidden=false;
-  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]})); $('#outShare').hidden=!canShare;
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]})); $('#outShare').hidden=!canShare; dl.hidden=canShare;
   $('#outShare').onclick=async()=>{ try{ await navigator.share({files:[file],title:'הרבנית'}); }catch(e){ if(!(e&&e.name==='AbortError')) toast('השיתוף לא זמין כאן. נסו "הורדה".'); } };
   openSheet('#outSheet');
 }
@@ -1387,7 +1434,8 @@ async function fastExport(bar){
         if(!src||src.width!==sw||src.height!==sh){ src=document.createElement('canvas'); src.width=sw; src.height=sh; sctx=src.getContext('2d'); }
         sample.draw(sctx,0,0); renderTo(out,1,src); return out; }};
     if(codec) video.codec=codec;
-    const conv=await M.Conversion.init({input,output,video,audio:{}}); return {conv,output}; };
+    const trim={}; if(clipIn(0)>0) trim.start=clipIn(0); if(S.media.tOut!=null) trim.end=clipOut(0);
+    const conv=await M.Conversion.init(Object.assign({input,output,video,audio:{}},(trim.start!=null||trim.end!=null)?{trim}:{})); return {conv,output}; };
   const ok=j=>j.conv.isValid && !j.conv.discardedTracks.some(d=>d.track.type==='video') && j.conv.utilizedTracks.some(t=>t.type==='video');
   let job=await make('avc'); if(!ok(job)) job=await make(null); if(!ok(job)) return null;
   let cancelled=false; S.exporting={cancel:()=>{ cancelled=true; job.conv.cancel().catch(()=>{}); }};
@@ -1396,16 +1444,16 @@ async function fastExport(bar){
   return new Blob([job.output.target.buffer],{type:'video/mp4'});
 }
 /* two clips: decode both, compose the crossfade frame by frame, encode (no screen recording) */
-async function mixAudio(M,ins,d,s1,T){
+async function mixAudio(M,ins,d,s1,T,off){ off=off||[0,0];
   const sr=48000, parts=[];
   for(let i=0;i<ins.length;i++){ const at=await ins[i].getPrimaryAudioTrack().catch(()=>null); if(!at||!(await at.canDecode().catch(()=>false))){ parts.push(null); continue; }
-    const sink=new M.AudioBufferSink(at), bufs=[]; for await (const w of sink.buffers(0,d[i])) bufs.push(w); parts.push(bufs); }
+    const sink=new M.AudioBufferSink(at), bufs=[]; for await (const w of sink.buffers(off[i],off[i]+d[i])) bufs.push(w); parts.push(bufs); }
   if(parts.every(p=>!p||!p.length)) return null;
   const ctx=new OfflineAudioContext(2,Math.max(1,Math.ceil(T*sr)),sr);
   parts.forEach((bufs,i)=>{ if(!bufs) return; const g=ctx.createGain(); g.connect(ctx.destination); const start=i===0?0:s1;
     if(i===0){ g.gain.setValueAtTime(1,0); g.gain.setValueAtTime(1,s1); g.gain.linearRampToValueAtTime(0,Math.max(s1+.01,d[0])); }
     else { g.gain.setValueAtTime(0,0); g.gain.setValueAtTime(0,s1); g.gain.linearRampToValueAtTime(1,s1+XF); }
-    for(const w of bufs){ const src=ctx.createBufferSource(); src.buffer=w.buffer; src.connect(g); src.start(start+Math.max(0,w.timestamp)); } });
+    for(const w of bufs){ const src=ctx.createBufferSource(); src.buffer=w.buffer; src.connect(g); const rel=w.timestamp-off[i]; if(rel<0){ if(-rel<w.buffer.duration) src.start(start,-rel); } else src.start(start+rel); } });
   return ctx.startRendering();
 }
 async function composeExport(){
@@ -1413,19 +1461,19 @@ async function composeExport(){
   const ins=[S.media.file,S.media2.file].map(f=>new M.Input({source:new M.BlobSource(f),formats:M.ALL_FORMATS}));
   const vt=await Promise.all(ins.map(i=>i.getPrimaryVideoTrack())); if(vt.some(t=>!t)) return null;
   if(!(await Promise.all(vt.map(t=>t.canDecode()))).every(Boolean)) return null;
-  const d=await Promise.all(vt.map(t=>t.computeDuration()));
+  await Promise.all(vt.map(t=>t.computeDuration())); const d=[clipLen(0),clipLen(1)], off=[clipIn(0),clipIn(1)];
   const fps=30, s1=Math.max(0,d[0]-XF), T=s1+d[1], N=Math.max(1,Math.round(T*fps));
   const [W,H]=dims(), out=document.createElement('canvas'); out.width=W; out.height=H;
   const w0=vt[0].displayWidth, h0=vt[0].displayHeight, k=Math.min(1,1920/Math.max(w0,h0)), mw=Math.max(2,Math.round(w0*k/2)*2), mh=Math.max(2,Math.round(h0*k/2)*2);
   const cm=document.createElement('canvas'); cm.width=mw; cm.height=mh; const cx=cm.getContext('2d');
   const sinks=vt.map(t=>new M.CanvasSink(t,{width:mw,height:mh,fit:'cover',poolSize:3}));
-  const ts0=[], ts1=[]; for(let i=0;i<N;i++){ const t=i/fps; if(t<d[0]) ts0.push(Math.min(t,d[0]-.001)); if(t>=s1) ts1.push(Math.min(t-s1,d[1]-.001)); }
+  const ts0=[], ts1=[]; for(let i=0;i<N;i++){ const t=i/fps; if(t<d[0]) ts0.push(off[0]+Math.min(t,d[0]-.001)); if(t>=s1) ts1.push(off[1]+Math.min(t-s1,d[1]-.001)); }
   const it0=sinks[0].canvasesAtTimestamps(ts0)[Symbol.asyncIterator](), it1=sinks[1].canvasesAtTimestamps(ts1)[Symbol.asyncIterator]();
   const fmt=new M.Mp4OutputFormat({fastStart:'in-memory'});
   const vcodec=await M.getFirstEncodableVideoCodec(fmt.getSupportedVideoCodecs(),{width:W,height:H}); if(!vcodec) return null;
   const output=new M.Output({format:fmt,target:new M.BufferTarget()});
   const vsrc=new M.CanvasSource(out,{codec:vcodec,bitrate:M.QUALITY_HIGH}); output.addVideoTrack(vsrc,{frameRate:fps});
-  let abuf=null, asrc=null; try{ abuf=await mixAudio(M,ins,d,s1,T); }catch(e){ abuf=null; }
+  let abuf=null, asrc=null; try{ abuf=await mixAudio(M,ins,d,s1,T,off); }catch(e){ abuf=null; }
   if(abuf){ const ac=await M.getFirstEncodableAudioCodec(fmt.getSupportedAudioCodecs(),{numberOfChannels:abuf.numberOfChannels,sampleRate:abuf.sampleRate}).catch(()=>null);
     if(ac){ asrc=new M.AudioBufferSource({codec:ac,bitrate:M.QUALITY_HIGH}); output.addAudioTrack(asrc); } }
   let cancelled=false; S.exporting={cancel:()=>{ cancelled=true; output.cancel().catch(()=>{}); }};
