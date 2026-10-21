@@ -1897,6 +1897,36 @@ const MI=(()=>{
   return {fade,enter,morph,highlight,sync,success,loading};
 })();
 
+
+/* ===================== Bot rendering API =====================
+   Used by the Telegram bot (headless). Returns either a finished JPG (photo)
+   or a transparent overlay PNG + where the video goes (video). The overlay is
+   extracted by rendering over black and over white ("difference matting"),
+   so it matches the studio pixel for pixel. */
+window.__botRender=async(o)=>{
+  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('poster')); i.src=o.poster; });
+  S.format=o.format==='post'?'post':'story'; S.isExample=false; S.ai=null; S.media2=null; S.cut=null; S.cutSrc=null;
+  S.media={type:o.kind==='video'?'video':'image',still:img,name:'bot'}; S.media.corners=corners(img);
+  S.adj=defaultAdj(); S.kicker='auto';
+  $('#headIn').value=((o.kicker?o.kicker.trim()+' ':'')+(o.head||'')).trim();
+  $('#extraIn').value=o.extra||''; $('#extraField').hidden=!o.extra;
+  const cr=o.credits||[]; [['#c1p','#c1n'],['#c2p','#c2n']].forEach(([p,n],i)=>{ const c=cr[i]; if(c&&CREDIT_TYPES.includes(c[0])) $(p).value=c[0]; $(n).value=c?c[1]:''; });
+  const want=o.theme&&THEMES.find(t=>t.id===o.theme||t.n===o.theme); S.theme=want?want.id:null; S.themeManual=!!want;
+  try{ await ensureFonts(); }catch(e){}
+  refreshUI(); await loadLogo(S.theme); bgCache.clear();
+  const [W,H]=dims();
+  if(o.kind!=='video'){ const c=renderTo(document.createElement('canvas'),1,img); return {kind:'image',W,H,theme:S.theme,jpg:c.toDataURL('image/jpeg',.94)}; }
+  const solid=col=>{ const c=document.createElement('canvas'); c.width=o.mw; c.height=o.mh; const x=c.getContext('2d'); x.fillStyle=col; x.fillRect(0,0,c.width,c.height); return c; };
+  const A=renderTo(document.createElement('canvas'),1,solid('#000')); const info=JSON.parse(JSON.stringify(lastInfo));
+  const B=renderTo(document.createElement('canvas'),1,solid('#fff'));
+  const a=A.getContext('2d').getImageData(0,0,W,H), b=B.getContext('2d').getImageData(0,0,W,H), d=a.data, e=b.data;
+  for(let i=0;i<d.length;i+=4){ const t=((e[i]-d[i])+(e[i+1]-d[i+1])+(e[i+2]-d[i+2]))/3, al=Math.max(0,Math.min(255,255-t));
+    if(al<=0){ d[i]=d[i+1]=d[i+2]=0; d[i+3]=0; continue; } const k=255/al; d[i]=Math.min(255,d[i]*k); d[i+1]=Math.min(255,d[i+1]*k); d[i+2]=Math.min(255,d[i+2]*k); d[i+3]=al; }
+  const O=document.createElement('canvas'); O.width=W; O.height=H; O.getContext('2d').putImageData(a,0,0);
+  const fy=S.adj.fy!=null?S.adj.fy:S.analysis.fy;
+  return {kind:'video',W,H,theme:S.theme,png:O.toDataURL('image/png'),media:info.media,fx:S.adj.fx,fy,gray:themeById(S.theme).id==='silver'&&S.analysis.mood==='sad'};
+};
+
 window.__miReady=true;
 boot();
 })();
