@@ -12,5 +12,9 @@ services:
         sync: false
       - key: ALLOWED_IDS
         sync: false
+      - key: TG_API_ID
+        sync: false
+      - key: TG_API_HASH
+        sync: false
       - key: WEBHOOK_SECRET
         generateValue: true

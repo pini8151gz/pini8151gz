@@ -189,7 +189,7 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
 
 
 # ---------------------------------------------------------------- pipeline
-def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
+def make(studio, items, meta, workdir, progress=lambda stage, p=None: None, max_bytes=48 * 1024 * 1024):
     """items: [{'path':..., 'kind':'image'|'video'}] in order. Returns (path, kind, info)."""
     for it in items:
         it.update(probe(it['path']))
@@ -284,8 +284,8 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None):
         raise RuntimeError('ffmpeg: ' + err[-600:])
 
     # Telegram bots can send up to 50 MB.
-    if os.path.getsize(out) > 48 * 1024 * 1024:
-        kbps = int((45 * 8 * 1024) / max(1.0, total)) - 170
+    if os.path.getsize(out) > max_bytes:
+        kbps = int(((max_bytes / 1048576) * 0.92 * 8 * 1024) / max(1.0, total)) - 170
         small = os.path.join(workdir, 'harabanit_small.mp4')
         run(['ffmpeg', '-y', '-v', 'error', '-i', out, '-c:v', 'libx264', '-preset', 'veryfast',
              '-b:v', f'{max(800, kbps)}k', '-maxrate', f'{max(800, kbps)}k', '-bufsize', f'{2 * max(800, kbps)}k',

@@ -6,6 +6,8 @@ RUN apt-get update \
 WORKDIR /app
 COPY harabanit-bot/requirements.txt /app/harabanit-bot/requirements.txt
 RUN python3 -m pip install --no-cache-dir -r /app/harabanit-bot/requirements.txt
+# Faster encryption for big Telegram downloads (optional: skip if no wheel is available)
+RUN python3 -m pip install --no-cache-dir --only-binary=:all: cryptg || true
 COPY harabanit /app/harabanit
 COPY harabanit-bot /app/harabanit-bot
 ENV PYTHONUNBUFFERED=1

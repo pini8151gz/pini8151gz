@@ -29,6 +29,7 @@ import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import bigfiles
 import engine
 
 TOKEN = os.environ.get('BOT_TOKEN', '').strip()
@@ -61,6 +62,7 @@ HELP = (
 )
 
 studio = None
+BIG = bigfiles.BigFiles(TOKEN)   # files over 20 MB (needs TG_API_ID / TG_API_HASH)
 jobs = queue.Queue()
 lock = threading.Lock()
 albums = {}       # media_group_id -> {'chat', 'user', 'items', 'caption', 'timer'}
@@ -165,10 +167,11 @@ def handle_update(upd):
     item = media_of(msg)
     caption = (msg.get('caption') or '').strip()
     if item:
-        if item['size'] and item['size'] > MAX_DOWNLOAD:
-            send(chat, '⚠️ הקובץ גדול מ־20MB, וטלגרם לא מאפשר לרובוטים להוריד קבצים כאלה.\nשלחו גרסה קצרה או דחוסה יותר.')
+        if item['size'] and item['size'] > MAX_DOWNLOAD and not BIG.enabled:
+            send(chat, '⚠️ הקובץ גדול מ־20MB. כדי לקבל קבצים גדולים (עד 2GB) צריך להוסיף ב־Render את TG_API_ID ו־TG_API_HASH.\nבינתיים אפשר לשלוח גרסה קצרה או דחוסה יותר.')
             return
         item['order'] = msg['message_id']
+        item['msg_id'] = msg['message_id']
         gid = msg.get('media_group_id')
         if gid:
             with lock:
@@ -270,7 +273,26 @@ def process(job):
     work = tempfile.mkdtemp(prefix='hb_')
     try:
         status('⬇️ מוריד את הקבצים…', True)
-        items = [{'path': download(it['file_id'], work), 'kind': it['kind']} for it in job['items']]
+        items = []
+        for n, it in enumerate(job['items'], 1):
+            big = it.get('size', 0) > MAX_DOWNLOAD
+            path = None
+            if not big:
+                try:
+                    path = download(it['file_id'], work)
+                except RuntimeError as e:
+                    if not (BIG.enabled and 'too big' in str(e).lower()):
+                        raise
+                    big = True
+            if big:
+                label = f' {n}/{len(job["items"])}' if len(job['items']) > 1 else ''
+                mb = round(it.get('size', 0) / 1048576)
+
+                def dl_progress(p, label=label, mb=mb):
+                    pct = int(p * 100)
+                    status(f'⬇️ מוריד קובץ גדול{label} ({mb}MB)\n' + '▰' * (pct // 10) + '▱' * (10 - pct // 10) + f' {pct}%')
+                path = BIG.download(it['msg_id'], work, dl_progress)
+            items.append({'path': path, 'kind': it['kind']})
 
         t_video = [None]
 
@@ -291,11 +313,15 @@ def process(job):
                     eta = f'\nעוד כ־{left} שנ׳' if left < 120 else f'\nעוד כ־{round(left / 60)} דק׳'
                 status(f'🎬 מרכיב את הסרטון\n{bar} {pct}%{eta}')
 
-        out, kind, info = engine.make(studio, items, meta, work, progress)
+        out, kind, info = engine.make(studio, items, meta, work, progress,
+                                      max_bytes=1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024)
         status('📤 שולח…', True)
         fmt = 'סטורי 9:16' if info['format'] == 'story' else 'פוסט 4:5'
         caption = f'✅ מוכן · {fmt}'
-        if kind == 'image':
+        if os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
+            BIG.send(chat, out, caption, video=(kind == 'video'), w=info['W'], h=info['H'], dur=info.get('dur', 0))
+            r = {'ok': True}
+        elif kind == 'image':
             r = api('sendDocument', {'chat_id': str(chat), 'caption': caption + ' · איכות מלאה'}, {'document': out}, timeout=300)
         else:
             r = api('sendVideo', {'chat_id': str(chat), 'caption': caption, 'supports_streaming': 'true',
