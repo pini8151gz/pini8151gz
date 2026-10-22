@@ -761,8 +761,9 @@ function drawJustified(ctx,L,xRight,maxW,yTop,color,align,opt){
          a little letter spacing first (reads evenly in Hebrew), then wider word gaps, both capped. */
       const target=L.fill?maxW:Math.max(...L.lines.map(l=>l.w)), need=target-ln.w;
       if(need>0){ const chars=ln.words.reduce((a,w)=>a+[...w.t].length,0);
-        lsx=Math.min(need*(n>1?.55:1)/Math.max(1,chars), L.size*(L.fill?.07:.03));
-        const left=need-lsx*chars; const extra=n>1?Math.min(left/(n-1), L.sp*(L.fill?1.6:.9)):0;
+        /* only a touch, and only when needed: tiny letter spacing, then slightly wider word gaps; the rest stays centred */
+        lsx=Math.min(need*(n>1?.4:1)/Math.max(1,chars), L.size*.018);
+        const left=need-lsx*chars; const extra=n>1?Math.min(left/(n-1), L.sp*.45):0;
         gap=L.sp+Math.max(0,extra); lw=sum+lsx*chars+gap*Math.max(0,n-1); } }
     if(lsx&&'letterSpacing' in ctx) ctx.letterSpacing=((S.adj.ls||0)+lsx)+'px'; else if(!lsx) setLS(ctx);
     let x = align==='center' ? xRight-(maxW-lw)/2 : xRight;

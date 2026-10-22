@@ -56,7 +56,8 @@ HELP = (
     '• שורה ראשונה קצרה עם ! – מילת פתיחה\n'
     '• הכותרת – בשורה הבאה. פסקה נוספת אחרי שורה ריקה = טקסט נוסף\n'
     '• קרדיטים – צילום: / צילום וידאו: / צילום תמונה: / באדיבות: / בהפקת: / מפיק: / קרדיט: / מתוך:\n'
-    '• #פוסט או #סטורי לבחירת פורמט, #סגול / #אדום וכו׳ לבחירת צבע\n\n'
+    '• #פוסט או #סטורי לבחירת פורמט, #סגול / #אדום וכו׳ לבחירת צבע\n'
+    '• קובץ גדול? שלחו קישור (גוגל דרייב / דרופבוקס / קישור ישיר) עם הטקסט\n\n'
     'אפשר גם לשלוח קודם את המדיה ואחר כך את הטקסט (או הפוך).\n'
     'פקודות: /post פוסט כברירת מחדל · /story סטורי כברירת מחדל · /id המזהה שלי'
 )
@@ -119,6 +120,50 @@ def download(file_id, dest_dir):
     dest = os.path.join(dest_dir, f'{uuid.uuid4().hex[:8]}_{os.path.basename(path)}')
     with urllib.request.urlopen(FILE_API + urllib.parse.quote(path), timeout=180) as r, open(dest, 'wb') as f:
         shutil.copyfileobj(r, f)
+    return dest
+
+
+URL_RE = re.compile(r'https?://[^\s<>"]+')
+MAX_URL_BYTES = 2 * 1024 * 1024 * 1024
+
+
+def direct_url(url):
+    """Turn share links into direct download links (Google Drive, Dropbox)."""
+    m = re.search(r'drive\.google\.com/(?:file/d/|open\?id=|uc\?(?:export=download&)?id=)([\w-]{10,})', url)
+    if m:
+        return f'https://drive.usercontent.google.com/download?id={m.group(1)}&export=download&confirm=t'
+    if 'dropbox.com' in url:
+        url = re.sub(r'([?&])dl=0', r'\1dl=1', url)
+        if 'dl=1' not in url and 'raw=1' not in url:
+            url += ('&' if '?' in url else '?') + 'dl=1'
+    return url
+
+
+def download_url(url, dest_dir, progress=None):
+    """Download a file from a link (up to 2 GB), with progress."""
+    req = urllib.request.Request(direct_url(url), headers={'User-Agent': 'Mozilla/5.0 (HarabanitBot)'})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        ctype = r.headers.get('Content-Type', '')
+        if 'text/html' in ctype:
+            raise RuntimeError('הקישור לא מוביל לקובץ ישיר. בגוגל דרייב ודרופבוקס צריך שיתוף "לכל מי שיש את הקישור".')
+        total = int(r.headers.get('Content-Length') or 0)
+        if total > MAX_URL_BYTES:
+            raise RuntimeError('הקובץ בקישור גדול מ־2GB.')
+        name = re.sub(r'[^\w.\-]', '_', os.path.basename(urllib.parse.urlparse(r.geturl()).path)) or 'media'
+        dest = os.path.join(dest_dir, f'{uuid.uuid4().hex[:8]}_{name}')
+        done, last = 0, 0.0
+        with open(dest, 'wb') as f:
+            while True:
+                chunk = r.read(1 << 20)
+                if not chunk:
+                    break
+                f.write(chunk)
+                done += len(chunk)
+                if done > MAX_URL_BYTES:
+                    raise RuntimeError('הקובץ בקישור גדול מ־2GB.')
+                if progress and time.time() - last > 3:
+                    last = time.time()
+                    progress(done, total)
     return dest
 
 
@@ -187,6 +232,12 @@ def handle_update(upd):
                 al['timer'].start()
             return
         arrived(chat, [item], caption)
+        return
+    urls = URL_RE.findall(text) if text and not text.startswith('/') else []
+    if urls:
+        rest = URL_RE.sub('', text).strip()
+        items = [{'url': u.rstrip('.,)'), 'kind': None, 'size': 0, 'order': i} for i, u in enumerate(urls)]
+        arrived(chat, items, rest)
         return
     if text and not text.startswith('/'):
         with lock:
@@ -275,6 +326,19 @@ def process(job):
         status('⬇️ מוריד את הקבצים…', True)
         items = []
         for n, it in enumerate(job['items'], 1):
+            if it.get('url'):
+                label = f' {n}/{len(job["items"])}' if len(job['items']) > 1 else ''
+
+                def url_progress(done, total, label=label):
+                    mb = done / 1048576
+                    if total:
+                        pct = int(done * 100 / total)
+                        status(f'⬇️ מוריד מהקישור{label}\n' + '▰' * (pct // 10) + '▱' * (10 - pct // 10) + f' {pct}% · {mb:.0f}MB')
+                    else:
+                        status(f'⬇️ מוריד מהקישור{label}\n{mb:.0f}MB')
+                path = download_url(it['url'], work, url_progress)
+                items.append({'path': path, 'kind': engine.kind_of(path)})
+                continue
             big = it.get('size', 0) > MAX_DOWNLOAD
             path = None
             if not big:

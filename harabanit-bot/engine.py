@@ -22,8 +22,18 @@ FPS = 30
 # Video output width. 720 keeps memory and time low on a small server; set OUT_W=1080 on a bigger one.
 OUT_W = int(os.environ.get('OUT_W', '720'))
 
-# Longest first, so "צילום וידאו:" wins over "צילום:".
-CREDIT_TYPES = ['צילום וידאו:', 'צילום תמונה:', 'צילום:', 'בהפקת:', 'מפיק:', 'באדיבות:', 'קרדיט:', 'מתוך:']
+# Credit labels as people actually type them -> the label the studio shows.
+# Any of : ; - – may follow the label ("צילום; איציק אוחנה" works too).
+CREDIT_ALIASES = [
+    ('צילום וידאו', 'צילום וידאו:'), ('צילום וידיאו', 'צילום וידאו:'), ('וידאו', 'צילום וידאו:'),
+    ('צילום תמונה', 'צילום תמונה:'), ('צילום תמונות', 'צילום תמונה:'), ('צילומים', 'צילום:'),
+    ('צלם תמונה', 'צילום תמונה:'), ('צלם וידאו', 'צילום וידאו:'), ('צלמת וידאו', 'צילום וידאו:'),
+    ('צילום', 'צילום:'), ('צלם', 'צילום:'), ('צלמת', 'צילום:'),
+    ('בהפקת', 'בהפקת:'), ('הפקה', 'בהפקת:'), ('הפקת', 'בהפקת:'), ('מפיק', 'מפיק:'), ('מפיקה', 'מפיק:'),
+    ('באדיבות', 'באדיבות:'), ('קרדיט', 'קרדיט:'), ('מתוך', 'מתוך:'),
+]
+CREDIT_TYPES = sorted({v for _, v in CREDIT_ALIASES}, key=len, reverse=True)
+_ALIAS = {k: v for k, v in CREDIT_ALIASES}
 
 
 # ---------------------------------------------------------------- text
@@ -48,7 +58,8 @@ def parse_text(text):
             theme = t
     text = re.sub(r'#\S+', '', text)
 
-    credit_re = re.compile('|'.join(re.escape(t) for t in CREDIT_TYPES))
+    labels = sorted(_ALIAS, key=len, reverse=True)   # longest first
+    credit_re = re.compile(r'(?:(?<=^)|(?<=[\s.,;|·]))(' + '|'.join(re.escape(t) for t in labels) + r')\s*[:;\-–—]\s*')
     credits, blocks, cur = [], [], []
     for raw in text.split('\n'):
         line = raw.strip()
@@ -64,9 +75,9 @@ def parse_text(text):
                 cur.append(before)
             for i, m in enumerate(hits):
                 end = hits[i + 1].start() if i + 1 < len(hits) else len(line)
-                name = line[m.end():end].strip(' .,:-|·')
+                name = line[m.end():end].strip(' .,:;-–—|·')
                 if name:
-                    credits.append([m.group(0), name])
+                    credits.append([_ALIAS[m.group(1)], name])
             continue
         cur.append(line)
     if cur:
@@ -97,7 +108,13 @@ def probe(path):
     out = run(['ffprobe', '-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', path]).stdout
     info = json.loads(out)
     v = next((s for s in info.get('streams', []) if s.get('codec_type') == 'video'), None)
-    has_audio = any(s.get('codec_type') == 'audio' for s in info.get('streams', []))
+    a = next((s for s in info.get('streams', []) if s.get('codec_type') == 'audio'), None)
+    has_audio = a is not None
+    try:
+        num, den = (v.get('avg_frame_rate') or v.get('r_frame_rate') or '30/1').split('/')
+        fps = float(num) / float(den or 1)
+    except (ValueError, ZeroDivisionError):
+        fps = 30.0
     dur = float(info.get('format', {}).get('duration') or (v or {}).get('duration') or 0)
     w, h = int(v['width']), int(v['height'])
     rot = 0
@@ -107,7 +124,22 @@ def probe(path):
     rot = int((v.get('tags') or {}).get('rotate', rot) or 0)
     if abs(rot) % 180 == 90:
         w, h = h, w
-    return {'w': w, 'h': h, 'dur': dur, 'audio': has_audio}
+    return {'w': w, 'h': h, 'dur': dur, 'audio': has_audio, 'fps': fps or 30.0, 'acodec': (a or {}).get('codec_name', '')}
+
+
+def kind_of(path):
+    """'image' or 'video' for a downloaded file of unknown type."""
+    try:
+        info = json.loads(run(['ffprobe', '-v', 'error', '-print_format', 'json', '-show_streams', '-show_format', path]).stdout)
+    except Exception:
+        raise RuntimeError('הקובץ מהקישור אינו תמונה או סרטון.')
+    fmt = info.get('format', {}).get('format_name', '')
+    v = next((s for s in info.get('streams', []) if s.get('codec_type') == 'video'), None)
+    if not v:
+        raise RuntimeError('הקובץ מהקישור אינו תמונה או סרטון.')
+    if 'image2' in fmt or fmt.endswith('_pipe') or v.get('codec_name') in ('mjpeg', 'png', 'webp', 'heic', 'gif') and float(info.get('format', {}).get('duration') or 0) < 0.2:
+        return 'image'
+    return 'video'
 
 
 def poster_of(path, kind, dur, out_jpg):
@@ -230,45 +262,69 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None, max_
     X = round(m['x'] + (m['w'] - m['dw']) * res['fx'])
     Y = round(m['y'] + (m['h'] - m['dh']) * res['fy'])
 
-    cmd = ['ffmpeg', '-y', '-v', 'error', '-nostats', '-progress', 'pipe:1', '-filter_complex_threads', '1']
-    for it in items:
-        if it['kind'] == 'image':
-            cmd += ['-loop', '1', '-t', f"{it['dur']:.3f}", '-i', it['path']]
-        else:
-            cmd += ['-i', it['path']]
-    cmd += ['-i', overlay]
-    n, ov = len(items), len(items)
-
-    f = []
-    for i, it in enumerate(items):
-        f.append(f"[{i}:v]fps={FPS},scale={mw}:{mh}:force_original_aspect_ratio=increase:flags=fast_bilinear,crop={mw}:{mh},setsar=1,format=yuv420p,settb=AVTB[v{i}]")
-        if it['audio']:
-            f.append(f"[{i}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=0:{it['dur']:.3f},asetpts=PTS-STARTPTS[a{i}]")
-        else:
-            f.append(f"anullsrc=channel_layout=stereo:sample_rate=48000,atrim=0:{it['dur']:.3f}[a{i}]")
-    vcur, acur, off = 'v0', 'a0', items[0]['dur'] - XF
-    for i in range(1, n):
-        f.append(f"[{vcur}][v{i}]xfade=transition=fade:duration={XF}:offset={max(0.0, off):.3f}[xv{i}]")
-        f.append(f"[{acur}][a{i}]acrossfade=d={XF}[xa{i}]")
-        vcur, acur = f'xv{i}', f'xa{i}'
-        off += items[i]['dur'] - XF
-    total = sum(it['dur'] for it in items) - XF * (n - 1)
+    # Frame rate: never above the source (a 25 fps clip stays 25, 50/60 fps drops to 30).
+    fps = max(15, min(FPS, round(min(it.get('fps', FPS) if it['kind'] == 'video' else FPS for it in items))))
+    total = sum(it['dur'] for it in items) - XF * (len(items) - 1)
     gray = ',hue=s=0' if res.get('gray') else ''
-    # Only the visible part of the clip is kept (inside the media area and the frame), then padded
-    # to full size: one cheap crop+pad instead of blending over a full-size background.
+    # Visible part of the media area (inside the frame). Clips are cut to exactly this, early,
+    # so every later step (crossfade, blending, encoding input) touches fewer pixels.
     x0, y0 = even(max(0, m['x'], X)), even(max(0, m['y'], Y))
     x1, y1 = min(W, m['x'] + m['w'], X + dw), min(H, m['y'] + m['h'], Y + dh)
     cw, ch = even(x1 - x0), even(y1 - y0)
-    f.append(f"[{vcur}]scale={dw}:{dh}:flags=fast_bilinear{gray},crop={cw}:{ch}:{x0 - X}:{y0 - Y},"
-             f"pad={W}:{H}:{x0}:{y0}:black,format=yuv420p[b1]")
-    # The design layer is converted once and repeated (not re-decoded per frame).
-    f.append(f"[{ov}:v]scale={W}:{H}:flags=lanczos,format=yuva420p,loop=loop=-1:size=1:start=0,setpts=N/{FPS}/TB[ovl]")
-    f.append(f"[b1][ovl]overlay=0:0:shortest=1:format=yuv420,format=yuv420p[out]")
+    # Two still images, made once: the full design over black (base), and the design layer
+    # cut to the media area (top: credit, logo, corner picture over the video).
+    base_png, top_png = os.path.join(workdir, 'base.png'), os.path.join(workdir, 'top.png')
+    run(['ffmpeg', '-y', '-v', 'error', '-i', overlay, '-filter_complex',
+         f"[0:v]scale={W}:{H}:flags=lanczos,format=rgba,split[a][b];color=c=black:s={W}x{H}:d=1[bk];"
+         f"[bk][a]overlay=0:0:format=auto,format=rgb24[base];[b]crop={cw}:{ch}:{x0}:{y0}[top]",
+         '-map', '[base]', '-frames:v', '1', base_png, '-map', '[top]', '-frames:v', '1', top_png])
+
+    cmd = ['ffmpeg', '-y', '-v', 'error', '-nostats', '-progress', 'pipe:1', '-filter_complex_threads', '1']
+    for it in items:
+        if it['kind'] == 'image':
+            cmd += ['-loop', '1', '-framerate', str(fps), '-t', f"{it['dur']:.3f}", '-i', it['path']]
+        else:
+            # Faster decoding: skip the in-loop deblocking (invisible once the clip is scaled down).
+            cmd += ['-skip_loop_filter', 'all', '-flags2', '+fast', '-i', it['path']]
+    cmd += ['-i', base_png, '-i', top_png]
+    n = len(items)
+    ib, it_ = n, n + 1
+
+    f = []
+    for i, it in enumerate(items):
+        f.append(f"[{i}:v]fps={fps},scale={dw}:{dh}:force_original_aspect_ratio=increase:flags=fast_bilinear,"
+                 f"crop={dw}:{dh},crop={cw}:{ch}:{x0 - X}:{y0 - Y}{gray},setsar=1,format=yuv420p,settb=AVTB[v{i}]")
+    vcur, off = 'v0', items[0]['dur'] - XF
+    for i in range(1, n):
+        f.append(f"[{vcur}][v{i}]xfade=transition=fade:duration={XF}:offset={max(0.0, off):.3f}[xv{i}]")
+        vcur = f'xv{i}'
+        off += items[i]['dur'] - XF
+    f.append(f"[{ib}:v]format=yuv420p,loop=loop=-1:size=1:start=0,setpts=N/{fps}/TB[base]")
+    f.append(f"[{it_}:v]format=yuva420p,loop=loop=-1:size=1:start=0,setpts=N/{fps}/TB[top]")
+    f.append(f"[base][{vcur}]overlay={x0}:{y0}:shortest=1:format=yuv420[b1]")
+    f.append(f"[b1][top]overlay={x0}:{y0}:format=yuv420,format=yuv420p[out]")
+
+    # Sound: a single clip with AAC sound is copied as is (no re-encoding).
+    copy_audio = n == 1 and items[0]['audio'] and items[0].get('acodec') == 'aac'
+    amap, acodec = [], ['-c:a', 'aac', '-b:a', '160k']
+    if copy_audio:
+        amap, acodec = ['-map', '0:a:0'], ['-c:a', 'copy']
+    else:
+        for i, it in enumerate(items):
+            if it['audio']:
+                f.append(f"[{i}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,atrim=0:{it['dur']:.3f},asetpts=PTS-STARTPTS[a{i}]")
+            else:
+                f.append(f"anullsrc=channel_layout=stereo:sample_rate=48000,atrim=0:{it['dur']:.3f}[a{i}]")
+        acur = 'a0'
+        for i in range(1, n):
+            f.append(f"[{acur}][a{i}]acrossfade=d={XF}[xa{i}]")
+            acur = f'xa{i}'
+        amap = ['-map', f'[{acur}]']
 
     out = os.path.join(workdir, 'harabanit.mp4')
-    cmd += ['-filter_complex', ';'.join(f), '-map', '[out]', '-map', f'[{acur}]',
+    cmd += ['-filter_complex', ';'.join(f), '-map', '[out]'] + amap + [
             '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '22', '-threads', '2', '-maxrate', '7M', '-bufsize', '14M',
-            '-pix_fmt', 'yuv420p', '-r', str(FPS), '-c:a', 'aac', '-b:a', '160k',
+            '-pix_fmt', 'yuv420p', '-r', str(fps)] + acodec + [
             '-t', f'{total:.3f}', '-movflags', '+faststart', out]
     progress('video', 0.0)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
