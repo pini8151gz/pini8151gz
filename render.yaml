@@ -18,3 +18,7 @@ services:
         sync: false
       - key: WEBHOOK_SECRET
         generateValue: true
+      - key: MODAL_TOKEN_ID
+        sync: false
+      - key: MODAL_TOKEN_SECRET
+        sync: false

@@ -3,3 +3,4 @@ telethon==1.37.0
 pillow==10.4.0
 numpy==1.26.4
 onnxruntime==1.19.2
+modal>=1.0

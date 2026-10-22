@@ -14,6 +14,7 @@ Environment:
 """
 import hashlib
 import hmac
+import sys
 import json
 import mimetypes
 import os
@@ -153,6 +154,69 @@ prefs = {}        # chat_id -> {'format': 'story'|'post'}
 sessions = {}     # sid -> a design waiting for approval (preview already sent)
 SESSION_TTL = 45 * 60
 ASSETS = os.path.join(HERE, 'assets')
+# Fast builds on Modal (modal.com, $30/month free): set MODAL_TOKEN_ID + MODAL_TOKEN_SECRET in Render.
+MODAL_ON = bool(os.environ.get('MODAL_TOKEN_ID') and os.environ.get('MODAL_TOKEN_SECRET'))
+MODAL_APP = os.environ.get('MODAL_APP', 'harabanit')
+remote = {'ok': False, 'err': '', 'fn': None, 'dict': None}
+
+
+def modal_setup():
+    """Deploy the build function to Modal (image cached after the first time) and connect to it."""
+    if not MODAL_ON:
+        return
+    try:
+        import subprocess
+        r = subprocess.run([sys.executable, '-m', 'modal', 'deploy', os.path.join(HERE, 'modal_app.py')],
+                           capture_output=True, text=True, timeout=900)
+        if r.returncode != 0:
+            remote['err'] = (r.stderr or r.stdout)[-400:]
+            print('modal deploy failed:', remote['err'], flush=True)
+            return
+        import modal
+        remote['fn'] = modal.Function.from_name(MODAL_APP, 'build')
+        remote['dict'] = modal.Dict.from_name(MODAL_APP + '-progress', create_if_missing=True)
+        remote['ok'] = True
+        print('modal ready', flush=True)
+    except Exception as e:
+        remote['err'] = str(e)[-400:]
+        traceback.print_exc()
+
+
+def remote_build(s, progress, max_bytes):
+    """Build the video on Modal. Returns the local path of the result."""
+    st = s['state']
+    jid = uuid.uuid4().hex[:10]
+    keys = ('kind', 'dur', 'audio', 'fps', 'acodec', 'w', 'h', 'vcodec')
+    items = [dict({k: it[k] for k in keys if k in it}, url=f'{PUBLIC_URL}/m/{s["token"]}/{i}') for i, it in enumerate(st['items'])]
+    with open(st['base'], 'rb') as f:
+        base = f.read()
+    with open(st['top'], 'rb') as f:
+        top = f.read()
+    # the clips are served to Modal through /m/<token>/<i>, so the session stays reachable while it builds
+    sessions[s['sid']] = s
+    tokens[s['token']] = s['sid']
+    try:
+        call = remote['fn'].spawn({'id': jid, 'items': items, 'geo': st['geo'], 'info': st['info'], 'max_bytes': max_bytes}, base, top)
+        progress('video', 0.0)
+        data = None
+        while data is None:
+            try:
+                data = call.get(timeout=2)
+            except TimeoutError:
+                pr = remote['dict'].get(jid) if remote['dict'] is not None else None
+                if pr and pr.get('stage') == 'video':
+                    progress('video', pr.get('p') or 0)
+    finally:
+        sessions.pop(s['sid'], None)
+        tokens.pop(s['token'], None)
+        try:
+            del remote['dict'][jid]
+        except Exception:
+            pass
+    out = os.path.join(s['work'], 'harabanit_remote.mp4')
+    with open(out, 'wb') as f:
+        f.write(data)
+    return out
 ANIM_IDS = {}     # colour -> Telegram file id of its logo animation (uploaded once)
 tokens = {}       # long random token -> sid (for the phone build page)
 # The studio, opened inside Telegram to build the video on the phone (much faster than this server).
@@ -684,8 +748,17 @@ def approve(job):
 
         if s['state']['mode'] == 'video':
             status('🎬 מרכיב את הסרטון\n▱▱▱▱▱▱▱▱▱▱ 0%', True, p=0)
-        out, kind, info = engine.finish(studio, s['state'], s['work'], progress,
-                                        max_bytes=1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024)
+        max_b = 1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024
+        out = None
+        if remote['ok'] and s['state']['mode'] == 'video' and PUBLIC_URL:
+            try:
+                out = remote_build(s, progress, max_b)
+                kind, info = 'video', dict(s['state']['info'], dur=engine.probe(out)['dur'])
+            except Exception:
+                traceback.print_exc()
+                out = None   # fall back to building here
+        if out is None:
+            out, kind, info = engine.finish(studio, s['state'], s['work'], progress, max_bytes=max_b)
         status('📤 שולח…', True)
         caption = f'✅ מוכן · {fmt_name(info["format"])}'
         if os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
@@ -832,7 +905,8 @@ class Hook(BaseHTTPRequestHandler):
                                     'corner': ({'url': f'/m/{parts[1]}/c', 'size': os.path.getsize(corner_file(s)),
                                                 'matte': corner_matte(s)} if s.get('corner') else None)})
         if parts[0] == 'm' and len(parts) == 3:
-            s = phone_job(parts[1])
+            sid = tokens.get(parts[1] or '')
+            s = sessions.get(sid) if sid else None
             try:
                 path = (corner_file(s) if parts[2] == 'c' else s['items'][int(parts[2])]['path']) if s else None
             except (ValueError, IndexError):
@@ -854,6 +928,7 @@ class Hook(BaseHTTPRequestHandler):
             body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
             body += f"\nallowed users: {len(ALLOWED) + len(EXTRA)}"
             body += f"\nbig files (2GB): {'on' if BIG.enabled else 'off – add TG_API_ID + TG_API_HASH'}"
+            body += f"\nfast builds (Modal): {'on' if remote['ok'] else ('error: ' + remote['err'] if remote['err'] else ('starting…' if MODAL_ON else 'off – add MODAL_TOKEN_ID + MODAL_TOKEN_SECRET'))}"
         data = body.encode()
         self.send_response(200)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
@@ -968,6 +1043,9 @@ def main():
         traceback.print_exc()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=keep_awake, daemon=True).start()
+    threading.Thread(target=modal_setup, daemon=True).start()
+    if MODAL_ON:
+        engine.OUT_W = int(os.environ.get('OUT_W', '1080'))   # the fast server can afford full quality
     cmds = [{'command': 'start', 'description': 'הסבר קצר'},
             {'command': 'story', 'description': 'סטורי 9:16 כברירת מחדל'},
             {'command': 'post', 'description': 'פוסט 4:5 כברירת מחדל'},

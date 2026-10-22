@@ -21,6 +21,9 @@ PHOTO_SECS = 4.0  # how long a photo stays on screen inside a video
 FPS = 30
 # Video output width. 720 keeps memory and time low on a small server; set OUT_W=1080 on a bigger one.
 OUT_W = int(os.environ.get('OUT_W', '720'))
+# Encoder settings: a small server uses 2 threads / ultrafast; a strong one (Modal) uses all cores / veryfast.
+FF_THREADS = os.environ.get('FF_THREADS', '2')
+FF_PRESET = os.environ.get('FF_PRESET', 'ultrafast')
 
 # Credit labels as people actually type them -> the label the studio shows.
 # Any of : ; - – may follow the label ("צילום; איציק אוחנה" works too).
@@ -449,7 +452,8 @@ def finish(studio, state, workdir, progress=lambda stage, p=None: None, max_byte
     if state['mode'] == 'image':
         return state['out'], 'image', state['info']
     # Free the browser's memory before ffmpeg starts (a small server can't hold both).
-    studio.close()
+    if studio is not None:
+        studio.close()
     items, g = state['items'], state['geo']
     W, H, dw, dh, X, Y = g['W'], g['H'], g['dw'], g['dh'], g['X'], g['Y']
     x0, y0, cw, ch, gray = g['x0'], g['y0'], g['cw'], g['ch'], g['gray']
@@ -504,7 +508,7 @@ def finish(studio, state, workdir, progress=lambda stage, p=None: None, max_byte
 
     out = os.path.join(workdir, 'harabanit.mp4')
     cmd += ['-filter_complex', ';'.join(f), '-map', '[out]'] + amap + [
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '22', '-threads', '2', '-maxrate', '7M', '-bufsize', '14M',
+            '-c:v', 'libx264', '-preset', FF_PRESET, '-crf', '22', '-threads', FF_THREADS, '-maxrate', '9M', '-bufsize', '18M',
             '-pix_fmt', 'yuv420p', '-r', str(fps)] + acodec + [
             '-t', f'{total:.3f}', '-movflags', '+faststart', out]
     progress('video', 0.0)
