@@ -217,7 +217,7 @@ def remote_build(s, progress, max_bytes):
     with open(out, 'wb') as f:
         f.write(data)
     return out
-ANIM_IDS = {}     # colour -> Telegram file id of its logo animation (uploaded once)
+STICKER_IDS = {}  # colour -> Telegram file id of its logo sticker (uploaded once)
 tokens = {}       # long random token -> sid (for the phone build page)
 # The studio, opened inside Telegram to build the video on the phone (much faster than this server).
 SITE_URL = os.environ.get('SITE_URL', 'https://pini8151gz.github.io/pini8151gz/harabanit/')
@@ -697,37 +697,34 @@ def approve(job):
     tokens.pop(s.get('token'), None)
     chat, pmsg, info = s['chat'], s['pmsg'], s['state']['info']
     head = f'{fmt_name(info["format"])} · {color_label(info.get("theme"))}'
-    last, shown = [0.0], [-1]
-    # While the video is built, the picture becomes a smooth looping animation of the logo filling with colour;
-    # the real progress is in the text under it.
-    anim = None
+    last, stk = [0.0], [None]
+    # While the video is built, a sticker of the logo filling with colour plays under the preview
+    # (stickers loop on their own, no play button); the real progress is in the preview's caption.
+    sticker = None
     if s['state']['mode'] == 'video':
-        theme = info.get('theme') if os.path.exists(os.path.join(ASSETS, f'fill_{info.get("theme")}.mp4')) else 'red'
-        anim = theme
+        sticker = info.get('theme') if os.path.exists(os.path.join(ASSETS, f'fill_{info.get("theme")}.webm')) else 'red'
+
+    def drop_sticker():
+        if stk[0]:
+            api('deleteMessage', {'chat_id': chat, 'message_id': stk[0]})
+            stk[0] = None
 
     def status(text, force=False, p=None):
         now = time.time()
-        cap = f'{text}\n<i>{head}</i>'
-        if anim and shown[0] < 0:
-            shown[0] = 0
-            media = {'type': 'animation', 'caption': cap, 'parse_mode': 'HTML', 'width': 480, 'height': 600}
-            fid = ANIM_IDS.get(anim)
-            if fid:
-                media['media'] = fid
-                r = api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media})
-            else:
-                media['media'] = 'attach://anim'
-                r = api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media},
-                        {'anim': os.path.join(ASSETS, f'fill_{anim}.mp4')}, timeout=60)
+        if sticker and stk[0] is None:
+            stk[0] = 0
+            fid = STICKER_IDS.get(sticker)
+            r = (api('sendSticker', {'chat_id': str(chat), 'sticker': fid, 'disable_notification': True}) if fid else
+                 api('sendSticker', {'chat_id': str(chat), 'disable_notification': 'true'},
+                     {'sticker': os.path.join(ASSETS, f'fill_{sticker}.webm')}, timeout=60))
             if r.get('ok'):
-                got = (r.get('result') or {}).get('animation') or (r.get('result') or {}).get('document') or {}
-                if got.get('file_id'):
-                    ANIM_IDS[anim] = got['file_id']   # next time: no upload
-                last[0] = now
-                return
+                stk[0] = r['result']['message_id']
+                got = (r['result'].get('sticker') or {}).get('file_id')
+                if got:
+                    STICKER_IDS[sticker] = got   # next time: no upload
         if force or now - last[0] > 3:
             last[0] = now
-            edit_caption(chat, pmsg, cap)
+            edit_caption(chat, pmsg, f'{text}\n<i>{head}</i>')
     try:
         t_video = [None]
 
@@ -772,6 +769,7 @@ def approve(job):
                     {'video': out}, timeout=600)
         if not r.get('ok'):
             raise RuntimeError(r.get('description', 'send failed'))
+        drop_sticker()
         if kind == 'video':
             api('deleteMessage', {'chat_id': chat, 'message_id': pmsg})
         else:
@@ -782,12 +780,8 @@ def approve(job):
         s['t'] = time.time()
         sessions[s['sid']] = s
         tokens[s['token']] = s['sid']
-        if shown[0] >= 0:   # bring the design preview back in place of the progress picture
-            media = {'type': 'photo', 'media': 'attach://photo', 'caption': preview_caption(s), 'parse_mode': 'HTML'}
-            api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media,
-                                     'reply_markup': main_kb(s)}, {'photo': s['state']['preview']}, timeout=60)
-        else:
-            edit_caption(chat, pmsg, preview_caption(s), main_kb(s))
+        drop_sticker()
+        edit_caption(chat, pmsg, preview_caption(s), main_kb(s))
         raise
     shutil.rmtree(s['work'], ignore_errors=True)
 
