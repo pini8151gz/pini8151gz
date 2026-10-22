@@ -182,8 +182,9 @@ def modal_setup():
         traceback.print_exc()
 
 
-def remote_build(s, progress, max_bytes):
-    """Build the video on Modal. Returns the local path of the result."""
+def remote_build(s, progress, max_bytes, caption):
+    """Build the video on Modal; Modal sends it to the chat itself when it fits 50 MB.
+    Returns (local_path or None, report dict)."""
     st = s['state']
     jid = uuid.uuid4().hex[:10]
     keys = ('kind', 'dur', 'audio', 'fps', 'acodec', 'w', 'h', 'vcodec')
@@ -196,7 +197,8 @@ def remote_build(s, progress, max_bytes):
     sessions[s['sid']] = s
     tokens[s['token']] = s['sid']
     try:
-        call = remote['fn'].spawn({'id': jid, 'items': items, 'geo': st['geo'], 'info': st['info'], 'max_bytes': max_bytes}, base, top)
+        call = remote['fn'].spawn({'id': jid, 'items': items, 'geo': st['geo'], 'info': st['info'], 'max_bytes': max_bytes,
+                                   'tg': {'token': TOKEN, 'chat': s['chat'], 'caption': caption}}, base, top)
         progress('video', 0.0)
         data = None
         while data is None:
@@ -206,6 +208,8 @@ def remote_build(s, progress, max_bytes):
                 pr = remote['dict'].get(jid) if remote['dict'] is not None else None
                 if pr and pr.get('stage') == 'video':
                     progress('video', pr.get('p') or 0)
+                elif pr and pr.get('stage') == 'send':
+                    progress('send')
     finally:
         sessions.pop(s['sid'], None)
         tokens.pop(s['token'], None)
@@ -213,11 +217,15 @@ def remote_build(s, progress, max_bytes):
             del remote['dict'][jid]
         except Exception:
             pass
+    if data.get('sent'):
+        return None, data
     out = os.path.join(s['work'], 'harabanit_remote.mp4')
     with open(out, 'wb') as f:
-        f.write(data)
-    return out
+        f.write(data['data'])
+    data.pop('data', None)
+    return out, data
 STICKER_IDS = {}  # colour -> Telegram file id of its logo sticker (uploaded once)
+LAST = {}         # timings of the last video (shown on /status)
 tokens = {}       # long random token -> sid (for the phone build page)
 ME = {}           # the bot's own profile (username, has_main_web_app)
 # The studio, opened inside Telegram to build the video on the phone (much faster than this server).
@@ -741,6 +749,9 @@ def approve(job):
         t_video = [None]
 
         def progress(stage, p=None):
+            if stage == 'send':
+                status('📤 שולח…', True)
+                return
             if stage == 'video':
                 now = time.time()
                 if t_video[0] is None:
@@ -758,29 +769,44 @@ def approve(job):
         if s['state']['mode'] == 'video':
             status('🎬 מרכיב את הסרטון\n▱▱▱▱▱▱▱▱▱▱ 0%', True, p=0)
         max_b = 1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024
-        out = None
+        out, sent, how = None, False, 'שרת'
+        t_start = time.time()
+        caption = f'✅ מוכן · {fmt_name(info["format"])}'
         if remote['ok'] and s['state']['mode'] == 'video' and PUBLIC_URL:
             try:
-                out = remote_build(s, progress, max_b)
-                kind, info = 'video', dict(s['state']['info'], dur=engine.probe(out)['dur'])
-            except Exception:
+                out, rep = remote_build(s, progress, max_b, caption)
+                sent, how = rep.get('sent', False), 'Modal'
+                LAST['modal'] = rep
+                if not sent:
+                    kind, info = 'video', dict(s['state']['info'], dur=engine.probe(out)['dur'])
+            except Exception as e:
                 traceback.print_exc()
-                out = None   # fall back to building here
-        if out is None:
+                LAST['modal_error'] = str(e)[-300:]
+                out, sent = None, False   # fall back to building here
+        if out is None and not sent:
             out, kind, info = engine.finish(studio, s['state'], s['work'], progress, max_bytes=max_b)
-        status('📤 שולח…', True)
-        caption = f'✅ מוכן · {fmt_name(info["format"])}'
-        if os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
+        t_built = time.time()
+        if sent:
+            r = {'ok': True}
+            kind = 'video'
+        elif os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
+            status('📤 שולח…', True)
             BIG.send(chat, out, caption, video=(kind == 'video'), w=info['W'], h=info['H'], dur=info.get('dur', 0))
             r = {'ok': True}
         elif kind == 'image':
+            status('📤 שולח…', True)
             r = api('sendDocument', {'chat_id': str(chat), 'caption': caption + ' · איכות מלאה'}, {'document': out}, timeout=300)
         else:
+            status('📤 שולח…', True)
             r = api('sendVideo', {'chat_id': str(chat), 'caption': caption, 'supports_streaming': 'true',
                                   'width': str(info['W']), 'height': str(info['H']), 'duration': str(int(info.get('dur', 0)))},
                     {'video': out}, timeout=600)
         if not r.get('ok'):
             raise RuntimeError(r.get('description', 'send failed'))
+        LAST.update(at=time.strftime('%H:%M:%S'), how=how, total=round(time.time() - t_start, 1),
+                    build=round(t_built - t_start, 1), send=round(time.time() - t_built, 1),
+                    size_mb=round(os.path.getsize(out) / 1048576, 1) if out else (LAST.get('modal') or {}).get('size', 0) // 1048576)
+        print('job timing:', LAST, flush=True)
         drop_sticker()
         if kind == 'video':
             api('deleteMessage', {'chat_id': chat, 'message_id': pmsg})
@@ -934,6 +960,7 @@ class Hook(BaseHTTPRequestHandler):
             body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
             body += f"\nallowed users: {len(ALLOWED) + len(EXTRA)}"
             body += f"\nbig files (2GB): {'on' if BIG.enabled else 'off – add TG_API_ID + TG_API_HASH'}"
+            body += f"\nlast video: {json.dumps(LAST, ensure_ascii=False)}"
             body += f"\nfast builds (Modal): {'on' if remote['ok'] else ('error: ' + remote['err'] if remote['err'] else ('starting…' if MODAL_ON else 'off – add MODAL_TOKEN_ID + MODAL_TOKEN_SECRET'))}"
         data = body.encode()
         self.send_response(200)

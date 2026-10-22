@@ -24,6 +24,7 @@ OUT_W = int(os.environ.get('OUT_W', '720'))
 # Encoder settings: a small server uses 2 threads / ultrafast; a strong one (Modal) uses all cores / veryfast.
 FF_THREADS = os.environ.get('FF_THREADS', '2')
 FF_PRESET = os.environ.get('FF_PRESET', 'ultrafast')
+FF_MAXRATE = os.environ.get('FF_MAXRATE', '7M')
 
 # Credit labels as people actually type them -> the label the studio shows.
 # Any of : ; - – may follow the label ("צילום; איציק אוחנה" works too).
@@ -508,7 +509,7 @@ def finish(studio, state, workdir, progress=lambda stage, p=None: None, max_byte
 
     out = os.path.join(workdir, 'harabanit.mp4')
     cmd += ['-filter_complex', ';'.join(f), '-map', '[out]'] + amap + [
-            '-c:v', 'libx264', '-preset', FF_PRESET, '-crf', '22', '-threads', FF_THREADS, '-maxrate', '9M', '-bufsize', '18M',
+            '-c:v', 'libx264', '-preset', FF_PRESET, '-crf', '22', '-threads', FF_THREADS, '-maxrate', FF_MAXRATE, '-bufsize', str(int(FF_MAXRATE.rstrip('M')) * 2) + 'M',
             '-pix_fmt', 'yuv420p', '-r', str(fps)] + acodec + [
             '-t', f'{total:.3f}', '-movflags', '+faststart', out]
     progress('video', 0.0)

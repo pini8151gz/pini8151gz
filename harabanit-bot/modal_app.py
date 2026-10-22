@@ -13,20 +13,22 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 image = (modal.Image.debian_slim(python_version='3.11')
          .apt_install('ffmpeg')
-         .env({'FF_THREADS': '0', 'FF_PRESET': 'veryfast', 'OUT_W': '1080'})
+         .env({'FF_THREADS': '0', 'FF_PRESET': 'veryfast', 'OUT_W': '1080', 'FF_MAXRATE': '5M'})
          .add_local_file(os.path.join(HERE, 'engine.py'), '/root/engine.py'))
 app = modal.App(APP_NAME)
 progress = modal.Dict.from_name(APP_NAME + '-progress', create_if_missing=True)
 
 
 @app.function(image=image, cpu=4.0, memory=4096, timeout=900)
-def build(job: dict, base: bytes, top: bytes) -> bytes:
+def build(job: dict, base: bytes, top: bytes) -> dict:
     """job: {'id', 'items': [{'url','kind','dur','audio','fps','acodec'}...], 'geo', 'info', 'max_bytes'}"""
     import shutil
     import tempfile
+    import time
     import urllib.request
     import engine
 
+    t0 = time.time()
     work = tempfile.mkdtemp(prefix='hb_')
     try:
         items = []
@@ -50,9 +52,41 @@ def build(job: dict, base: bytes, top: bytes) -> bytes:
             if stage == 'video':
                 progress[job['id']] = {'stage': 'video', 'p': p or 0}
         out, kind, info = engine.finish(None, state, work, prog, max_bytes=job.get('max_bytes', 48 * 1024 * 1024))
+        t_built = time.time()
+        size = os.path.getsize(out)
+        tg = job.get('tg')
+        # Send straight to Telegram from here (fast machine, fast network) when it fits the Bot API's 50 MB.
+        if tg and size <= 49 * 1024 * 1024:
+            progress[job['id']] = {'stage': 'send', 'p': 1}
+            r = send_video(tg, out, info)
+            if r.get('ok'):
+                return {'sent': True, 'size': size, 'build': round(t_built - t0, 1), 'send': round(time.time() - t_built, 1),
+                        'dur': info.get('dur', 0)}
         with open(out, 'rb') as f:
             data = f.read()
-        progress[job['id']] = {'stage': 'done', 'p': 1, 'dur': info.get('dur', 0), 'W': info['W'], 'H': info['H']}
-        return data
+        return {'sent': False, 'data': data, 'size': size, 'build': round(t_built - t0, 1), 'dur': info.get('dur', 0)}
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def send_video(tg, path, info):
+    """sendVideo through the Bot API (multipart, streamed from disk)."""
+    import json
+    import uuid
+    import urllib.request
+    boundary = uuid.uuid4().hex
+    fields = {'chat_id': str(tg['chat']), 'caption': tg.get('caption', ''), 'supports_streaming': 'true',
+              'width': str(info['W']), 'height': str(info['H']), 'duration': str(int(info.get('dur', 0)))}
+    head = b''.join(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in fields.items())
+    head += (f'--{boundary}\r\nContent-Disposition: form-data; name="video"; filename="harabanit.mp4"\r\n'
+             f'Content-Type: video/mp4\r\n\r\n').encode()
+    tail = f'\r\n--{boundary}--\r\n'.encode()
+    with open(path, 'rb') as f:
+        body = head + f.read() + tail
+    req = urllib.request.Request(f'https://api.telegram.org/bot{tg["token"]}/sendVideo', data=body,
+                                 headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+    try:
+        with urllib.request.urlopen(req, timeout=300) as r:
+            return json.loads(r.read().decode())
+    except Exception as e:
+        return {'ok': False, 'description': str(e)}
