@@ -484,10 +484,12 @@ def process(job):
                 path = BIG.download(it['msg_id'], work, dl_progress)
             items.append({'path': path, 'kind': it['kind']})
 
-        status('🎨 מעצב בשפת המותג…', True)
-        state = engine.prepare(studio, items, meta, work)
+        items, corner = engine.split_corner(items)
+        status('🎨 מעצב בשפת המותג…' + ('\n🔍 מנתח את התמונה לפינה…' if corner else ''), True)
+        state = engine.prepare(studio, items, meta, work, corner=corner and corner['path'])
         sid = uuid.uuid4().hex[:8]
         sess = {'sid': sid, 'chat': chat, 'work': work, 'items': items, 'meta': meta, 'state': state,
+                'corner': corner and corner['path'],
                 't': time.time(), 'busy': False, 'token': uuid.uuid4().hex + uuid.uuid4().hex[:16]}
         tokens[sess['token']] = sid
         r = api('sendPhoto', {'chat_id': str(chat), 'caption': preview_caption(sess), 'parse_mode': 'HTML',
@@ -519,7 +521,7 @@ def restyle(job):
     if not s:
         return
     try:
-        s['state'] = engine.prepare(studio, s['items'], s['meta'], s['work'])
+        s['state'] = engine.prepare(studio, s['items'], s['meta'], s['work'], corner=s.get('corner'))
         s['t'] = time.time()
         media = {'type': 'photo', 'media': 'attach://photo', 'caption': preview_caption(s), 'parse_mode': 'HTML'}
         r = api('editMessageMedia', {'chat_id': str(s['chat']), 'message_id': str(s['pmsg']), 'media': media,
@@ -634,6 +636,23 @@ def check_init_data(init):
         return None
 
 
+def corner_file(s):
+    for n in ('corner.png', 'corner.jpg'):
+        p = os.path.join(s['work'], n)
+        if os.path.exists(p):
+            return p
+    return s.get('corner')
+
+
+def corner_matte(s):
+    """The person mask the server already found for the corner photo (the phone reuses it)."""
+    try:
+        with open(os.path.join(s['work'], 'corner_matte.json')) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
 def phone_job(token):
     sid = tokens.get(token or '')
     s = sessions.get(sid) if sid else None
@@ -709,11 +728,13 @@ class Hook(BaseHTTPRequestHandler):
                                     'kicker': meta.get('kicker', ''), 'head': meta.get('head', ''),
                                     'extra': meta.get('extra', ''), 'credits': meta.get('credits', []),
                                     'items': [{'url': f'/m/{parts[1]}/{i}', 'kind': it['kind'],
-                                               'size': os.path.getsize(it['path'])} for i, it in enumerate(s['items'])]})
+                                               'size': os.path.getsize(it['path'])} for i, it in enumerate(s['items'])],
+                                    'corner': ({'url': f'/m/{parts[1]}/c', 'size': os.path.getsize(corner_file(s)),
+                                                'matte': corner_matte(s)} if s.get('corner') else None)})
         if parts[0] == 'm' and len(parts) == 3:
             s = phone_job(parts[1])
             try:
-                path = s['items'][int(parts[2])]['path'] if s else None
+                path = (corner_file(s) if parts[2] == 'c' else s['items'][int(parts[2])]['path']) if s else None
             except (ValueError, IndexError):
                 path = None
             if not path or not os.path.exists(path):

@@ -1312,7 +1312,7 @@ async function aiMatte(img,maxSide){
   const [iw,ih]=srcSize(img), sc=Math.min(1,(maxSide||768)/Math.max(iw,ih)), w=Math.round(iw*sc), h=Math.round(ih*sc);
   const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
   await nextFrame();
-  const src=tf.tidy(()=>tf.browser.fromPixels(c).expandDims(0).toFloat().div(255));
+  const src=tf.tidy(()=>tf.div(tf.cast(tf.expandDims(tf.browser.fromPixels(c),0),'float32'),255));
   const ratio=tf.scalar(Math.min(1,448/Math.max(w,h)));
   let rec=[tf.scalar(0),tf.scalar(0),tf.scalar(0),tf.scalar(0)], pha=null;
   for(let k=0;k<2;k++){ /* a few passes let the recurrent state settle on a still photo */
@@ -1992,10 +1992,17 @@ window.__botRender=async(o)=>{
   $('#extraIn').value=o.extra||''; $('#extraField').hidden=!o.extra;
   const cr=o.credits||[]; [['#c1p','#c1n'],['#c2p','#c2n']].forEach(([p,n],i)=>{ const c=cr[i]; if(c&&CREDIT_TYPES.includes(c[0])) $(p).value=c[0]; $(n).value=c?c[1]:''; });
   const want=o.theme&&THEMES.find(t=>t.id===o.theme||t.n===o.theme); S.theme=want?want.id:null; S.themeManual=!!want;
+  let corner=null;
+  if(o.cut){ /* the photo sent with the video goes in the corner; analysed once, reused when only colour/format change */
+    if(CORNER_CACHE.url===o.cut&&CORNER_CACHE.res){ cornerRestore(CORNER_CACHE.res.snap); corner=CORNER_CACHE.res.info; }
+    else { const ci=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('cut')); i.src=o.cut; });
+      let pre=null; if(o.cutMatte&&o.cutMatte.b64){ const bin=atob(o.cutMatte.b64), a=new Float32Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i)/255; pre={a,w:o.cutMatte.w,h:o.cutMatte.h}; }
+      try{ corner=await autoCorner(ci,o.cutMax||448,pre); if(corner) corner.server=!!pre; }catch(e){ S.cutSrc=null; setCut(ci,false,ci,''); S.adj.cutStyle='circle'; corner={look:'circle',err:String(e&&e.message)}; }
+      CORNER_CACHE.url=o.cut; CORNER_CACHE.res={snap:cornerSnapshot(),info:corner}; } }
   try{ await ensureFonts(); }catch(e){}
   refreshUI(); await loadLogo(S.theme); bgCache.clear();
   const [W,H]=dims();
-  if(o.kind!=='video'){ const c=renderTo(document.createElement('canvas'),1,img); return {kind:'image',W,H,theme:S.theme,jpg:c.toDataURL('image/jpeg',.94)}; }
+  if(o.kind!=='video'){ const c=renderTo(document.createElement('canvas'),1,img); return {kind:'image',W,H,theme:S.theme,corner,jpg:c.toDataURL('image/jpeg',.94)}; }
   const solid=col=>{ const c=document.createElement('canvas'); c.width=o.mw; c.height=o.mh; const x=c.getContext('2d'); x.fillStyle=col; x.fillRect(0,0,c.width,c.height); return c; };
   const A=renderTo(document.createElement('canvas'),1,solid('#000')); const info=JSON.parse(JSON.stringify(lastInfo));
   const B=renderTo(document.createElement('canvas'),1,solid('#fff'));
@@ -2004,8 +2011,37 @@ window.__botRender=async(o)=>{
     if(al<=0){ d[i]=d[i+1]=d[i+2]=0; d[i+3]=0; continue; } const k=255/al; d[i]=Math.min(255,d[i]*k); d[i+1]=Math.min(255,d[i+1]*k); d[i+2]=Math.min(255,d[i+2]*k); d[i+3]=al; }
   const O=document.createElement('canvas'); O.width=W; O.height=H; O.getContext('2d').putImageData(a,0,0);
   const fy=S.adj.fy!=null?S.adj.fy:S.analysis.fy;
-  return {kind:'video',W,H,theme:S.theme,png:O.toDataURL('image/png'),media:info.media,fx:S.adj.fx,fy,gray:themeById(S.theme).id==='silver'&&S.analysis.mood==='sad'};
+  return {kind:'video',W,H,theme:S.theme,corner,png:O.toDataURL('image/png'),media:info.media,fx:S.adj.fx,fy,gray:themeById(S.theme).id==='silver'&&S.analysis.mood==='sad'};
 };
+
+/* ---------- corner photo next to a video: decide the look automatically ----------
+   Already cut out -> as is. One or two people with a clean outline -> background removed, white sticker edge.
+   A crowd, a face that fills the photo, a blurry outline or no person -> a framed circle centred on the face. */
+const CORNER_CACHE={url:null,res:null};
+async function autoCorner(img,maxSide,pre){
+  S.cutSrc=null; Object.assign(S.adj,{cutStyle:'auto',cutScale:1,cutZoom:1,cutFx:.5,cutFy:.3,cutX:0,cutY:0});
+  if(hasAlpha(img)){ setCut(img,true,img,'גזורה'); return {look:'transparent'}; }
+  let m=null, f=null, err=null; try{ m=pre||await aiMatte(img,maxSide||512); f=figures(m); }catch(e){ m=null; f=null; err=String(e&&e.message||e).slice(0,160); }
+  const n=m?m.w*m.h:1, area=f&&f.best?f.area/n:0;
+  let cov=0, unc=0, x0=1e9, y0=1e9, x1=-1, y1=-1;
+  if(m&&f&&f.best){ for(let i=0;i<n;i++){ const v=m.a[i]; if(v>.5){ cov++; if(f.lab[i]===f.best){ const x=i%m.w, y=(i-x)/m.w; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } } if(v>.15&&v<.85) unc++; } }
+  const clean=cov>0 && unc/cov<.2, person=area>=.04;
+  const bw=x1-x0+1, bh=y1-y0+1, touches=person&&(x0<=1&&x1>=m.w-2);   /* figure runs off both sides: a close-up */
+  if(person && f.count<=2 && area<=.6 && clean && !touches){
+    const sel=splitMain(m,f), masks={main:matteMask(m,f,true,sel)}; masks.blob=sel?matteMask(m,f,true):null; masks.all=f.count>1?matteMask(m,f,false):null;
+    const preset={cutLine:'white'}; if(f.count===2&&masks.all) preset.cutSel='all';
+    if(bh>bw*2.3) preset.cutCrop='hs';   /* a full standing figure reads better as head and shoulders */
+    startLook(img,m,masks,preset); S.adj.cutStyle='cut';
+    return {look:'cutout',people:f.count,area:+area.toFixed(3)};
+  }
+  setCut(img,false,img,''); S.adj.cutStyle='circle';
+  if(person){ S.adj.cutFx=Math.max(0,Math.min(1,(x0+x1)/2/m.w)); S.adj.cutFy=Math.max(0,Math.min(1,(y0+bh*.22)/m.h));
+    S.adj.cutZoom=Math.max(1,Math.min(2.2,Math.sqrt(.3/Math.max(.05,area)))); }
+  else { S.adj.cutFx=.5; S.adj.cutFy=.4; }
+  return {look:'circle',people:f?f.count:0,area:+area.toFixed(3),clean,err};
+}
+function cornerSnapshot(){ const keep={}; Object.keys(S.adj).filter(k=>k.startsWith('cut')).forEach(k=>keep[k]=S.adj[k]); return {cut:S.cut,cutSrc:S.cutSrc,adj:keep}; }
+function cornerRestore(c){ S.cut=c.cut; S.cutSrc=c.cutSrc; Object.assign(S.adj,c.adj); }
 
 /* ---------- Telegram: build the bot's video here, on the phone ----------
    The bot opens this page with ?tg=<token>. The material and the design choices come from the bot,
@@ -2060,10 +2096,13 @@ async function tgRun(){
   try{
     const jr=await fetch(TG_API+'/j/'+encodeURIComponent(TG_TOKEN)); const job=await jr.json().catch(()=>({}));
     if(!job.ok) return fail(job.error==='expired'?'פג התוקף – שלחו שוב לרובוט':'לא הצלחתי להתחבר לרובוט');
-    const files=[], n=job.items.length, all=job.items.reduce((a,i)=>a+(i.size||0),0); let before=0;
+    const files=[], n=job.items.length, all=job.items.reduce((a,i)=>a+(i.size||0),0)+(job.corner?job.corner.size||0:0); let before=0;
     for(let i=0;i<n;i++){ const it=job.items[i];
       const b=await tgFetch(TG_API+it.url,(got,tot)=>set('⬇️ מוריד את החומר',(before+got)/(all||tot||1),mb(before+got)+(all?' מתוך '+mb(all):'')));
       before+=b.size; files.push(new File([b],'clip'+i+'.mp4',{type:b.type||'video/mp4'})); }
+    let cornerImg=null;
+    if(job.corner){ const cb=await tgFetch(TG_API+job.corner.url,(got)=>set('⬇️ מוריד את החומר',(before+got)/(all||1),mb(before+got)+' מתוך '+mb(all)));
+      cornerImg=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('cut')); i.src=URL.createObjectURL(cb); }); }
     set('🎨 פותח לעריכה',1,'');
     stopPlay(); S.isExample=false; S.ai=null; S.cut=null; S.cutSrc=null; S.media2=null;
     S.format=job.format==='post'?'post':'story';
@@ -2076,6 +2115,9 @@ async function tgRun(){
     $('#extraIn').value=job.extra||''; $('#extraField').hidden=!job.extra;
     const cr=job.credits||[]; [['#c1p','#c1n'],['#c2p','#c2n']].forEach(([p,q],i)=>{ const c=cr[i]; if(c&&CREDIT_TYPES.includes(c[0])) $(p).value=c[0]; $(q).value=c?c[1]:''; });
     const want=job.theme&&THEMES.find(t=>t.id===job.theme); S.theme=want?want.id:null; S.themeManual=!!want;
+    if(cornerImg){ set('🔍 מנתח את התמונה לפינה',1,''); const cm=job.corner.matte; let pre=null;
+      if(cm&&cm.b64){ const bin=atob(cm.b64), a=new Float32Array(bin.length); for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i)/255; pre={a,w:cm.w,h:cm.h}; }
+      try{ await autoCorner(cornerImg,512,pre); }catch(e){ S.cutSrc=null; setCut(cornerImg,false,cornerImg,''); S.adj.cutStyle='circle'; } }
     try{ await ensureFonts(); }catch(e){}
     refreshUI(); await loadLogo(S.theme); bgCache.clear(); setMediaUI(); resetSeq(); enterStudio(); draw();
     show(false);

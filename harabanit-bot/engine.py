@@ -316,8 +316,71 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
 # ---------------------------------------------------------------- pipeline
 # Two steps: prepare() designs and returns a quick preview picture (seconds),
 # finish() builds the final file (the slow part for videos) after approval.
-def prepare(studio, items, meta, workdir):
-    """items: [{'path':..., 'kind':'image'|'video'}] in order. Returns a state dict with 'preview' (JPG path)."""
+def split_corner(items):
+    """A photo sent together with video(s): the videos are the main media, the (first) photo goes in the corner."""
+    vids = [i for i in items if i['kind'] == 'video']
+    imgs = [i for i in items if i['kind'] == 'image']
+    if vids and imgs:
+        return vids[:2], imgs[0]
+    return items, None
+
+
+def corner_data_url(path, workdir):
+    """The corner photo, at most 1024 px, as a data URL (PNG keeps transparency)."""
+    keep_alpha = os.path.splitext(path)[1].lower() in ('.png', '.webp')
+    out = os.path.join(workdir, 'corner.png' if keep_alpha else 'corner.jpg')
+    if not os.path.exists(out):
+        run(['ffmpeg', '-y', '-v', 'error', '-i', path, '-vf',
+             "scale='min(1024,iw)':'min(1024,ih)':force_original_aspect_ratio=decrease", '-frames:v', '1']
+            + ([] if keep_alpha else ['-q:v', '3']) + [out])
+    return data_url(out, 'image/png' if keep_alpha else 'image/jpeg'), out
+
+
+RVM_ONNX = os.environ.get('RVM_ONNX', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models', 'rvm.onnx'))
+
+
+def person_matte(path, workdir, max_side=512):
+    """Where the people are in a photo (alpha 0..255), found with the RVM model on the CPU.
+    Same model the studio runs on the phone; here it takes seconds instead of minutes in the browser.
+    Returns {'w','h','b64'} or None (no model / no library)."""
+    cache = os.path.join(workdir, 'corner_matte.json')
+    if os.path.exists(cache):
+        with open(cache) as f:
+            return json.load(f)
+    try:
+        import numpy as np
+        import onnxruntime as ort
+        from PIL import Image
+    except ImportError:
+        return None
+    if not os.path.exists(RVM_ONNX):
+        return None
+    im = Image.open(path).convert('RGB')
+    k = min(1.0, max_side / max(im.size))
+    w, h = max(2, round(im.width * k)), max(2, round(im.height * k))
+    im = im.resize((w, h), Image.BILINEAR)
+    x = (np.asarray(im, dtype=np.float32) / 255.0).transpose(2, 0, 1)[None]
+    so = ort.SessionOptions()
+    so.intra_op_num_threads = 1
+    so.inter_op_num_threads = 1
+    sess = ort.InferenceSession(RVM_ONNX, so, providers=['CPUExecutionProvider'])
+    rec = [np.zeros((1, 1, 1, 1), np.float32)] * 4
+    ratio = np.array([min(1.0, 448 / max(w, h))], np.float32)
+    pha = None
+    for _ in range(2):   # a second pass lets the recurrent state settle on a still photo
+        out = sess.run(None, {'src': x, 'r1i': rec[0], 'r2i': rec[1], 'r3i': rec[2], 'r4i': rec[3], 'downsample_ratio': ratio})
+        pha, rec = out[1], out[2:6]
+    del sess
+    a = np.clip(pha[0, 0] * 255 + .5, 0, 255).astype(np.uint8)
+    res = {'w': int(a.shape[1]), 'h': int(a.shape[0]), 'b64': base64.b64encode(a.tobytes()).decode()}
+    with open(cache, 'w') as f:
+        json.dump(res, f)
+    return res
+
+
+def prepare(studio, items, meta, workdir, corner=None):
+    """items: [{'path':..., 'kind':'image'|'video'}] in order; corner: optional photo path for the corner.
+    Returns a state dict with 'preview' (JPG path)."""
     for it in items:
         if 'w' not in it:
             it.update(probe(it['path']))
@@ -332,6 +395,12 @@ def prepare(studio, items, meta, workdir):
     opts = {'format': fmt, 'kicker': meta.get('kicker', ''), 'head': meta.get('head', ''),
             'extra': meta.get('extra', ''), 'credits': meta.get('credits', []), 'theme': meta.get('theme'),
             'poster': data_url(poster)}
+    if corner:
+        opts['cut'], cfile = corner_data_url(corner, workdir)
+        try:
+            opts['cutMatte'] = person_matte(cfile, workdir)
+        except Exception as e:   # the studio falls back to its own detection
+            print('matte failed:', e, flush=True)
 
     # A single photo -> the preview is already the finished picture.
     if len(items) == 1 and first['kind'] == 'image':
@@ -369,7 +438,7 @@ def prepare(studio, items, meta, workdir):
          f"[1:v]{clip}[p];[base2][p]overlay={x0}:{y0}[pb];[pb][top2]overlay={x0}:{y0}[prev]",
          '-map', '[base]', '-frames:v', '1', base_png, '-map', '[top]', '-frames:v', '1', top_png,
          '-map', '[prev]', '-frames:v', '1', '-q:v', '3', preview])
-    return {'mode': 'video', 'preview': preview, 'items': items, 'base': base_png, 'top': top_png,
+    return {'mode': 'video', 'preview': preview, 'items': items, 'base': base_png, 'top': top_png, 'corner': res.get('corner'),
             'geo': {'W': W, 'H': H, 'dw': dw, 'dh': dh, 'X': X, 'Y': Y, 'x0': x0, 'y0': y0, 'cw': cw, 'ch': ch, 'gray': gray},
             'info': {'theme': res.get('theme'), 'format': fmt, 'W': W, 'H': H,
                      'fx': res.get('fx', .5), 'fy': res.get('fy', .5), 'gray': bool(res.get('gray'))}}
