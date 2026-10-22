@@ -703,7 +703,7 @@ function wordsOf(text){ const out=[]; text.split('\n').forEach((ln,i)=>{ if(i&&o
 
 const layoutCache=new Map();
 function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
-  const key=[words.join(' '),maxW,maxH,maxSize,minSize,lhR,maxLines,light?1:0,S.kit.headFont,S.adj.weight,S.adj.ls,document.fonts.status,'nat5'].join('|');
+  const key=[words.join(' '),maxW,maxH,maxSize,minSize,lhR,maxLines,light?1:0,S.kit.headFont,S.adj.weight,S.adj.ls,document.fonts.status,'nat8'].join('|');
   setLS(ctx);
   const hit=layoutCache.get(key); if(hit) return hit;
   /* break the words at one font size: greedy, then balanced so the lines are about the same length */
@@ -726,7 +726,7 @@ function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
   if(!light && best && !best.over){
     /* one line less reads better (two full lines rather than three short ones): allow a slightly smaller font for it */
     const n=best.lines.length;
-    if(n>1) for(let size=best.size-1; size>=Math.max(minSize,best.size*.88); size-=1){ const L=mk(size); if(ok(L)&&L.lines.length<n){ best=L; break; } }
+    if(n>1) for(let size=best.size-1; size>=Math.max(minSize,best.size*(n>2?.72:.8)); size-=1){ const L=mk(size); if(ok(L)&&L.lines.length<n){ best=L; break; } }
     const longest=Math.max(...best.lines.map(l=>l.w));
     best.fill=longest>=maxW*.9;
   }
@@ -766,8 +766,8 @@ function drawJustified(ctx,L,xRight,maxW,yTop,color,align,opt){
       const target=L.fill?maxW:Math.max(...L.lines.map(l=>l.w)), need=target-ln.w;
       if(need>0){ const chars=ln.words.reduce((a,w)=>a+[...w.t].length,0);
         /* only a touch, and only when needed: tiny letter spacing, then slightly wider word gaps; the rest stays centred */
-        lsx=Math.min(need*(n>1?.4:1)/Math.max(1,chars), L.size*.018);
-        const left=need-lsx*chars; const extra=n>1?Math.min(left/(n-1), L.sp*.45):0;
+        lsx=Math.min(need*(n>1?.25:1)/Math.max(1,chars), L.size*.015);
+        const left=need-lsx*chars; const extra=n>1?Math.min(left/(n-1), L.sp*1.2):0;
         gap=L.sp+Math.max(0,extra); lw=sum+lsx*chars+gap*Math.max(0,n-1); } }
     if(lsx&&'letterSpacing' in ctx) ctx.letterSpacing=((S.adj.ls||0)+lsx)+'px'; else if(!lsx) setLS(ctx);
     let x = align==='center' ? xRight-(maxW-lw)/2 : xRight;
@@ -850,7 +850,9 @@ function renderBrand(ctx,W,H,src,scale){
   const s=W/1080, story=S.format==='story', T=themeById(S.theme), P=palette(T), a=S.analysis, A=S.adj;
   ctx.drawImage(background(T,W,H,scale),0,0,W,H);
   const framed=A.frame==='frame', inset=framed?44*s:0;
-  const m=Math.max(A.boxM*s, framed?inset:0), padX=(A.pad+6)*s, padY=A.pad*s, tw=W-2*m-2*padX;
+  /* the headline box lines up exactly with the video's edges (videos keep a strip of background on the sides) */
+  const vSide=!framed&&S.media&&S.media.type==='video'?58*s:0;
+  const m=Math.max(A.boxM*s, framed?inset:0, vSide), padX=(A.pad+6)*s, padY=A.pad*s, tw=W-2*m-2*padX;
   const k=effectiveKicker(); const head=$('#headIn').value.trim(); const own=ownKicker(head); const kN=k?wordsOf(k).length:own?wordsOf(own).length:0;
   const words=wordsOf((k?k+' ':'')+head); if(!words.length) words.push('כותרת');
   const L=layout(ctx,words,tw,H*(story?.2:.24),60*s*A.scale,Math.min(40,34*A.scale+6)*s,A.lh,story?5:4,false);
@@ -860,7 +862,7 @@ function renderBrand(ctx,W,H,src,scale){
   const boxH=padY*2+L.h+(L2?gap+L2.h:0);
   const safeTop=(story?196:30)*s, bottomPad=(story?26:22)*s, between=framed?16*s:0;
   /* videos always keep a strip of the background on both sides (brand look) */
-  const mx=framed?inset:(S.media&&S.media.type==='video'?58*s:0), mw=W-2*mx; const [sw,sh]=srcSize(src); const natural=mw*(sh/(sw||1));
+  const mx=framed?inset:vSide, mw=W-2*mx; const [sw,sh]=srcSize(src); const natural=mw*(sh/(sw||1));
   const avail=Math.max(120*s,H-bottomPad-safeTop-boxH-between);
   const fill=A.mFill==='fill'||natural>=avail;
   const mediaH=fill?avail:natural;
