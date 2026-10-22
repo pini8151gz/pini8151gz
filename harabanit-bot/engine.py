@@ -184,10 +184,8 @@ def even(n):
 
 # ---------------------------------------------------------------- progress picture
 # While the video is built, the chat shows the brand logo filling with colour (like the studio's export screen).
-THEME_HEX = {'sky': '#19A3F3', 'purple': '#784ECE', 'indigo': '#350AD3', 'blue': '#2B6AE6', 'lime': '#73BA3C',
-             'forest': '#064520', 'mint': '#15E78E', 'teal': '#00AFB4', 'pink': '#F90B78', 'magenta': '#EC00C7',
-             'red': '#EF2A1A', 'coral': '#F96249', 'orange': '#E98139', 'yellow': '#EFE15A', 'silver': '#A9ABB0',
-             'copper': '#9A6436'}
+THEME_HEX = {'red': '#EF2A1A', 'orange': '#E98139', 'yellow': '#EFE15A', 'lime': '#73BA3C', 'blue': '#2B6AE6',
+             'purple': '#784ECE'}
 _FONT = next((f for f in ('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
                           '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf') if os.path.exists(f)), None)
 

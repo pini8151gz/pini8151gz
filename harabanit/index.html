@@ -377,7 +377,7 @@ body.noscroll{overflow:hidden}
 
 <div class="app" dir="rtl" lang="he" hidden>
   <header class="top">
-    <div class="brand"><img id="brandLogo" alt="" src="logos/sky.webp">
+    <div class="brand"><img id="brandLogo" alt="" src="logos/blue.webp">
       <div class="brand-name">הרבנית סטודיו</div></div>
   </header>
 
@@ -464,7 +464,7 @@ body.noscroll{overflow:hidden}
     <div class="dock-body">
       <div class="adj-group" data-group="color">
         <div class="tgrid" id="themeGrid" role="group" aria-label="כל הצבעים"></div>
-        <label class="custom-color"><input type="color" id="customColor" value="#C2185B"><span>צבע משלכם</span></label>
+
       </div>
 
       <div class="adj-group" data-group="text" hidden>
@@ -611,25 +611,14 @@ const DEFAULT_KIT={name:'הרבנית',headFont:'Rubik',fontData:null,fontName:'
 
 /* the 16 official logo colors */
 const THEMES=[
-  /* the brand's own colours: real backgrounds and logos (bg/, logos/) */
-  {id:'red',n:'אדום',c:'#EF2A1A',bg:1},{id:'orange',n:'כתום',c:'#E98139',bg:1},{id:'yellow',n:'צהוב',c:'#EFE15A',bg:1},{id:'lime',n:'ירוק',c:'#73BA3C',bg:1},{id:'blue',n:'כחול',c:'#2B6AE6',bg:1},{id:'purple',n:'סגול',c:'#784ECE',bg:1},
-  {id:'sky',n:'תכלת',c:'#19A3F3'},{id:'indigo',n:'אינדיגו',c:'#350AD3'},
-  {id:'forest',n:'ירוק כהה',c:'#064520'},
-  {id:'mint',n:'מנטה',c:'#15E78E'},{id:'teal',n:'טורקיז',c:'#00AFB4'},{id:'pink',n:'ורוד',c:'#F90B78'},
-  {id:'magenta',n:'מג׳נטה',c:'#EC00C7'},{id:'coral',n:'אלמוג',c:'#F96249'},
-  {id:'silver',n:'כסף',c:'#A9ABB0',metal:['#E6E7EA','#B9BBC0','#7E8187']},
-  {id:'copper',n:'נחושת',c:'#9A6436',metal:['#D9A57A','#A86C3D','#5E3418']},
-  {id:'gold',n:'זהב',c:'#D4A21A',base:'red'},{id:'burgundy',n:'בורדו',c:'#8C1D3B',base:'red'},{id:'navy',n:'נייבי',c:'#1D2D6B',base:'red'},
-  {id:'royal',n:'כחול רויאל',c:'#2847C9',base:'red'},{id:'ice',n:'תכלת בהיר',c:'#6CC7F0',base:'red'},{id:'petrol',n:'פטרול',c:'#0D6E7A',base:'red'},
-  {id:'emerald',n:'אמרלד',c:'#0F9D63',base:'red'},{id:'olive',n:'זית',c:'#6E7F2B',base:'red'},{id:'sage',n:'מרווה',c:'#8FB79A',base:'red'},
-  {id:'lavender',n:'לבנדר',c:'#9B7FE6',base:'red'},{id:'plum',n:'שזיף',c:'#5B2370',base:'red'},{id:'raspberry',n:'פטל',c:'#C2185B',base:'red'},
-  {id:'rose',n:'ורוד עתיק',c:'#C97A86',base:'red'},{id:'peach',n:'אפרסק',c:'#F5A07A',base:'red'},{id:'sand',n:'חול',c:'#C9A77C',base:'red'},
-  {id:'chocolate',n:'שוקולד',c:'#5E3B24',base:'red'},{id:'charcoal',n:'פחם',c:'#2B2B30',base:'red'}
+  /* only the brand's own colours: the real backgrounds and logos from the brand folder (bg/, logos/) */
+  {id:'red',n:'אדום',c:'#EF2A1A',bg:1},{id:'orange',n:'כתום',c:'#E98139',bg:1},{id:'yellow',n:'צהוב',c:'#EFE15A',bg:1},
+  {id:'lime',n:'ירוק',c:'#73BA3C',bg:1},{id:'blue',n:'כחול',c:'#2B6AE6',bg:1},{id:'purple',n:'סגול',c:'#784ECE',bg:1}
 ];
-const OFFICIAL=16;
+const OFFICIAL=6;
 const KICKERS=['מזל טוב!','צדיק!','צדיקה!','היסטוריה במגזר!','מחובר למגזר!','ברכה והצלחה!','ברכת צדיק!','מרגש!','צפו!','בלעדי!','מבזק!','תיעוד!','נדיר!','חזק!','וואו!','שמחה גדולה!','אשת חיל!','קידוש השם!','מעורר השראה!','רגע היסטורי!','סוף סוף!','לא נעים!','ברוך דיין האמת'];
-const KICKER_THEME={'מזל טוב!':'sky','צדיק!':'yellow','צדיקה!':'pink','היסטוריה במגזר!':'copper','רגע היסטורי!':'copper','מחובר למגזר!':'purple','ברכה והצלחה!':'lime','ברכת צדיק!':'yellow','מרגש!':'magenta','צפו!':'indigo','בלעדי!':'orange','מבזק!':'red','תיעוד!':'teal','נדיר!':'copper','חזק!':'red','וואו!':'magenta','שמחה גדולה!':'sky','אשת חיל!':'pink','קידוש השם!':'forest','מעורר השראה!':'mint','סוף סוף!':'coral','לא נעים!':'red','ברוך דיין האמת':'silver'};
-const MOOD_THEME={celebration:'sky',blessing:'lime',sector:'purple',sad:'silver',embarrassing:'red',exclusive:'orange',news:'purple'};
+const KICKER_THEME={'מזל טוב!':'blue','צדיק!':'yellow','צדיקה!':'purple','היסטוריה במגזר!':'orange','רגע היסטורי!':'orange','מחובר למגזר!':'purple','ברכה והצלחה!':'lime','ברכת צדיק!':'yellow','מרגש!':'purple','צפו!':'blue','בלעדי!':'orange','מבזק!':'red','תיעוד!':'blue','נדיר!':'orange','חזק!':'red','וואו!':'purple','שמחה גדולה!':'blue','אשת חיל!':'purple','קידוש השם!':'lime','מעורר השראה!':'lime','סוף סוף!':'orange','לא נעים!':'red','ברוך דיין האמת':'blue'};
+const MOOD_THEME={celebration:'blue',blessing:'lime',sector:'purple',sad:'blue',embarrassing:'red',exclusive:'orange',news:'purple'};
 const CREDIT_TYPES=['צילום:','צילום וידאו:','צילום תמונה:','בהפקת:','מפיק:','באדיבות:','קרדיט:','מתוך:'];
 
 const S={format:'story',media:null,cut:null,isExample:true,kit:loadKit(),logos:{},
@@ -1048,7 +1037,7 @@ $('#kCustom').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefa
 /* ---------- entry screen ---------- */
 let wTimer=0;
 function startWelcome(){
-  const ids=['red','sky','purple','lime','orange','pink','teal','yellow','indigo','magenta','coral','mint','blue','forest','silver','copper'];
+  const ids=['red','blue','purple','lime','orange','yellow'];
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   let i=0, front=$('#wLogoA'), back=$('#wLogoB');
   wTimer=setInterval(()=>{ i=(i+1)%ids.length; const id=ids[i];
@@ -1824,7 +1813,7 @@ function syncAdj(){
 }
 document.querySelectorAll('.adj input[type=range][data-k]').forEach(i=>i.addEventListener('input',()=>{ S.adj[i.dataset.k]=+i.value; draw(); syncAdj(); }));
 document.querySelectorAll('.adj .pills[data-k]').forEach(p=>p.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; S.adj[p.dataset.k]=b.dataset.v; draw(); syncAdj(); }));
-$('#customColor').addEventListener('change',e=>{
+$('#customColor')&&$('#customColor').addEventListener('change',e=>{
   let T=THEMES.find(t=>t.id==='custom'); if(!T){ T={id:'custom',n:'משלכם',c:e.target.value,base:'red'}; THEMES.push(T); }
   T.c=e.target.value; delete S.logos.custom; document.querySelectorAll('[data-id="custom"]').forEach(n=>n.remove());
   $('#themes').appendChild(themeChip(T)); $('#themeGrid').appendChild(themeChip(T)); bgCache.clear();

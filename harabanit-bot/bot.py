@@ -234,11 +234,8 @@ ORIGINS = {o.strip().rstrip('/') for o in os.environ.get('SITE_ORIGINS', 'https:
 MAX_UPLOAD = 2 * 1024 * 1024 * 1024
 
 # The studio's 16 brand colours (id, emoji, name) for the colour buttons.
-COLORS = [('red', '🔴', 'אדום'), ('orange', '🟠', 'כתום'), ('yellow', '🟡', 'צהוב'), ('lime', '🟢', 'ירוק'),
-          ('blue', '🔵', 'כחול'), ('purple', '🟣', 'סגול'),
-          ('sky', '🩵', 'תכלת'), ('indigo', '🟦', 'אינדיגו'), ('forest', '🌲', 'ירוק כהה'), ('mint', '🌿', 'מנטה'),
-          ('teal', '💠', 'טורקיז'), ('pink', '🩷', 'ורוד'), ('magenta', '🌸', 'מג׳נטה'), ('coral', '🪸', 'אלמוג'),
-          ('silver', '⚪', 'כסף'), ('copper', '🟤', 'נחושת')]
+COLORS = [('red', '🔴', 'אדום'), ('orange', '🟠', 'כתום'), ('yellow', '🟡', 'צהוב'),
+          ('lime', '🟢', 'ירוק'), ('blue', '🔵', 'כחול'), ('purple', '🟣', 'סגול')]
 COLOR = {c[0]: c for c in COLORS}
 
 
@@ -334,7 +331,7 @@ def colors_kb(s):
     rows, row = [], []
     for cid, emo, name in COLORS:
         row.append({'text': ('✓' if cid == cur else emo) + ' ' + name, 'callback_data': f'c:{cid}:{sid}'})
-        if len(row) == 4:
+        if len(row) == 3:
             rows.append(row)
             row = []
     rows.append([{'text': '↩️ חזרה', 'callback_data': f'cb:{sid}'}])
