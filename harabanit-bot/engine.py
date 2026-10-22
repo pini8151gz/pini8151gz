@@ -221,63 +221,81 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
 
 
 # ---------------------------------------------------------------- pipeline
-def make(studio, items, meta, workdir, progress=lambda stage, p=None: None, max_bytes=48 * 1024 * 1024):
-    """items: [{'path':..., 'kind':'image'|'video'}] in order. Returns (path, kind, info)."""
+# Two steps: prepare() designs and returns a quick preview picture (seconds),
+# finish() builds the final file (the slow part for videos) after approval.
+def prepare(studio, items, meta, workdir):
+    """items: [{'path':..., 'kind':'image'|'video'}] in order. Returns a state dict with 'preview' (JPG path)."""
     for it in items:
-        it.update(probe(it['path']))
-        if it['kind'] == 'image':
-            it['dur'] = PHOTO_SECS
-            it['audio'] = False
+        if 'w' not in it:
+            it.update(probe(it['path']))
+            if it['kind'] == 'image':
+                it['dur'] = PHOTO_SECS
+                it['audio'] = False
     fmt = meta.get('format') or 'story'
     first = items[0]
-    poster = poster_of(first['path'], first['kind'], first['dur'], os.path.join(workdir, 'poster.jpg'))
+    poster = os.path.join(workdir, 'poster.jpg')
+    if not os.path.exists(poster):
+        poster_of(first['path'], first['kind'], first['dur'], poster)
     opts = {'format': fmt, 'kicker': meta.get('kicker', ''), 'head': meta.get('head', ''),
             'extra': meta.get('extra', ''), 'credits': meta.get('credits', []), 'theme': meta.get('theme'),
             'poster': data_url(poster)}
 
-    # A single photo -> a finished picture.
+    # A single photo -> the preview is already the finished picture.
     if len(items) == 1 and first['kind'] == 'image':
-        progress('design')
         opts['kind'] = 'image'
         res = studio.render(opts)
         out = save_data_url(res['jpg'], os.path.join(workdir, 'harabanit.jpg'))
-        return out, 'image', {'theme': res.get('theme'), 'format': fmt, 'W': res['W'], 'H': res['H']}
+        return {'mode': 'image', 'out': out, 'preview': out, 'items': items,
+                'info': {'theme': res.get('theme'), 'format': fmt, 'W': res['W'], 'H': res['H']}}
 
-    # Video (or several clips / photos) -> MP4.
-    # Work at roughly the output size: a 4K phone clip is scaled down once, early.
     k = min(1.0, 1280 / max(first['w'], first['h']))
-    mw, mh = even(first['w'] * k), even(first['h'] * k)
-    opts.update({'kind': 'video', 'mw': mw, 'mh': mh})
-    progress('design')
+    opts.update({'kind': 'video', 'mw': even(first['w'] * k), 'mh': even(first['h'] * k)})
     res = studio.render(opts)
-    # Free the browser's memory before ffmpeg starts (a small server can't hold both).
-    studio.close()
     overlay = save_data_url(res['png'], os.path.join(workdir, 'overlay.png'))
     # Everything below works at the output size (default 720 wide): the design layer is scaled once.
     q = min(1.0, OUT_W / res['W'])
     W, H = even(res['W'] * q), even(res['H'] * q)
     m = {k2: res['media'][k2] * q for k2 in ('x', 'y', 'w', 'h', 'dw', 'dh')}
     dw, dh = even(m['dw']), even(m['dh'])
-    mw, mh = dw, dh   # clips are scaled straight to their final size, once
     X = round(m['x'] + (m['w'] - m['dw']) * res['fx'])
     Y = round(m['y'] + (m['h'] - m['dh']) * res['fy'])
-
-    # Frame rate: never above the source (a 25 fps clip stays 25, 50/60 fps drops to 30).
-    fps = max(15, min(FPS, round(min(it.get('fps', FPS) if it['kind'] == 'video' else FPS for it in items))))
-    total = sum(it['dur'] for it in items) - XF * (len(items) - 1)
     gray = ',hue=s=0' if res.get('gray') else ''
-    # Visible part of the media area (inside the frame). Clips are cut to exactly this, early,
-    # so every later step (crossfade, blending, encoding input) touches fewer pixels.
+    # Visible part of the media area (inside the frame). Clips are cut to exactly this, early.
     x0, y0 = even(max(0, m['x'], X)), even(max(0, m['y'], Y))
     x1, y1 = min(W, m['x'] + m['w'], X + dw), min(H, m['y'] + m['h'], Y + dh)
     cw, ch = even(x1 - x0), even(y1 - y0)
     # Two still images, made once: the full design over black (base), and the design layer
     # cut to the media area (top: credit, logo, corner picture over the video).
     base_png, top_png = os.path.join(workdir, 'base.png'), os.path.join(workdir, 'top.png')
-    run(['ffmpeg', '-y', '-v', 'error', '-i', overlay, '-filter_complex',
+    preview = os.path.join(workdir, 'preview.jpg')
+    clip = (f"scale={dw}:{dh}:force_original_aspect_ratio=increase:flags=bicubic,"
+            f"crop={dw}:{dh},crop={cw}:{ch}:{x0 - X}:{y0 - Y}{gray},setsar=1")
+    run(['ffmpeg', '-y', '-v', 'error', '-i', overlay, '-i', poster, '-filter_complex',
          f"[0:v]scale={W}:{H}:flags=lanczos,format=rgba,split[a][b];color=c=black:s={W}x{H}:d=1[bk];"
-         f"[bk][a]overlay=0:0:format=auto,format=rgb24[base];[b]crop={cw}:{ch}:{x0}:{y0}[top]",
-         '-map', '[base]', '-frames:v', '1', base_png, '-map', '[top]', '-frames:v', '1', top_png])
+         f"[bk][a]overlay=0:0:format=auto,format=rgb24,split[base][base2];[b]crop={cw}:{ch}:{x0}:{y0},split[top][top2];"
+         f"[1:v]{clip}[p];[base2][p]overlay={x0}:{y0}[pb];[pb][top2]overlay={x0}:{y0}[prev]",
+         '-map', '[base]', '-frames:v', '1', base_png, '-map', '[top]', '-frames:v', '1', top_png,
+         '-map', '[prev]', '-frames:v', '1', '-q:v', '3', preview])
+    return {'mode': 'video', 'preview': preview, 'items': items, 'base': base_png, 'top': top_png,
+            'geo': {'W': W, 'H': H, 'dw': dw, 'dh': dh, 'X': X, 'Y': Y, 'x0': x0, 'y0': y0, 'cw': cw, 'ch': ch, 'gray': gray},
+            'info': {'theme': res.get('theme'), 'format': fmt, 'W': W, 'H': H}}
+
+
+def finish(studio, state, workdir, progress=lambda stage, p=None: None, max_bytes=48 * 1024 * 1024):
+    """Build the final file from a prepared state. Returns (path, kind, info)."""
+    if state['mode'] == 'image':
+        return state['out'], 'image', state['info']
+    # Free the browser's memory before ffmpeg starts (a small server can't hold both).
+    studio.close()
+    items, g = state['items'], state['geo']
+    W, H, dw, dh, X, Y = g['W'], g['H'], g['dw'], g['dh'], g['X'], g['Y']
+    x0, y0, cw, ch, gray = g['x0'], g['y0'], g['cw'], g['ch'], g['gray']
+    base_png, top_png = state['base'], state['top']
+    res = state['info']
+    fmt = res['format']
+    # Frame rate: never above the source (a 25 fps clip stays 25, 50/60 fps drops to 30).
+    fps = max(15, min(FPS, round(min(it.get('fps', FPS) if it['kind'] == 'video' else FPS for it in items))))
+    total = sum(it['dur'] for it in items) - XF * (len(items) - 1)
 
     cmd = ['ffmpeg', '-y', '-v', 'error', '-nostats', '-progress', 'pipe:1', '-filter_complex_threads', '1']
     for it in items:
@@ -348,3 +366,9 @@ def make(studio, items, meta, workdir, progress=lambda stage, p=None: None, max_
              '-c:a', 'copy', '-movflags', '+faststart', small])
         out = small
     return out, 'video', {'theme': res.get('theme'), 'format': fmt, 'W': W, 'H': H, 'dur': total}
+
+
+def make(studio, items, meta, workdir, progress=lambda stage, p=None: None, max_bytes=48 * 1024 * 1024):
+    """Design and build in one go (no preview step)."""
+    progress('design')
+    return finish(studio, prepare(studio, items, meta, workdir), workdir, progress, max_bytes)

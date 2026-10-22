@@ -56,7 +56,7 @@ HELP = (
     '• שורה ראשונה קצרה עם ! – מילת פתיחה\n'
     '• הכותרת – בשורה הבאה. פסקה נוספת אחרי שורה ריקה = טקסט נוסף\n'
     '• קרדיטים – צילום: / צילום וידאו: / צילום תמונה: / באדיבות: / בהפקת: / מפיק: / קרדיט: / מתוך:\n'
-    '• #פוסט או #סטורי לבחירת פורמט, #סגול / #אדום וכו׳ לבחירת צבע\n'
+    '• מקבלים תצוגה מקדימה תוך שניות, עם כפתורים: סטורי / פוסט, צבע, ✅ אשר\n'
     '• קובץ גדול? שלחו קישור (גוגל דרייב / דרופבוקס / קישור ישיר) עם הטקסט\n\n'
     'אפשר גם לשלוח קודם את המדיה ואחר כך את הטקסט (או הפוך).\n'
     'פקודות: /post פוסט כברירת מחדל · /story סטורי כברירת מחדל · /id המזהה שלי'
@@ -69,6 +69,15 @@ lock = threading.Lock()
 albums = {}       # media_group_id -> {'chat', 'user', 'items', 'caption', 'timer'}
 pending = {}      # chat_id -> {'items': [...], 'text': str, 't': time}
 prefs = {}        # chat_id -> {'format': 'story'|'post'}
+sessions = {}     # sid -> a design waiting for approval (preview already sent)
+SESSION_TTL = 45 * 60
+
+# The studio's 16 brand colours (id, emoji, name) for the colour buttons.
+COLORS = [('sky', '🩵', 'תכלת'), ('purple', '🟣', 'סגול'), ('indigo', '🟦', 'אינדיגו'), ('blue', '🔵', 'כחול'),
+          ('lime', '🟢', 'ליים'), ('forest', '🌲', 'ירוק כהה'), ('mint', '🌿', 'מנטה'), ('teal', '💠', 'טורקיז'),
+          ('pink', '🩷', 'ורוד'), ('magenta', '🌸', 'מג׳נטה'), ('red', '🔴', 'אדום'), ('coral', '🪸', 'אלמוג'),
+          ('orange', '🟠', 'כתום'), ('yellow', '🟡', 'צהוב'), ('silver', '⚪', 'כסף'), ('copper', '🟤', 'נחושת')]
+COLOR = {c[0]: c for c in COLORS}
 
 
 # ---------------------------------------------------------------- Telegram API
@@ -110,6 +119,49 @@ def send(chat, text, **kw):
 
 def edit(chat, msg_id, text):
     api('editMessageText', dict(chat_id=chat, message_id=msg_id, text=text, parse_mode='HTML'))
+
+
+def edit_caption(chat, msg_id, text, kb=None):
+    api('editMessageCaption', dict(chat_id=chat, message_id=msg_id, caption=text, parse_mode='HTML',
+                                   reply_markup=kb))
+
+
+def fmt_name(f):
+    return 'סטורי 9:16' if f == 'story' else 'פוסט 4:5'
+
+
+def color_label(theme):
+    c = COLOR.get(theme)
+    return f'{c[1]} {c[2]}' if c else '🎨 אוטומטי'
+
+
+def preview_caption(s):
+    info = s['state']['info']
+    what = 'סרטון' if s['state']['mode'] == 'video' else 'תמונה'
+    return (f'👀 <b>תצוגה מקדימה</b> · {fmt_name(info["format"])} · {color_label(info.get("theme"))}\n'
+            f'אפשר לשנות פורמט וצבע. כשמתאים – ✅ אשר{" והסרטון יוכן" if what == "סרטון" else ""}.')
+
+
+def main_kb(s):
+    sid, info = s['sid'], s['state']['info']
+    f = info['format']
+    return {'inline_keyboard': [
+        [{'text': ('✓ ' if f == 'story' else '') + 'סטורי 9:16', 'callback_data': f'f:story:{sid}'},
+         {'text': ('✓ ' if f == 'post' else '') + 'פוסט 4:5', 'callback_data': f'f:post:{sid}'}],
+        [{'text': f'צבע: {color_label(info.get("theme"))} ▾', 'callback_data': f'cm:{sid}'}],
+        [{'text': '✅ אשר' + (' והכן סרטון' if s['state']['mode'] == 'video' else ''), 'callback_data': f'ok:{sid}'}]]}
+
+
+def colors_kb(s):
+    sid, cur = s['sid'], s['state']['info'].get('theme')
+    rows, row = [], []
+    for cid, emo, name in COLORS:
+        row.append({'text': ('✓' if cid == cur else emo) + ' ' + name, 'callback_data': f'c:{cid}:{sid}'})
+        if len(row) == 4:
+            rows.append(row)
+            row = []
+    rows.append([{'text': '↩️ חזרה', 'callback_data': f'cb:{sid}'}])
+    return {'inline_keyboard': rows}
 
 
 def download(file_id, dest_dir):
@@ -187,7 +239,59 @@ def media_of(msg):
     return None
 
 
+def handle_callback(cq):
+    user = (cq.get('from') or {}).get('id')
+    data = cq.get('data') or ''
+
+    def answer(text=''):
+        api('answerCallbackQuery', {'callback_query_id': cq['id'], 'text': text or None})
+    if user not in ALLOWED:
+        answer('🔒 אין הרשאה')
+        return
+    parts = data.split(':')
+    sid = parts[-1]
+    s = sessions.get(sid)
+    if not s:
+        answer('⌛ פג התוקף – שלחו שוב את החומר')
+        return
+    act = parts[0]
+    if act == 'cm':
+        answer()
+        api('editMessageReplyMarkup', {'chat_id': s['chat'], 'message_id': s['pmsg'], 'reply_markup': colors_kb(s)})
+        return
+    if act == 'cb':
+        answer()
+        api('editMessageReplyMarkup', {'chat_id': s['chat'], 'message_id': s['pmsg'], 'reply_markup': main_kb(s)})
+        return
+    if s.get('busy'):
+        answer('⏳ רגע, עדיין עובד…')
+        return
+    info = s['state']['info']
+    if act == 'f':
+        if parts[1] == info['format']:
+            answer()
+            return
+        s['meta']['format'] = parts[1]
+        prefs.setdefault(s['chat'], {})['format'] = parts[1]
+    elif act == 'c':
+        if parts[1] == info.get('theme'):
+            answer()
+            api('editMessageReplyMarkup', {'chat_id': s['chat'], 'message_id': s['pmsg'], 'reply_markup': main_kb(s)})
+            return
+        s['meta']['theme'] = parts[1]
+    elif act != 'ok':
+        answer()
+        return
+    s['busy'] = True
+    ahead = jobs.qsize()
+    answer(('✅ מתחיל' if act == 'ok' else '🎨 מעצב מחדש…') + (f' (בתור: {ahead})' if ahead else ''))
+    jobs.put({'type': 'approve' if act == 'ok' else 'restyle', 'sid': sid, 'chat': s['chat']})
+
+
 def handle_update(upd):
+    if upd.get('callback_query'):
+        handle_callback(upd['callback_query'])
+        return
     msg = upd.get('message') or upd.get('channel_post')
     if not msg:
         return
@@ -276,7 +380,7 @@ def enqueue(chat, items, caption):
     note = f' (בתור: {ahead} לפניך)' if ahead else ''
     r = send(chat, f'⏳ מתחיל לעבוד{note}…')
     msg_id = (r.get('result') or {}).get('message_id')
-    jobs.put({'chat': chat, 'items': items, 'caption': caption, 'msg': msg_id})
+    jobs.put({'type': 'new', 'chat': chat, 'items': items, 'caption': caption, 'msg': msg_id})
 
 
 # ---------------------------------------------------------------- worker
@@ -289,8 +393,15 @@ def worker():
         traceback.print_exc()
     while True:
         job = jobs.get()
+        cleanup_sessions()
         try:
-            process(job)
+            kind = job.get('type', 'new')
+            if kind == 'new':
+                process(job)
+            elif kind == 'restyle':
+                restyle(job)
+            else:
+                approve(job)
             try:
                 studio.warm()
             except Exception:
@@ -301,6 +412,9 @@ def worker():
             if 'ffmpeg' in msg:
                 msg = 'לא הצלחתי לעבד את הסרטון. נסו קובץ MP4 רגיל.'
             send(job['chat'], f'❌ משהו השתבש: {msg[:300]}')
+            s = sessions.get(job.get('sid'))
+            if s:
+                s['busy'] = False
         finally:
             jobs.task_done()
 
@@ -358,12 +472,67 @@ def process(job):
                 path = BIG.download(it['msg_id'], work, dl_progress)
             items.append({'path': path, 'kind': it['kind']})
 
+        status('🎨 מעצב בשפת המותג…', True)
+        state = engine.prepare(studio, items, meta, work)
+        sid = uuid.uuid4().hex[:8]
+        sess = {'sid': sid, 'chat': chat, 'work': work, 'items': items, 'meta': meta, 'state': state,
+                't': time.time(), 'busy': False}
+        r = api('sendPhoto', {'chat_id': str(chat), 'caption': preview_caption(sess), 'parse_mode': 'HTML',
+                              'reply_markup': main_kb(sess)}, {'photo': state['preview']}, timeout=120)
+        if not r.get('ok'):
+            raise RuntimeError(r.get('description', 'send failed'))
+        sess['pmsg'] = r['result']['message_id']
+        sessions[sid] = sess
+        work = None   # kept for the approval step
+        if msg_id:
+            api('deleteMessage', {'chat_id': chat, 'message_id': msg_id})
+    finally:
+        if work:
+            shutil.rmtree(work, ignore_errors=True)
+
+
+def cleanup_sessions():
+    now = time.time()
+    for sid, s in list(sessions.items()):
+        if now - s['t'] > SESSION_TTL and not s.get('busy'):
+            sessions.pop(sid, None)
+            shutil.rmtree(s['work'], ignore_errors=True)
+            api('editMessageReplyMarkup', {'chat_id': s['chat'], 'message_id': s['pmsg'], 'reply_markup': {'inline_keyboard': []}})
+
+
+def restyle(job):
+    s = sessions.get(job['sid'])
+    if not s:
+        return
+    try:
+        s['state'] = engine.prepare(studio, s['items'], s['meta'], s['work'])
+        s['t'] = time.time()
+        media = {'type': 'photo', 'media': 'attach://photo', 'caption': preview_caption(s), 'parse_mode': 'HTML'}
+        r = api('editMessageMedia', {'chat_id': str(s['chat']), 'message_id': str(s['pmsg']), 'media': media,
+                                     'reply_markup': main_kb(s)}, {'photo': s['state']['preview']}, timeout=120)
+        if not r.get('ok') and 'not modified' not in r.get('description', ''):
+            raise RuntimeError(r.get('description', 'edit failed'))
+    finally:
+        s['busy'] = False
+
+
+def approve(job):
+    s = sessions.pop(job['sid'], None)
+    if not s:
+        return
+    chat, pmsg, info = s['chat'], s['pmsg'], s['state']['info']
+    head = f'{fmt_name(info["format"])} · {color_label(info.get("theme"))}'
+    last = [0.0]
+
+    def status(text, force=False):
+        if force or time.time() - last[0] > 3:
+            last[0] = time.time()
+            edit_caption(chat, pmsg, f'{text}\n<i>{head}</i>')
+    try:
         t_video = [None]
 
         def progress(stage, p=None):
-            if stage == 'design':
-                status('🎨 מעצב בשפת המותג…', True)
-            elif stage == 'video':
+            if stage == 'video':
                 now = time.time()
                 if t_video[0] is None:
                     t_video[0] = now
@@ -377,11 +546,12 @@ def process(job):
                     eta = f'\nעוד כ־{left} שנ׳' if left < 120 else f'\nעוד כ־{round(left / 60)} דק׳'
                 status(f'🎬 מרכיב את הסרטון\n{bar} {pct}%{eta}')
 
-        out, kind, info = engine.make(studio, items, meta, work, progress,
-                                      max_bytes=1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024)
+        if s['state']['mode'] == 'video':
+            status('🎬 מרכיב את הסרטון\n▱▱▱▱▱▱▱▱▱▱ 0%', True)
+        out, kind, info = engine.finish(studio, s['state'], s['work'], progress,
+                                        max_bytes=1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024)
         status('📤 שולח…', True)
-        fmt = 'סטורי 9:16' if info['format'] == 'story' else 'פוסט 4:5'
-        caption = f'✅ מוכן · {fmt}'
+        caption = f'✅ מוכן · {fmt_name(info["format"])}'
         if os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
             BIG.send(chat, out, caption, video=(kind == 'video'), w=info['W'], h=info['H'], dur=info.get('dur', 0))
             r = {'ok': True}
@@ -393,10 +563,18 @@ def process(job):
                     {'video': out}, timeout=600)
         if not r.get('ok'):
             raise RuntimeError(r.get('description', 'send failed'))
-        if msg_id:
-            api('deleteMessage', {'chat_id': chat, 'message_id': msg_id})
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
+        if kind == 'video':
+            api('deleteMessage', {'chat_id': chat, 'message_id': pmsg})
+        else:
+            edit_caption(chat, pmsg, f'✅ מוכן · {head}')
+    except Exception:
+        # Let the user try again from the same preview.
+        s['busy'] = False
+        s['t'] = time.time()
+        sessions[s['sid']] = s
+        edit_caption(chat, pmsg, preview_caption(s), main_kb(s))
+        raise
+    shutil.rmtree(s['work'], ignore_errors=True)
 
 
 # ---------------------------------------------------------------- web server (webhook + health)
@@ -410,6 +588,7 @@ class Hook(BaseHTTPRequestHandler):
             info = api('getWebhookInfo').get('result', {})
             body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
             body += f"\nallowed users: {len(ALLOWED)}"
+            body += f"\nbig files (2GB): {'on' if BIG.enabled else 'off – add TG_API_ID + TG_API_HASH'}"
         self.wfile.write(body.encode())
 
     def do_HEAD(self):
@@ -445,7 +624,7 @@ def polling():
     api('deleteWebhook', {'drop_pending_updates': False})
     offset = None
     while True:
-        r = api('getUpdates', {'timeout': 50, 'offset': offset, 'allowed_updates': ['message']}, timeout=70)
+        r = api('getUpdates', {'timeout': 50, 'offset': offset, 'allowed_updates': ['message', 'callback_query']}, timeout=70)
         for upd in r.get('result', []) if r.get('ok') else []:
             offset = upd['update_id'] + 1
             safe_handle(upd)
@@ -479,7 +658,7 @@ def main():
         {'command': 'id', 'description': 'המזהה שלי'}]})
     if PUBLIC_URL:
         r = api('setWebhook', {'url': PUBLIC_URL + '/tg', 'secret_token': SECRET or None,
-                               'allowed_updates': ['message'], 'max_connections': 10})
+                               'allowed_updates': ['message', 'callback_query'], 'max_connections': 10})
         print('webhook:', r, flush=True)
         if r.get('ok'):
             ThreadingHTTPServer(('0.0.0.0', PORT), Hook).serve_forever()
