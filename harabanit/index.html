@@ -837,6 +837,7 @@ function creditText(){
 }
 function sideFor(mediaBottom,H,D,bm){
   if(S.adj.side!=='auto') return S.adj.side;
+  return 'right';   /* brand rule: the logo always sits on the right (a corner picture goes left) */
   const a=S.analysis;
   if(mediaBottom < H-bm-D*.85) return 'left';
   if(a.subjectX==='left') return 'right';
@@ -2048,7 +2049,7 @@ async function tgRun(){
   const mb=n=>(n/1048576).toFixed(n>1e8?0:1)+'MB';
   const ov=document.querySelector('.tgov'), btn=$('#tgBtn');
   const show=on=>{ ov.hidden=!on; };
-  const fail=(msg,back)=>{ show(true); set('❌ '+msg,0,back?'':'אפשר לחזור לצ׳אט וללחוץ "✅ אשר והכן בשרת"'); btn.hidden=false;
+  const fail=(msg,back)=>{ show(true); set('❌ '+msg,0,back?'':'אפשר לחזור לצ׳אט וללחוץ "✅ אישור תצוגה"'); btn.hidden=false;
     if(back){ btn.textContent='חזרה לעריכה'; btn.onclick=()=>{ btn.hidden=true; show(false); }; }
     else { btn.textContent='חזרה לצ׳אט'; btn.onclick=()=>{ try{ TGW&&TGW.close(); }catch(e){} }; } };
   const mbP=loadMB().catch(()=>null);   /* the encoder library loads while the material downloads */
