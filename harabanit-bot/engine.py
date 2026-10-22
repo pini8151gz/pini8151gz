@@ -124,7 +124,18 @@ def probe(path):
     rot = int((v.get('tags') or {}).get('rotate', rot) or 0)
     if abs(rot) % 180 == 90:
         w, h = h, w
-    return {'w': w, 'h': h, 'dur': dur, 'audio': has_audio, 'fps': fps or 30.0, 'acodec': (a or {}).get('codec_name', '')}
+    return {'w': w, 'h': h, 'dur': dur, 'audio': has_audio, 'fps': fps or 30.0, 'acodec': (a or {}).get('codec_name', ''), 'vcodec': (v or {}).get('codec_name', '')}
+
+
+def playable(path, workdir):
+    """Make sure a video plays everywhere in Telegram (H.264 + AAC). Converts only when needed."""
+    p = probe(path)
+    if p['vcodec'] == 'h264' and p['acodec'] in ('aac', ''):
+        return path, p
+    out = os.path.join(workdir, 'phone_fixed.mp4')
+    vc = ['-c:v', 'copy'] if p['vcodec'] == 'h264' else ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '21', '-pix_fmt', 'yuv420p']
+    run(['ffmpeg', '-y', '-v', 'error', '-i', path] + vc + ['-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', out])
+    return out, probe(out)
 
 
 def kind_of(path):
@@ -278,7 +289,8 @@ def prepare(studio, items, meta, workdir):
          '-map', '[prev]', '-frames:v', '1', '-q:v', '3', preview])
     return {'mode': 'video', 'preview': preview, 'items': items, 'base': base_png, 'top': top_png,
             'geo': {'W': W, 'H': H, 'dw': dw, 'dh': dh, 'X': X, 'Y': Y, 'x0': x0, 'y0': y0, 'cw': cw, 'ch': ch, 'gray': gray},
-            'info': {'theme': res.get('theme'), 'format': fmt, 'W': W, 'H': H}}
+            'info': {'theme': res.get('theme'), 'format': fmt, 'W': W, 'H': H,
+                     'fx': res.get('fx', .5), 'fy': res.get('fy', .5), 'gray': bool(res.get('gray'))}}
 
 
 def finish(studio, state, workdir, progress=lambda stage, p=None: None, max_bytes=48 * 1024 * 1024):

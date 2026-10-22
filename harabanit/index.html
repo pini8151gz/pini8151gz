@@ -701,7 +701,7 @@ function wordsOf(text){ const out=[]; text.split('\n').forEach((ln,i)=>{ if(i&&o
 
 const layoutCache=new Map();
 function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
-  const key=[words.join(' '),maxW,maxH,maxSize,minSize,lhR,maxLines,light?1:0,S.kit.headFont,S.adj.weight,S.adj.ls,document.fonts.status,'fill2'].join('|');
+  const key=[words.join(' '),maxW,maxH,maxSize,minSize,lhR,maxLines,light?1:0,S.kit.headFont,S.adj.weight,S.adj.ls,document.fonts.status,'nat4'].join('|');
   setLS(ctx);
   const hit=layoutCache.get(key); if(hit) return hit;
   /* break the words at one font size: greedy, then balanced so the lines are about the same length */
@@ -719,12 +719,14 @@ function layout(ctx,words,maxW,maxH,maxSize,minSize,lhR,maxLines,light){
   const ok=L=>L.h<=maxH && L.lines.length<=maxLines && L.lines.every(l=>l.w<=maxW+1);
   let best=null;
   for(let size=Math.round(maxSize); size>=minSize; size-=1){ best=mk(size); if(ok(best)) break; best.over=true; }
-  /* headline fills the box: grow the font (same number of lines) until the longest line reaches the full width */
+  /* the popular look: the headline keeps its natural size (never blown up). Only a line that is
+     already close to the full width is evened out to it, with a touch of spacing. */
   if(!light && best && !best.over){
-    const longest=Math.max(...best.lines.map(l=>l.w)), n=best.lines.length;
-    const top=Math.min(Math.round(maxSize*2), Math.floor(best.size*maxW/Math.max(1,longest)));
-    for(let size=top; size>best.size; size-=1){ const L=mk(size); if(ok(L)&&L.lines.length===n){ best=L; break; } }
-    best.fill=true;
+    /* one line less reads better (two full lines rather than three short ones): allow a slightly smaller font for it */
+    const n=best.lines.length;
+    if(n>1) for(let size=best.size-1; size>=Math.max(minSize,best.size*.88); size-=1){ const L=mk(size); if(ok(L)&&L.lines.length<n){ best=L; break; } }
+    const longest=Math.max(...best.lines.map(l=>l.w));
+    best.fill=longest>=maxW*.9;
   }
   if(layoutCache.size>80) layoutCache.clear(); layoutCache.set(key,best); return best;
 }
@@ -1597,7 +1599,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#kFold').h
 
 /* ---------- saving ---------- */
 function startProg(){ $('#outActs').hidden=true; $('#outWrap').innerHTML=''; $('#outNote').textContent=''; const u=logoSrc(S.theme)||'logos/red.webp'; $('#lfBase').src=u; $('#lfTop').src=u; setProg(0); $('#outProg').hidden=false; }
-function setProg(p){ p=Math.max(0,Math.min(1,p||0)); $('#outProg').style.setProperty('--p',p); $('#outPct').textContent=Math.round(p*100)+'%'; }
+function setProg(p){ p=Math.max(0,Math.min(1,p||0)); if(S.onProg) S.onProg(p); $('#outProg').style.setProperty('--p',p); $('#outPct').textContent=Math.round(p*100)+'%'; }
 function fileBase(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return `harabanit-${S.format}-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
 const SITE='https://ulvis.net/harabanit';
 document.querySelectorAll('[data-copylink]').forEach(b=>b.addEventListener('click',async()=>{
@@ -1642,10 +1644,10 @@ async function fastExport(bar){
   const [W,H]=dims(); const out=document.createElement('canvas'); out.width=W; out.height=H; let src=null, sctx=null;
   const make=async(codec)=>{ const input=new M.Input({source:new M.BlobSource(S.media.file),formats:M.ALL_FORMATS});
     const output=new M.Output({format:new M.Mp4OutputFormat({fastStart:'in-memory'}),target:new M.BufferTarget()});
-    const video={forceTranscode:true,processedWidth:W,processedHeight:H,quality:M.QUALITY_HIGH,
+    const video=Object.assign({forceTranscode:true,processedWidth:W,processedHeight:H},S.vBitrate?{bitrate:S.vBitrate}:{quality:M.QUALITY_HIGH},{
       process:(sample)=>{ const sw=sample.displayWidth, sh=sample.displayHeight;
         if(!src||src.width!==sw||src.height!==sh){ src=document.createElement('canvas'); src.width=sw; src.height=sh; sctx=src.getContext('2d'); }
-        sample.draw(sctx,0,0); renderTo(out,1,src); return out; }};
+        sample.draw(sctx,0,0); renderTo(out,1,src); return out; }});
     if(codec) video.codec=codec;
     const trim={}; if(clipIn(0)>0) trim.start=clipIn(0); if(S.media.tOut!=null) trim.end=clipOut(0);
     const conv=await M.Conversion.init(Object.assign({input,output,video,audio:{}},(trim.start!=null||trim.end!=null)?{trim}:{})); return {conv,output}; };
@@ -1685,7 +1687,7 @@ async function composeExport(){
   const fmt=new M.Mp4OutputFormat({fastStart:'in-memory'});
   const vcodec=await M.getFirstEncodableVideoCodec(fmt.getSupportedVideoCodecs(),{width:W,height:H}); if(!vcodec) return null;
   const output=new M.Output({format:fmt,target:new M.BufferTarget()});
-  const vsrc=new M.CanvasSource(out,{codec:vcodec,bitrate:M.QUALITY_HIGH}); output.addVideoTrack(vsrc,{frameRate:fps});
+  const vsrc=new M.CanvasSource(out,{codec:vcodec,bitrate:S.vBitrate||M.QUALITY_HIGH}); output.addVideoTrack(vsrc,{frameRate:fps});
   let abuf=null, asrc=null; try{ abuf=await mixAudio(M,ins,d,s1,T,off); }catch(e){ abuf=null; }
   if(abuf){ const ac=await M.getFirstEncodableAudioCodec(fmt.getSupportedAudioCodecs(),{numberOfChannels:abuf.numberOfChannels,sampleRate:abuf.sampleRate}).catch(()=>null);
     if(ac){ asrc=new M.AudioBufferSource({codec:ac,bitrate:M.QUALITY_HIGH}); output.addAudioTrack(asrc); } }
@@ -1999,8 +2001,88 @@ window.__botRender=async(o)=>{
   return {kind:'video',W,H,theme:S.theme,png:O.toDataURL('image/png'),media:info.media,fx:S.adj.fx,fy,gray:themeById(S.theme).id==='silver'&&S.analysis.mood==='sad'};
 };
 
+/* ---------- Telegram: build the bot's video here, on the phone ----------
+   The bot opens this page with ?tg=<token>. The material and the design choices come from the bot,
+   the phone encodes (hardware, seconds) and the result goes back to the chat. */
+const TGQ=new URLSearchParams(location.search);
+const TG_TOKEN=TGQ.get('tg');
+const TG_API=(/^http:\/\/127\.0\.0\.1:\d+$/.test(TGQ.get('api')||'')?TGQ.get('api'):'https://harabanit-bot.onrender.com');
+function tgScript(){ return new Promise(res=>{ if(window.Telegram&&Telegram.WebApp) return res(Telegram.WebApp);
+  const sc=document.createElement('script'); sc.src='https://telegram.org/js/telegram-web-app.js';
+  sc.onload=()=>res(window.Telegram&&Telegram.WebApp||null); sc.onerror=()=>res(null); document.head.appendChild(sc); setTimeout(()=>res(window.Telegram&&Telegram.WebApp||null),4000); }); }
+function tgUI(){
+  const st=document.createElement('style'); st.textContent=`
+  .tgov{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:var(--bg,#0f0f12);color:var(--fg,#fff);font-family:Rubik,system-ui,sans-serif;direction:rtl}
+  .tgbox{width:min(360px,100%);display:grid;gap:14px;justify-items:center;text-align:center}
+  .tgbox img{width:96px;height:96px;object-fit:contain;transition:transform .38s cubic-bezier(.2,.8,.2,1)}
+  .tgbox.ok img{transform:scale(1.08)}
+  .tgbox b{font-size:20px;font-weight:700}
+  .tgbar{width:100%;height:10px;border-radius:99px;background:color-mix(in srgb,currentColor 14%,transparent);overflow:hidden}
+  .tgbar i{display:block;height:100%;width:0;border-radius:inherit;background:#F93A34;transition:width .25s ease}
+  .tgbox small{opacity:.72;font-size:14px;min-height:1.4em}
+  .tgbox button{font:inherit;font-weight:600;padding:12px 22px;border-radius:12px;border:0;background:#F93A34;color:#fff}
+  @media (prefers-reduced-motion:reduce){.tgbar i,.tgbox img{transition:none}}`;
+  document.head.appendChild(st);
+  const ov=document.createElement('div'); ov.className='tgov'; ov.setAttribute('role','status'); ov.setAttribute('aria-live','polite');
+  ov.innerHTML='<div class="tgbox"><img src="logos/red.webp" alt=""><b id="tgT">מתחבר לרובוט…</b><div class="tgbar"><i id="tgP"></i></div><small id="tgS"></small><button id="tgBtn" hidden>חזרה לצ׳אט</button></div>';
+  document.body.appendChild(ov);
+  return (t,p,sub)=>{ if(t!=null) $('#tgT').textContent=t; if(p!=null) $('#tgP').style.width=Math.round(Math.max(0,Math.min(1,p))*100)+'%'; if(sub!=null) $('#tgS').textContent=sub; };
+}
+async function tgFetch(url,onP){
+  const r=await fetch(url); if(!r.ok) throw new Error(r.status===410?'expired':'net');
+  const total=+r.headers.get('Content-Length')||0, rd=r.body&&r.body.getReader?r.body.getReader():null;
+  if(!rd) return r.blob();
+  const parts=[]; let got=0; for(;;){ const {done,value}=await rd.read(); if(done) break; parts.push(value); got+=value.length; onP&&onP(got,total); }
+  return new Blob(parts,{type:r.headers.get('Content-Type')||'video/mp4'});
+}
+function tgUpload(url,blob,init,onP){ return new Promise((res,rej)=>{ const x=new XMLHttpRequest(); x.open('POST',url); x.setRequestHeader('X-Init-Data',init); x.setRequestHeader('Content-Type','video/mp4');
+  x.upload.onprogress=e=>{ if(e.lengthComputable) onP(e.loaded/e.total); };
+  x.onload=()=>{ let j={}; try{ j=JSON.parse(x.responseText); }catch(e){} x.status===200&&j.ok?res(j):rej(new Error(j.error||('http '+x.status))); };
+  x.onerror=()=>rej(new Error('net')); x.send(blob); }); }
+async function tgRun(){
+  const set=tgUI(), TGW=await tgScript();
+  try{ TGW&&TGW.ready(); TGW&&TGW.expand(); }catch(e){}
+  const init=(TGW&&TGW.initData)||new URLSearchParams(location.hash.slice(1)).get('tgWebAppData')||'';
+  const mb=n=>(n/1048576).toFixed(n>1e8?0:1)+'MB';
+  const fail=msg=>{ set('❌ '+msg,0,'אפשר לחזור לצ׳אט וללחוץ "✅ אשר והכן בשרת"'); const b=$('#tgBtn'); b.hidden=false; b.onclick=()=>{ try{ TGW&&TGW.close(); }catch(e){} }; };
+  let lock=null; try{ if(navigator.wakeLock) lock=await navigator.wakeLock.request('screen'); }catch(e){}
+  const mbP=loadMB().catch(()=>null);   /* the encoder library loads while the material downloads */
+  try{
+    const jr=await fetch(TG_API+'/j/'+encodeURIComponent(TG_TOKEN)); const job=await jr.json().catch(()=>({}));
+    if(!job.ok) return fail(job.error==='expired'?'פג התוקף – שלחו שוב לרובוט':'לא הצלחתי להתחבר לרובוט');
+    const files=[], n=job.items.length, all=job.items.reduce((a,i)=>a+(i.size||0),0); let before=0;
+    for(let i=0;i<n;i++){ const it=job.items[i];
+      const b=await tgFetch(TG_API+it.url,(got,tot)=>set('⬇️ מוריד את החומר',.25*(before+got)/(all||tot||1),mb(before+got)+(all?' מתוך '+mb(all):'')));
+      before+=b.size; files.push(new File([b],'clip'+i+'.mp4',{type:b.type||'video/mp4'})); }
+    set('🎨 מעצב',.27,'');
+    stopPlay(); S.isExample=false; S.ai=null; S.cut=null; S.cutSrc=null; S.media2=null;
+    S.format=job.format==='post'?'post':'story';
+    const a=await loadVideoFile(files[0]); S.media={type:'video',video:a.v,still:a.poster,name:'tg',file:files[0]}; S.media.corners=corners(a.poster);
+    if(files[1]){ const b=await loadVideoFile(files[1]); S.media2={video:b.v,still:b.poster,name:'tg2',file:files[1]}; }
+    S.adj=defaultAdj(); S.adj.align='center'; S.adj.fx=job.fx!=null?job.fx:.5; S.adj.fy=job.fy!=null?job.fy:null; S.kicker='auto';
+    $('#headIn').value=((job.kicker?job.kicker.trim()+' ':'')+(job.head||'')).trim();
+    $('#extraIn').value=job.extra||''; $('#extraField').hidden=!job.extra;
+    const cr=job.credits||[]; [['#c1p','#c1n'],['#c2p','#c2n']].forEach(([p,q],i)=>{ const c=cr[i]; if(c&&CREDIT_TYPES.includes(c[0])) $(p).value=c[0]; $(q).value=c?c[1]:''; });
+    const want=job.theme&&THEMES.find(t=>t.id===job.theme); S.theme=want?want.id:null; S.themeManual=!!want;
+    try{ await ensureFonts(); }catch(e){}
+    refreshUI(); await loadLogo(S.theme); bgCache.clear(); setMediaUI(); resetSeq(); draw();
+    set('⚡ בונה את הסרטון בטלפון',.3,'');
+    await mbP; S.vBitrate=6e6; const t0=performance.now();
+    S.onProg=p=>{ const el=(performance.now()-t0)/1000, left=p>.05?Math.round(el*(1-p)/p):null; set(null,.3+.5*p,Math.round(p*100)+'%'+(left!=null?' · עוד כ־'+left+' שנ׳':'')); };
+    let out=null; try{ out=await fastExport(); }catch(e){ console.error('tg export',e&&e.message); out=null; }
+    S.onProg=null; S.exporting=null;
+    if(!(out instanceof Blob)) return fail('הטלפון הזה לא הצליח לבנות את הסרטון');
+    set('📤 שולח לצ׳אט',.8,mb(out.size));
+    await tgUpload(TG_API+'/u/'+encodeURIComponent(TG_TOKEN),out,init,p=>set(null,.8+.2*p,mb(out.size*p)+' מתוך '+mb(out.size)));
+    set('✅ נשלח לצ׳אט',1,''); document.querySelector('.tgbox').classList.add('ok');
+    try{ TGW&&TGW.HapticFeedback&&TGW.HapticFeedback.notificationOccurred('success'); }catch(e){}
+    setTimeout(()=>{ try{ TGW&&TGW.close(); }catch(e){} },1200);
+  }catch(e){ console.error('tg',e&&e.message,e&&e.stack); fail(e&&e.message==='expired'?'פג התוקף – שלחו שוב לרובוט':e&&/forbidden/.test(e.message)?'אין הרשאה – פתחו מתוך הרובוט':'משהו השתבש בדרך'); }
+  finally{ try{ lock&&lock.release(); }catch(e){} }
+}
+
 window.__miReady=true;
-boot();
+boot().then(()=>{ if(TG_TOKEN) tgRun(); });
 })();
 </script>
 

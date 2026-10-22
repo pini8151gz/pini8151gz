@@ -13,6 +13,7 @@ Environment:
   SITE_DIR        folder of the studio (default: ../harabanit)
 """
 import hashlib
+import hmac
 import json
 import mimetypes
 import os
@@ -71,6 +72,11 @@ pending = {}      # chat_id -> {'items': [...], 'text': str, 't': time}
 prefs = {}        # chat_id -> {'format': 'story'|'post'}
 sessions = {}     # sid -> a design waiting for approval (preview already sent)
 SESSION_TTL = 45 * 60
+tokens = {}       # long random token -> sid (for the phone build page)
+# The studio, opened inside Telegram to build the video on the phone (much faster than this server).
+SITE_URL = os.environ.get('SITE_URL', 'https://pini8151gz.github.io/pini8151gz/harabanit/')
+ORIGINS = {o.strip().rstrip('/') for o in os.environ.get('SITE_ORIGINS', 'https://pini8151gz.github.io').split(',') if o.strip()}
+MAX_UPLOAD = 2 * 1024 * 1024 * 1024
 
 # The studio's 16 brand colours (id, emoji, name) for the colour buttons.
 COLORS = [('sky', '🩵', 'תכלת'), ('purple', '🟣', 'סגול'), ('indigo', '🟦', 'אינדיגו'), ('blue', '🔵', 'כחול'),
@@ -148,8 +154,16 @@ def main_kb(s):
     return {'inline_keyboard': [
         [{'text': ('✓ ' if f == 'story' else '') + 'סטורי 9:16', 'callback_data': f'f:story:{sid}'},
          {'text': ('✓ ' if f == 'post' else '') + 'פוסט 4:5', 'callback_data': f'f:post:{sid}'}],
-        [{'text': f'צבע: {color_label(info.get("theme"))} ▾', 'callback_data': f'cm:{sid}'}],
-        [{'text': '✅ אשר' + (' והכן סרטון' if s['state']['mode'] == 'video' else ''), 'callback_data': f'ok:{sid}'}]]}
+        [{'text': f'צבע: {color_label(info.get("theme"))} ▾', 'callback_data': f'cm:{sid}'}]] + (
+        [[{'text': '⚡ הכן בטלפון (מהיר)', 'web_app': {'url': f'{SITE_URL}?tg={s["token"]}'}}],
+         [{'text': '✅ אשר והכן בשרת', 'callback_data': f'ok:{sid}'}]] if phone_ok(s) else
+        [[{'text': '✅ אשר' + (' והכן סרטון' if s['state']['mode'] == 'video' else ''), 'callback_data': f'ok:{sid}'}]])}
+
+
+def phone_ok(s):
+    """The phone can build one video or two videos (with a crossfade)."""
+    its = s['items']
+    return s['state']['mode'] == 'video' and 1 <= len(its) <= 2 and all(i['kind'] == 'video' for i in its)
 
 
 def colors_kb(s):
@@ -476,7 +490,8 @@ def process(job):
         state = engine.prepare(studio, items, meta, work)
         sid = uuid.uuid4().hex[:8]
         sess = {'sid': sid, 'chat': chat, 'work': work, 'items': items, 'meta': meta, 'state': state,
-                't': time.time(), 'busy': False}
+                't': time.time(), 'busy': False, 'token': uuid.uuid4().hex + uuid.uuid4().hex[:16]}
+        tokens[sess['token']] = sid
         r = api('sendPhoto', {'chat_id': str(chat), 'caption': preview_caption(sess), 'parse_mode': 'HTML',
                               'reply_markup': main_kb(sess)}, {'photo': state['preview']}, timeout=120)
         if not r.get('ok'):
@@ -496,6 +511,7 @@ def cleanup_sessions():
     for sid, s in list(sessions.items()):
         if now - s['t'] > SESSION_TTL and not s.get('busy'):
             sessions.pop(sid, None)
+            tokens.pop(s.get('token'), None)
             shutil.rmtree(s['work'], ignore_errors=True)
             api('editMessageReplyMarkup', {'chat_id': s['chat'], 'message_id': s['pmsg'], 'reply_markup': {'inline_keyboard': []}})
 
@@ -520,6 +536,7 @@ def approve(job):
     s = sessions.pop(job['sid'], None)
     if not s:
         return
+    tokens.pop(s.get('token'), None)
     chat, pmsg, info = s['chat'], s['pmsg'], s['state']['info']
     head = f'{fmt_name(info["format"])} · {color_label(info.get("theme"))}'
     last = [0.0]
@@ -572,32 +589,171 @@ def approve(job):
         s['busy'] = False
         s['t'] = time.time()
         sessions[s['sid']] = s
+        tokens[s['token']] = s['sid']
         edit_caption(chat, pmsg, preview_caption(s), main_kb(s))
         raise
     shutil.rmtree(s['work'], ignore_errors=True)
 
 
 # ---------------------------------------------------------------- web server (webhook + health)
+def check_init_data(init):
+    """Telegram Mini App sign-in: returns the user id if the data was signed by Telegram for this bot."""
+    try:
+        pairs = dict(urllib.parse.parse_qsl(init or '', keep_blank_values=True))
+        got = pairs.pop('hash', '')
+        dcs = '\n'.join(f'{k}={pairs[k]}' for k in sorted(pairs))
+        key = hmac.new(b'WebAppData', TOKEN.encode(), hashlib.sha256).digest()
+        if not got or not hmac.compare_digest(hmac.new(key, dcs.encode(), hashlib.sha256).hexdigest(), got):
+            return None
+        if time.time() - int(pairs.get('auth_date', '0')) > 24 * 3600:
+            return None
+        return int(json.loads(pairs.get('user', '{}')).get('id', 0)) or None
+    except Exception:
+        return None
+
+
+def phone_job(token):
+    sid = tokens.get(token or '')
+    s = sessions.get(sid) if sid else None
+    return s if s and phone_ok(s) else None
+
+
+def deliver_phone_result(s, path):
+    """A video built on the phone arrived: send it to the chat and close the preview."""
+    chat, info = s['chat'], s['state']['info']
+    path, p = engine.playable(path, s['work'])
+    caption = f'✅ מוכן · {fmt_name(info["format"])}'
+    if BIG.enabled:
+        BIG.send(chat, path, caption, video=True, w=p['w'], h=p['h'], dur=p['dur'])
+    else:
+        r = api('sendVideo', {'chat_id': str(chat), 'caption': caption, 'supports_streaming': 'true',
+                              'width': str(p['w']), 'height': str(p['h']), 'duration': str(int(p['dur']))},
+                {'video': path}, timeout=600)
+        if not r.get('ok'):
+            raise RuntimeError(r.get('description', 'send failed'))
+    sessions.pop(s['sid'], None)
+    tokens.pop(s.get('token'), None)
+    api('deleteMessage', {'chat_id': chat, 'message_id': s['pmsg']})
+    shutil.rmtree(s['work'], ignore_errors=True)
+
+
 class Hook(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+    protocol_version = 'HTTP/1.1'
+
+    def cors(self):
+        origin = (self.headers.get('Origin') or '').rstrip('/')
+        if origin in ORIGINS:
+            self.send_header('Access-Control-Allow-Origin', origin)
+            self.send_header('Vary', 'Origin')
+            self.send_header('Access-Control-Allow-Headers', 'X-Init-Data, Content-Type')
+            self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+            self.send_header('Access-Control-Max-Age', '600')
+
+    def reply(self, code, obj):
+        body = json.dumps(obj, ensure_ascii=False).encode()
+        self.send_response(code)
+        self.cors()
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        body = 'הרבנית סטודיו – הרובוט פעיל · גרסה ' + os.environ.get('RENDER_GIT_COMMIT', 'local')[:7]
+        self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.cors()
+        self.send_header('Content-Length', '0')
+        self.end_headers()
+
+    def do_GET(self):
+        parts = self.path.split('?')[0].strip('/').split('/')
+        if parts[0] == 'j' and len(parts) == 2:
+            s = phone_job(parts[1])
+            if not s:
+                return self.reply(410, {'ok': False, 'error': 'expired'})
+            info, meta = s['state']['info'], s['meta']
+            return self.reply(200, {'ok': True, 'format': info['format'], 'theme': info.get('theme'),
+                                    'fx': info.get('fx', .5), 'fy': info.get('fy', .5),
+                                    'kicker': meta.get('kicker', ''), 'head': meta.get('head', ''),
+                                    'extra': meta.get('extra', ''), 'credits': meta.get('credits', []),
+                                    'items': [{'url': f'/m/{parts[1]}/{i}', 'kind': it['kind'],
+                                               'size': os.path.getsize(it['path'])} for i, it in enumerate(s['items'])]})
+        if parts[0] == 'm' and len(parts) == 3:
+            s = phone_job(parts[1])
+            try:
+                path = s['items'][int(parts[2])]['path'] if s else None
+            except (ValueError, IndexError):
+                path = None
+            if not path or not os.path.exists(path):
+                return self.reply(410, {'ok': False, 'error': 'expired'})
+            size = os.path.getsize(path)
+            self.send_response(200)
+            self.cors()
+            self.send_header('Content-Type', mimetypes.guess_type(path)[0] or 'video/mp4')
+            self.send_header('Content-Length', str(size))
+            self.end_headers()
+            with open(path, 'rb') as f:
+                shutil.copyfileobj(f, self.wfile, 1 << 20)
+            return
+        body ='הרבנית סטודיו – הרובוט פעיל · גרסה ' + os.environ.get('RENDER_GIT_COMMIT', 'local')[:7]
         if self.path.startswith('/status'):
             info = api('getWebhookInfo').get('result', {})
             body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
             body += f"\nallowed users: {len(ALLOWED)}"
             body += f"\nbig files (2GB): {'on' if BIG.enabled else 'off – add TG_API_ID + TG_API_HASH'}"
-        self.wfile.write(body.encode())
+        data = body.encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_HEAD(self):
         self.send_response(200)
+        self.send_header('Content-Length', '0')
         self.end_headers()
 
+    def upload(self, token):
+        length = int(self.headers.get('Content-Length') or 0)
+        user = check_init_data(self.headers.get('X-Init-Data'))
+        s = phone_job(token)
+        if not user or user not in ALLOWED:
+            self.close_connection = True
+            return self.reply(403, {'ok': False, 'error': 'forbidden'})
+        if not s:
+            self.close_connection = True
+            return self.reply(410, {'ok': False, 'error': 'expired'})
+        if not 0 < length <= MAX_UPLOAD:
+            self.close_connection = True
+            return self.reply(413, {'ok': False, 'error': 'size'})
+        if s.get('busy'):
+            self.close_connection = True
+            return self.reply(409, {'ok': False, 'error': 'busy'})
+        s['busy'] = True
+        try:
+            path = os.path.join(s['work'], f'phone_{uuid.uuid4().hex[:6]}.mp4')
+            left = length
+            with open(path, 'wb') as f:
+                while left > 0:
+                    chunk = self.rfile.read(min(1 << 20, left))
+                    if not chunk:
+                        raise RuntimeError('upload cut')
+                    f.write(chunk)
+                    left -= len(chunk)
+            deliver_phone_result(s, path)
+            self.reply(200, {'ok': True})
+        except Exception as e:
+            traceback.print_exc()
+            s['busy'] = False
+            self.close_connection = True
+            self.reply(500, {'ok': False, 'error': str(e)[:200]})
+
     def do_POST(self):
+        parts = self.path.split('?')[0].strip('/').split('/')
+        if parts[0] == 'u' and len(parts) == 2:
+            return self.upload(parts[1])
         if self.path != '/tg' or (SECRET and self.headers.get('X-Telegram-Bot-Api-Secret-Token') != SECRET):
             self.send_response(403)
+            self.send_header('Content-Length', '0')
             self.end_headers()
             return
         length = int(self.headers.get('Content-Length') or 0)
@@ -606,6 +762,7 @@ class Hook(BaseHTTPRequestHandler):
         except ValueError:
             upd = {}
         self.send_response(200)
+        self.send_header('Content-Length', '0')
         self.end_headers()
         threading.Thread(target=safe_handle, args=(upd,), daemon=True).start()
 
