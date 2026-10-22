@@ -859,7 +859,8 @@ function renderBrand(ctx,W,H,src,scale){
   const gap=L2?12*s:0;
   const boxH=padY*2+L.h+(L2?gap+L2.h:0);
   const safeTop=(story?196:30)*s, bottomPad=(story?26:22)*s, between=framed?16*s:0;
-  const mw=W-2*inset; const [sw,sh]=srcSize(src); const natural=mw*(sh/(sw||1));
+  /* videos always keep a strip of the background on both sides (brand look) */
+  const mx=framed?inset:(S.media&&S.media.type==='video'?58*s:0), mw=W-2*mx; const [sw,sh]=srcSize(src); const natural=mw*(sh/(sw||1));
   const avail=Math.max(120*s,H-bottomPad-safeTop-boxH-between);
   const fill=A.mFill==='fill'||natural>=avail;
   const mediaH=fill?avail:natural;
@@ -867,8 +868,8 @@ function renderBrand(ctx,W,H,src,scale){
   const boxY = (A.boxPos==='bottom' ? top+mediaH+between : top) + A.boxOff*s;
   const mediaY = A.boxPos==='bottom' ? top : top+boxH+between;
   /* media */
-  ctx.save(); ctx.beginPath(); if(framed) rr(ctx,inset,mediaY,mw,mediaH,22*s); else ctx.rect(0,mediaY,W,mediaH); ctx.clip();
-  const geo=drawCoverZ(ctx,src,inset,mediaY,mw,mediaH,A.fx,A.fy!=null?A.fy:a.fy,A.zoom);
+  ctx.save(); ctx.beginPath(); if(framed) rr(ctx,inset,mediaY,mw,mediaH,22*s); else ctx.rect(mx,mediaY,mw,mediaH); ctx.clip();
+  const geo=drawCoverZ(ctx,src,mx,mediaY,mw,mediaH,A.fx,A.fy!=null?A.fy:a.fy,A.zoom);
   if(T.id==='silver' && a.mood==='sad'){ ctx.globalCompositeOperation='saturation'; ctx.fillStyle='#808080'; ctx.fillRect(0,mediaY,W,mediaH); }
   ctx.restore();
   /* headline box */
@@ -888,7 +889,7 @@ function renderBrand(ctx,W,H,src,scale){
     ctx.font=bold(25*s); ctx.direction='rtl';
     const joined=cr.join('. ')+(cr.length>1?'.':'');
     const lines = ctx.measureText(joined).width<=W*.8 ? [joined] : cr;
-    const edgeR=Math.max(m,inset+10*s);
+    const edgeR=Math.max(m,mx+10*s);
     let ty=mediaY+9*s; const th=40*s;
     lines.forEach(t=>{ const cw=Math.min(ctx.measureText(t).width,W*.84); const tx=W-edgeR-cw-24*s;
       ctx.fillStyle=P.tag; rr(ctx,tx,ty,cw+24*s,th,9*s); ctx.fill();
@@ -906,7 +907,7 @@ function renderBrand(ctx,W,H,src,scale){
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=18*s; ctx.shadowOffsetY=4*s; ctx.drawImage(im,lx,ly,w,D); ctx.restore();
     logoRect={x:lx,y:ly,w,h:D}; }
   lastInfo={lines:L.lines.length,over:L.over,maxLines:story?5:4,W,box:{x:m,y:boxY,w:W-2*m,h:boxH},
-    media:{x:inset,y:mediaY,w:mw,h:mediaH,dw:geo.dw,dh:geo.dh}, logo:logoRect, cut:cutRect};
+    media:{x:mx,y:mediaY,w:mw,h:mediaH,dw:geo.dw,dh:geo.dh}, logo:logoRect, cut:cutRect};
 }
 function drawCutout(ctx,W,H,s,corner,color){
   const A=S.adj, im=S.cut.img, [iw,ih]=srcSize(im), story=S.format==='story', k=A.cutScale;
