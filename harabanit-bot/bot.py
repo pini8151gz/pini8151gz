@@ -537,12 +537,31 @@ def approve(job):
     tokens.pop(s.get('token'), None)
     chat, pmsg, info = s['chat'], s['pmsg'], s['state']['info']
     head = f'{fmt_name(info["format"])} · {color_label(info.get("theme"))}'
-    last = [0.0]
+    last, last_media, shown = [0.0], [0.0], [-1]
+    # The picture becomes the logo filling with colour as the video is built (every 10%).
+    frames = []
+    if s['state']['mode'] == 'video':
+        try:
+            frames = engine.fill_frames(SITE_DIR, info.get('theme') or 'red', s['work'])
+        except Exception:
+            traceback.print_exc()
 
-    def status(text, force=False):
-        if force or time.time() - last[0] > 3:
-            last[0] = time.time()
-            edit_caption(chat, pmsg, f'{text}\n<i>{head}</i>')
+    def status(text, force=False, p=None):
+        now = time.time()
+        cap = f'{text}\n<i>{head}</i>'
+        if frames and p is not None:
+            step = max(0, min(len(frames) - 1, int(p * (len(frames) - 1) + 1e-6)))
+            if step != shown[0] and (force or now - last_media[0] > 2):
+                media = {'type': 'photo', 'media': 'attach://photo', 'caption': cap, 'parse_mode': 'HTML'}
+                r = api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media},
+                        {'photo': frames[step]}, timeout=60)
+                if r.get('ok'):
+                    shown[0] = step
+                    last[0] = last_media[0] = now
+                    return
+        if force or now - last[0] > 3:
+            last[0] = now
+            edit_caption(chat, pmsg, cap)
     try:
         t_video = [None]
 
@@ -559,13 +578,13 @@ def approve(job):
                 if p > 0.04 and spent > 2:
                     left = int(spent * (1 - p) / p)
                     eta = f'\nעוד כ־{left} שנ׳' if left < 120 else f'\nעוד כ־{round(left / 60)} דק׳'
-                status(f'🎬 מרכיב את הסרטון\n{bar} {pct}%{eta}')
+                status(f'🎬 מרכיב את הסרטון\n{bar} {pct}%{eta}', p=p)
 
         if s['state']['mode'] == 'video':
-            status('🎬 מרכיב את הסרטון\n▱▱▱▱▱▱▱▱▱▱ 0%', True)
+            status('🎬 מרכיב את הסרטון\n▱▱▱▱▱▱▱▱▱▱ 0%', True, p=0)
         out, kind, info = engine.finish(studio, s['state'], s['work'], progress,
                                         max_bytes=1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024)
-        status('📤 שולח…', True)
+        status('📤 שולח…', True, p=1 if frames else None)
         caption = f'✅ מוכן · {fmt_name(info["format"])}'
         if os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
             BIG.send(chat, out, caption, video=(kind == 'video'), w=info['W'], h=info['H'], dur=info.get('dur', 0))
@@ -588,7 +607,12 @@ def approve(job):
         s['t'] = time.time()
         sessions[s['sid']] = s
         tokens[s['token']] = s['sid']
-        edit_caption(chat, pmsg, preview_caption(s), main_kb(s))
+        if shown[0] >= 0:   # bring the design preview back in place of the progress picture
+            media = {'type': 'photo', 'media': 'attach://photo', 'caption': preview_caption(s), 'parse_mode': 'HTML'}
+            api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media,
+                                     'reply_markup': main_kb(s)}, {'photo': s['state']['preview']}, timeout=60)
+        else:
+            edit_caption(chat, pmsg, preview_caption(s), main_kb(s))
         raise
     shutil.rmtree(s['work'], ignore_errors=True)
 

@@ -178,6 +178,88 @@ def even(n):
     return max(2, n - (n % 2))
 
 
+# ---------------------------------------------------------------- progress picture
+# While the video is built, the chat shows the brand logo filling with colour (like the studio's export screen).
+THEME_HEX = {'sky': '#19A3F3', 'purple': '#780095', 'indigo': '#350AD3', 'blue': '#009CFC', 'lime': '#73EF05',
+             'forest': '#064520', 'mint': '#15E78E', 'teal': '#00AFB4', 'pink': '#F90B78', 'magenta': '#EC00C7',
+             'red': '#F93A34', 'coral': '#F96249', 'orange': '#F75D00', 'yellow': '#FDC400', 'silver': '#A9ABB0',
+             'copper': '#9A6436'}
+_FONT = next((f for f in ('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+                          '/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf') if os.path.exists(f)), None)
+
+
+def fill_frames(site_dir, theme, out_dir, steps=10):
+    """Pictures of the logo filled 0%..100% (steps+1 files). Returns their paths ([] if Pillow is missing)."""
+    try:
+        from PIL import Image, ImageDraw, ImageFilter, ImageFont
+    except ImportError:
+        return []
+    logo_path = os.path.join(site_dir, 'logos', f'{theme}.webp')
+    if not os.path.exists(logo_path):
+        theme, logo_path = 'red', os.path.join(site_dir, 'logos', 'red.webp')
+    col = THEME_HEX.get(theme, '#F93A34')
+    rgb = tuple(int(col[i:i + 2], 16) for i in (1, 3, 5))
+    W, H = 720, 900
+    mix = lambda k: tuple(round(c * (1 - k) + 255 * k) for c in rgb)
+    bg = Image.new('RGB', (W, H))
+    top_c, bot_c = mix(.86), mix(.97)
+    d = ImageDraw.Draw(bg)
+    for y in range(H):
+        t = y / (H - 1)
+        d.line([(0, y), (W, y)], fill=tuple(round(a * (1 - t) + b * t) for a, b in zip(top_c, bot_c)))
+    logo = Image.open(logo_path).convert('RGBA')
+    LW = 470
+    logo = logo.resize((LW, round(logo.height * LW / logo.width)), Image.LANCZOS)
+    LH = logo.height
+    x0, y0 = (W - LW) // 2, 150
+    alpha = logo.split()[3]
+    gray = logo.convert('LA').convert('RGBA')
+    gray.putalpha(alpha.point(lambda a: int(a * .2)))
+    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    sh = Image.new('RGBA', logo.size, rgb + (0,))
+    sh.putalpha(alpha.point(lambda a: int(a * .35)))
+    shadow.paste(sh, (x0, y0 + 14), sh)
+    shadow = shadow.filter(ImageFilter.GaussianBlur(18))
+    font = ImageFont.truetype(_FONT, 64) if _FONT else ImageFont.load_default()
+    ink = tuple(round(c * .55) for c in rgb) if sum(rgb) > 380 else rgb
+    paths = []
+    for i in range(steps + 1):
+        p = i / steps
+        im = bg.convert('RGBA')
+        im.alpha_composite(gray, (x0, y0))
+        fh = round(LH * p)
+        if fh > 0:
+            sl = shadow.crop((0, 0, W, H))
+            # the shadow follows the filled part only
+            m = Image.new('L', (W, H), 0)
+            ImageDraw.Draw(m).rectangle([0, y0 + LH - fh, W, H], fill=255)
+            im.alpha_composite(Image.composite(sl, Image.new('RGBA', (W, H), (0, 0, 0, 0)), m))
+            part = logo.crop((0, LH - fh, LW, LH))
+            im.alpha_composite(part, (x0, y0 + LH - fh))
+            if p < 1:
+                # a soft shine on the fill line, inside the logo only
+                band = Image.new('L', (LW, LH), 0)
+                yb = LH - fh
+                ImageDraw.Draw(band).rectangle([0, max(0, yb - 5), LW, min(LH, yb + 5)], fill=170)
+                band = band.filter(ImageFilter.GaussianBlur(4))
+                band = Image.composite(band, Image.new('L', (LW, LH), 0), alpha)
+                shine = Image.new('RGBA', (LW, LH), (255, 255, 255, 0))
+                shine.putalpha(band)
+                im.alpha_composite(shine, (x0, y0))
+        txt = f'{round(p * 100)}%'
+        tw = ImageDraw.Draw(im).textlength(txt, font=font)
+        ImageDraw.Draw(im).text(((W - tw) / 2, y0 + LH + 70), txt, font=font, fill=ink)
+        # thin progress line under the number
+        bx, by, bw = 180, y0 + LH + 175, W - 360
+        ImageDraw.Draw(im).rounded_rectangle([bx, by, bx + bw, by + 10], 5, fill=mix(.8))
+        if p > 0:
+            ImageDraw.Draw(im).rounded_rectangle([bx, by, bx + max(10, round(bw * p)), by + 10], 5, fill=rgb)
+        out = os.path.join(out_dir, f'fill_{i:02d}.jpg')
+        im.convert('RGB').save(out, quality=88)
+        paths.append(out)
+    return paths
+
+
 # ---------------------------------------------------------------- studio (headless)
 class Studio:
     """Serves the studio folder on localhost and calls window.__botRender in Chromium."""
