@@ -152,6 +152,8 @@ pending = {}      # chat_id -> {'items': [...], 'text': str, 't': time}
 prefs = {}        # chat_id -> {'format': 'story'|'post'}
 sessions = {}     # sid -> a design waiting for approval (preview already sent)
 SESSION_TTL = 45 * 60
+ASSETS = os.path.join(HERE, 'assets')
+ANIM_IDS = {}     # colour -> Telegram file id of its logo animation (uploaded once)
 tokens = {}       # long random token -> sid (for the phone build page)
 # The studio, opened inside Telegram to build the video on the phone (much faster than this server).
 SITE_URL = os.environ.get('SITE_URL', 'https://pini8151gz.github.io/pini8151gz/harabanit/')
@@ -631,28 +633,34 @@ def approve(job):
     tokens.pop(s.get('token'), None)
     chat, pmsg, info = s['chat'], s['pmsg'], s['state']['info']
     head = f'{fmt_name(info["format"])} · {color_label(info.get("theme"))}'
-    last, last_media, shown = [0.0], [0.0], [-1]
-    # The picture becomes the logo filling with colour as the video is built (every 10%).
-    frames = []
+    last, shown = [0.0], [-1]
+    # While the video is built, the picture becomes a smooth looping animation of the logo filling with colour;
+    # the real progress is in the text under it.
+    anim = None
     if s['state']['mode'] == 'video':
-        try:
-            frames = engine.fill_frames(SITE_DIR, info.get('theme') or 'red', s['work'])
-        except Exception:
-            traceback.print_exc()
+        theme = info.get('theme') if os.path.exists(os.path.join(ASSETS, f'fill_{info.get("theme")}.mp4')) else 'red'
+        anim = theme
 
     def status(text, force=False, p=None):
         now = time.time()
         cap = f'{text}\n<i>{head}</i>'
-        if frames and p is not None:
-            step = max(0, min(len(frames) - 1, int(p * (len(frames) - 1) + 1e-6)))
-            if step != shown[0] and (force or now - last_media[0] > 2):
-                media = {'type': 'photo', 'media': 'attach://photo', 'caption': cap, 'parse_mode': 'HTML'}
+        if anim and shown[0] < 0:
+            shown[0] = 0
+            media = {'type': 'animation', 'caption': cap, 'parse_mode': 'HTML', 'width': 480, 'height': 600}
+            fid = ANIM_IDS.get(anim)
+            if fid:
+                media['media'] = fid
+                r = api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media})
+            else:
+                media['media'] = 'attach://anim'
                 r = api('editMessageMedia', {'chat_id': str(chat), 'message_id': str(pmsg), 'media': media},
-                        {'photo': frames[step]}, timeout=60)
-                if r.get('ok'):
-                    shown[0] = step
-                    last[0] = last_media[0] = now
-                    return
+                        {'anim': os.path.join(ASSETS, f'fill_{anim}.mp4')}, timeout=60)
+            if r.get('ok'):
+                got = (r.get('result') or {}).get('animation') or (r.get('result') or {}).get('document') or {}
+                if got.get('file_id'):
+                    ANIM_IDS[anim] = got['file_id']   # next time: no upload
+                last[0] = now
+                return
         if force or now - last[0] > 3:
             last[0] = now
             edit_caption(chat, pmsg, cap)
@@ -678,7 +686,7 @@ def approve(job):
             status('🎬 מרכיב את הסרטון\n▱▱▱▱▱▱▱▱▱▱ 0%', True, p=0)
         out, kind, info = engine.finish(studio, s['state'], s['work'], progress,
                                         max_bytes=1900 * 1024 * 1024 if BIG.enabled else 48 * 1024 * 1024)
-        status('📤 שולח…', True, p=1 if frames else None)
+        status('📤 שולח…', True)
         caption = f'✅ מוכן · {fmt_name(info["format"])}'
         if os.path.getsize(out) > 49 * 1024 * 1024 and BIG.enabled:
             BIG.send(chat, out, caption, video=(kind == 'video'), w=info['W'], h=info['H'], dur=info.get('dur', 0))
