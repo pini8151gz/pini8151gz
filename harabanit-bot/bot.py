@@ -37,6 +37,91 @@ TOKEN = os.environ.get('BOT_TOKEN', '').strip()
 API = f'https://api.telegram.org/bot{TOKEN}/'
 FILE_API = f'https://api.telegram.org/file/bot{TOKEN}/'
 ALLOWED = {int(x) for x in re.findall(r'\d+', os.environ.get('ALLOWED_IDS', ''))}
+# The first ID in ALLOWED_IDS is the admin: people ask for access and the admin approves them with one tap.
+ADMIN = int((re.findall(r'\d+', os.environ.get('ALLOWED_IDS', '')) or ['0'])[0])
+EXTRA = {}        # user id -> name, approved by the admin (kept in a pinned message in the admin's chat)
+STORE_TAG = '🔐 רשימת המורשים לרובוט'
+store_msg = [None]
+asked = {}        # user id -> time of the last access request (no spamming the admin)
+
+
+def is_allowed(uid):
+    return uid in ALLOWED or uid in EXTRA
+
+
+def load_users():
+    """Read the approved list back from the pinned message (survives restarts and updates)."""
+    if not ADMIN:
+        return
+    pm = (api('getChat', {'chat_id': ADMIN}).get('result') or {}).get('pinned_message') or {}
+    text = pm.get('text') or ''
+    if not text.startswith(STORE_TAG):
+        return
+    store_msg[0] = pm.get('message_id')
+    for uid, name in re.findall(r'^• (\d+) – (.*)$', text, re.M):
+        EXTRA[int(uid)] = name
+
+
+def save_users():
+    lines = [STORE_TAG, '(הרובוט שומר כאן את מי שאישרת. לא למחוק ולא לבטל את הנעיצה)', '']
+    lines += [f'• {uid} – {name}' for uid, name in EXTRA.items()] or ['אין עדיין']
+    text = '\n'.join(lines)
+    if store_msg[0]:
+        r = api('editMessageText', {'chat_id': ADMIN, 'message_id': store_msg[0], 'text': text})
+        if r.get('ok') or 'not modified' in r.get('description', ''):
+            return
+    r = api('sendMessage', {'chat_id': ADMIN, 'text': text, 'disable_notification': True})
+    if r.get('ok'):
+        store_msg[0] = r['result']['message_id']
+        api('pinChatMessage', {'chat_id': ADMIN, 'message_id': store_msg[0], 'disable_notification': True})
+
+
+def who(u):
+    name = ' '.join(x for x in (u.get('first_name'), u.get('last_name')) if x) or 'ללא שם'
+    return name + (f' (@{u["username"]})' if u.get('username') else '')
+
+
+def users_kb():
+    rows = [[{'text': f'🗑 הסרה: {name[:28]}', 'callback_data': f'ur:{uid}'}] for uid, name in EXTRA.items()]
+    return {'inline_keyboard': rows}
+
+
+def admin_callback(cq, user, data):
+    """Approve / deny / remove (admin only). Returns True when handled."""
+    act, _, uid = data.partition(':')
+    if act not in ('ua', 'ud', 'ur'):
+        return False
+    msg = cq.get('message') or {}
+    if user != ADMIN:
+        api('answerCallbackQuery', {'callback_query_id': cq['id'], 'text': '🔒 רק המנהל'})
+        return True
+    uid = int(uid)
+    if act == 'ua':
+        name = (msg.get('text') or '').split('\n')[1].replace('👤 ', '') if '\n' in (msg.get('text') or '') else str(uid)
+        EXTRA[uid] = name
+        save_users()
+        api('answerCallbackQuery', {'callback_query_id': cq['id'], 'text': '✅ אושר'})
+        api('editMessageText', {'chat_id': msg['chat']['id'], 'message_id': msg['message_id'],
+                                'text': f'✅ אושר: {name}'})
+        send(uid, '✅ קיבלת גישה לרובוט הרבנית סטודיו!\n\n' + HELP)
+    elif act == 'ud':
+        api('answerCallbackQuery', {'callback_query_id': cq['id'], 'text': 'נדחה'})
+        api('editMessageText', {'chat_id': msg['chat']['id'], 'message_id': msg['message_id'],
+                                'text': '❌ ' + ((msg.get('text') or '').split('\n')[1] if '\n' in (msg.get('text') or '') else str(uid)) + ' – נדחה'})
+    else:
+        name = EXTRA.pop(uid, str(uid))
+        save_users()
+        api('answerCallbackQuery', {'callback_query_id': cq['id'], 'text': '🗑 הוסר'})
+        api('editMessageText', {'chat_id': msg['chat']['id'], 'message_id': msg['message_id'],
+                                'text': users_text(), 'parse_mode': 'HTML', 'reply_markup': users_kb()})
+    return True
+
+
+def users_text():
+    lines = ['👥 <b>מורשים לרובוט</b>', f'• {ADMIN} – מנהל']
+    lines += [f'• {u} – (קבוע ב־Render)' for u in ALLOWED if u != ADMIN]
+    lines += [f'• {u} – {n}' for u, n in EXTRA.items()]
+    return '\n'.join(lines) + ('\n\nלהסרה – לחצו על הכפתור.' if EXTRA else '\n\nאנשים חדשים: שולחים לרובוט /start ואתם מאשרים בלחיצה.')
 _RAW_SECRET = os.environ.get('WEBHOOK_SECRET', '').strip()
 # Telegram only accepts A-Z a-z 0-9 _ - in secret tokens, so derive a safe one.
 SECRET = hashlib.sha256(_RAW_SECRET.encode()).hexdigest() if _RAW_SECRET else ''
@@ -257,7 +342,9 @@ def handle_callback(cq):
 
     def answer(text=''):
         api('answerCallbackQuery', {'callback_query_id': cq['id'], 'text': text or None})
-    if user not in ALLOWED:
+    if admin_callback(cq, user, data):
+        return
+    if not is_allowed(user):
         answer('🔒 אין הרשאה')
         return
     parts = data.split(':')
@@ -314,8 +401,18 @@ def handle_update(upd):
     if text.startswith('/id'):
         send(chat, f'המזהה שלך: <code>{user}</code>')
         return
-    if user not in ALLOWED:
-        send(chat, f'🔒 אין לך הרשאה להשתמש ברובוט.\nהמזהה שלך: <code>{user}</code>\nשלחו אותו למנהל כדי לקבל גישה.')
+    if not is_allowed(user):
+        if ADMIN and time.time() - asked.get(user, 0) > 600:
+            asked[user] = time.time()
+            send(ADMIN, f'🙋 <b>בקשת גישה לרובוט</b>\n👤 {who(msg.get("from") or {})}\nמזהה: <code>{user}</code>',
+                 reply_markup={'inline_keyboard': [[{'text': '✅ אשר', 'callback_data': f'ua:{user}'},
+                                                    {'text': '❌ דחה', 'callback_data': f'ud:{user}'}]]})
+            send(chat, '🔒 עדיין אין לך גישה לרובוט.\n📨 שלחתי בקשה למנהל – תקבל הודעה ברגע שיאשר.')
+        else:
+            send(chat, '⏳ הבקשה שלך כבר אצל המנהל. תקבל הודעה ברגע שיאשר.')
+        return
+    if text.startswith('/users') and user == ADMIN:
+        send(chat, users_text(), reply_markup=users_kb())
         return
     if text.startswith('/start') or text.startswith('/help'):
         send(chat, HELP)
@@ -752,7 +849,7 @@ class Hook(BaseHTTPRequestHandler):
         if self.path.startswith('/status'):
             info = api('getWebhookInfo').get('result', {})
             body += f"\nwebhook: {bool(info.get('url'))} pending: {info.get('pending_update_count')} error: {info.get('last_error_message', '-')}"
-            body += f"\nallowed users: {len(ALLOWED)}"
+            body += f"\nallowed users: {len(ALLOWED) + len(EXTRA)}"
             body += f"\nbig files (2GB): {'on' if BIG.enabled else 'off – add TG_API_ID + TG_API_HASH'}"
         data = body.encode()
         self.send_response(200)
@@ -770,7 +867,7 @@ class Hook(BaseHTTPRequestHandler):
         length = int(self.headers.get('Content-Length') or 0)
         user = check_init_data(self.headers.get('X-Init-Data'))
         s = phone_job(token)
-        if not user or user not in ALLOWED:
+        if not user or not is_allowed(user):
             self.close_connection = True
             return self.reply(403, {'ok': False, 'error': 'forbidden'})
         if not s:
@@ -861,13 +958,21 @@ def main():
     if not TOKEN:
         raise SystemExit('BOT_TOKEN is missing')
     studio = engine.Studio(SITE_DIR)
+    try:
+        load_users()
+        print('approved users:', len(EXTRA), flush=True)
+    except Exception:
+        traceback.print_exc()
     threading.Thread(target=worker, daemon=True).start()
     threading.Thread(target=keep_awake, daemon=True).start()
-    api('setMyCommands', {'commands': [
-        {'command': 'start', 'description': 'הסבר קצר'},
-        {'command': 'story', 'description': 'סטורי 9:16 כברירת מחדל'},
-        {'command': 'post', 'description': 'פוסט 4:5 כברירת מחדל'},
-        {'command': 'id', 'description': 'המזהה שלי'}]})
+    cmds = [{'command': 'start', 'description': 'הסבר קצר'},
+            {'command': 'story', 'description': 'סטורי 9:16 כברירת מחדל'},
+            {'command': 'post', 'description': 'פוסט 4:5 כברירת מחדל'},
+            {'command': 'id', 'description': 'המזהה שלי'}]
+    api('setMyCommands', {'commands': cmds})
+    if ADMIN:   # the admin also sees /users
+        api('setMyCommands', {'commands': cmds + [{'command': 'users', 'description': 'ניהול מורשים'}],
+                              'scope': {'type': 'chat', 'chat_id': ADMIN}})
     if PUBLIC_URL:
         r = api('setWebhook', {'url': PUBLIC_URL + '/tg', 'secret_token': SECRET or None,
                                'allowed_updates': ['message', 'callback_query'], 'max_connections': 10})
