@@ -2047,7 +2047,11 @@ function cornerRestore(c){ S.cut=c.cut; S.cutSrc=c.cutSrc; Object.assign(S.adj,c
    The bot opens this page with ?tg=<token>. The material and the design choices come from the bot,
    the phone encodes (hardware, seconds) and the result goes back to the chat. */
 const TGQ=new URLSearchParams(location.search);
-const TG_TOKEN=TGQ.get('tg');
+/* the job's token: ?tg=… (button in a private chat) or the Mini App start parameter (link from a group) */
+const TG_TOKEN=(()=>{ const q=TGQ.get('tg')||TGQ.get('tgWebAppStartParam'); if(q) return q;
+  try{ const h=new URLSearchParams(location.hash.slice(1)); const sp=h.get('tgWebAppStartParam'); if(sp) return sp;
+    const d=h.get('tgWebAppData'); if(d){ const v=new URLSearchParams(d).get('start_param'); if(v) return v; } }catch(e){}
+  return null; })();
 const TG_API=(/^http:\/\/127\.0\.0\.1:\d+$/.test(TGQ.get('api')||'')?TGQ.get('api'):'https://harabanit-bot.onrender.com');
 function tgScript(){ return new Promise(res=>{ if(window.Telegram&&Telegram.WebApp) return res(Telegram.WebApp);
   const sc=document.createElement('script'); sc.src='https://telegram.org/js/telegram-web-app.js';

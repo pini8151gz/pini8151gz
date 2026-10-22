@@ -219,6 +219,7 @@ def remote_build(s, progress, max_bytes):
     return out
 STICKER_IDS = {}  # colour -> Telegram file id of its logo sticker (uploaded once)
 tokens = {}       # long random token -> sid (for the phone build page)
+ME = {}           # the bot's own profile (username, has_main_web_app)
 # The studio, opened inside Telegram to build the video on the phone (much faster than this server).
 SITE_URL = os.environ.get('SITE_URL', 'https://pini8151gz.github.io/pini8151gz/harabanit/')
 ORIGINS = {o.strip().rstrip('/') for o in os.environ.get('SITE_ORIGINS', 'https://pini8151gz.github.io').split(',') if o.strip()}
@@ -299,9 +300,18 @@ def main_kb(s):
         [{'text': ('✓ ' if f == 'story' else '') + 'סטורי 9:16', 'callback_data': f'f:story:{sid}'},
          {'text': ('✓ ' if f == 'post' else '') + 'פוסט 4:5', 'callback_data': f'f:post:{sid}'}],
         [{'text': f'צבע: {color_label(info.get("theme"))} ▾', 'callback_data': f'cm:{sid}'}]] + (
-        [[{'text': '✏️ עריכה מלאה', 'web_app': {'url': f'{SITE_URL}?tg={s["token"]}'}}],
-         [{'text': '✅ אישור תצוגה', 'callback_data': f'ok:{sid}'}]] if phone_ok(s) else
+        ([[edit_button(s)]] if phone_ok(s) and edit_button(s) else []) +
         [[{'text': '✅ אישור תצוגה', 'callback_data': f'ok:{sid}'}]])}
+
+
+def edit_button(s):
+    """'Full edit' opens the studio inside Telegram. Private chat: a web_app button.
+    Groups don't allow those, so there it is a t.me link to the bot's main Mini App (when one is set in BotFather)."""
+    if s['chat'] > 0:
+        return {'text': '✏️ עריכה מלאה', 'web_app': {'url': f'{SITE_URL}?tg={s["token"]}'}}
+    if ME.get('username') and ME.get('has_main_web_app'):
+        return {'text': '✏️ עריכה מלאה', 'url': f'https://t.me/{ME["username"]}?startapp={s["token"]}'}
+    return None
 
 
 def phone_ok(s):
@@ -463,6 +473,8 @@ def handle_update(upd):
         send(chat, f'המזהה שלך: <code>{user}</code>')
         return
     if not is_allowed(user):
+        if chat < 0 and not text.startswith('/start'):
+            return   # in a group: people without access are simply ignored (no noise)
         if ADMIN and time.time() - asked.get(user, 0) > 600:
             asked[user] = time.time()
             send(ADMIN, f'🙋 <b>בקשת גישה לרובוט</b>\n👤 {who(msg.get("from") or {})}\nמזהה: <code>{user}</code>',
@@ -1030,6 +1042,11 @@ def main():
     if not TOKEN:
         raise SystemExit('BOT_TOKEN is missing')
     studio = engine.Studio(SITE_DIR)
+    try:
+        ME.update(api('getMe').get('result') or {})
+        print('bot:', ME.get('username'), 'main mini app:', ME.get('has_main_web_app'), flush=True)
+    except Exception:
+        traceback.print_exc()
     try:
         load_users()
         print('approved users:', len(EXTRA), flush=True)
