@@ -526,6 +526,7 @@ body.noscroll{overflow:hidden}
 
       <div class="adj-group" data-group="logo" hidden>
         <div class="ctl"><span class="ctl-head">הצגה</span><div class="pills row" data-k="logoShow"><button type="button" data-v="on">עם לוגו</button><button type="button" data-v="off">בלי לוגו</button></div></div>
+        <div class="ctl"><span class="ctl-head">מרכז הלוגו</span><div class="pills row" data-k="logoVar"><button type="button" data-v="dark">שחור</button><button type="button" data-v="light">לבן</button></div></div>
         <div class="ctl"><div class="ctl-head"><label for="a-logoScale">גודל</label><output data-for="logoScale"></output></div><input type="range" id="a-logoScale" data-k="logoScale" min="0.5" max="1.6" step="0.05"></div>
         <div class="ctl"><span class="ctl-head">צד</span><div class="pills row" data-k="side"><button type="button" data-v="auto">אוטומטי</button><button type="button" data-v="left">שמאל</button><button type="button" data-v="right">ימין</button></div></div>
         <div class="ctl"><div class="ctl-head"><label for="a-logoX">הזזה לצדדים</label><output data-for="logoX"></output></div><input type="range" id="a-logoX" dir="ltr" data-k="logoX" min="-800" max="800" step="5"></div>
@@ -610,11 +611,12 @@ const DEFAULT_KIT={name:'הרבנית',headFont:'Rubik',fontData:null,fontName:'
 
 /* the 16 official logo colors */
 const THEMES=[
-  {id:'sky',n:'תכלת',c:'#19A3F3'},{id:'purple',n:'סגול',c:'#780095'},{id:'indigo',n:'אינדיגו',c:'#350AD3'},
-  {id:'blue',n:'כחול',c:'#009CFC'},{id:'lime',n:'ליים',c:'#73EF05'},{id:'forest',n:'ירוק כהה',c:'#064520'},
+  /* the brand's own colours: real backgrounds and logos (bg/, logos/) */
+  {id:'red',n:'אדום',c:'#EF2A1A',bg:1},{id:'orange',n:'כתום',c:'#E98139',bg:1},{id:'yellow',n:'צהוב',c:'#EFE15A',bg:1},{id:'lime',n:'ירוק',c:'#73BA3C',bg:1},{id:'blue',n:'כחול',c:'#2B6AE6',bg:1},{id:'purple',n:'סגול',c:'#784ECE',bg:1},
+  {id:'sky',n:'תכלת',c:'#19A3F3'},{id:'indigo',n:'אינדיגו',c:'#350AD3'},
+  {id:'forest',n:'ירוק כהה',c:'#064520'},
   {id:'mint',n:'מנטה',c:'#15E78E'},{id:'teal',n:'טורקיז',c:'#00AFB4'},{id:'pink',n:'ורוד',c:'#F90B78'},
-  {id:'magenta',n:'מג׳נטה',c:'#EC00C7'},{id:'red',n:'אדום',c:'#F93A34'},{id:'coral',n:'אלמוג',c:'#F96249'},
-  {id:'orange',n:'כתום',c:'#F75D00'},{id:'yellow',n:'צהוב',c:'#FDC400'},
+  {id:'magenta',n:'מג׳נטה',c:'#EC00C7'},{id:'coral',n:'אלמוג',c:'#F96249'},
   {id:'silver',n:'כסף',c:'#A9ABB0',metal:['#E6E7EA','#B9BBC0','#7E8187']},
   {id:'copper',n:'נחושת',c:'#9A6436',metal:['#D9A57A','#A86C3D','#5E3418']},
   {id:'gold',n:'זהב',c:'#D4A21A',base:'red'},{id:'burgundy',n:'בורדו',c:'#8C1D3B',base:'red'},{id:'navy',n:'נייבי',c:'#1D2D6B',base:'red'},
@@ -638,7 +640,7 @@ function defaultAdj(){ return {scale:1,align:'center',lh:1.22,boxPos:'top',boxM:
   weight:'auto',boxStyle:'light',ink:'auto',kStyle:'plain',ls:0,radius:16,pad:24,boxOff:0,extraScale:.78,
   mFill:'auto',frame:'none',zoom:1,fx:.5,fy:null,
   cutStyle:'auto',cutScale:1,cutZoom:1,cutFx:.5,cutFy:.3,cutSel:'main',cutEdge:0,cutFeather:0,cutLine:'none',cutLineW:3,cutShadow:'soft',cutFade:0,cutBg:'none',cutBgCol:'#ffffff',cutBlur:14,cutLight:0,cutContrast:0,cutBW:'off',cutCrop:'full',cutFlip:'off',cutSide:'auto',cutX:0,cutY:0,
-  logoShow:'on',logoScale:1,side:'auto',logoX:0,logoY:0}; }
+  logoShow:'on',logoVar:'dark',logoScale:1,side:'auto',logoX:0,logoY:0}; }
 function loadKit(){ try{ const r=localStorage.getItem(KIT_KEY); if(r) return Object.assign({},DEFAULT_KIT,JSON.parse(r)); }catch(e){} return Object.assign({},DEFAULT_KIT); }
 function saveKit(){ try{ localStorage.setItem(KIT_KEY,JSON.stringify(S.kit)); }catch(e){ try{ localStorage.setItem(KIT_KEY,JSON.stringify(Object.assign({},S.kit,{fontData:null}))); }catch(_){} } }
 
@@ -788,10 +790,21 @@ function drawCoverZ(ctx,src,x,y,w,h,fx,fy,zoom){
 
 /* background: post color + tilted wordmark pattern, cached per theme, size and scale */
 const bgCache=new Map();
+const BGIMG={};
+function bgKey(id,W,H){ return id+'-'+(H/W>1.5?'story':'post'); }
+function preloadBg(id){ const T=THEMES.find(t=>t.id===id); if(!T||!T.bg) return Promise.resolve();
+  return Promise.all(['story','post'].map(f=>{ const k=id+'-'+f; if(BGIMG[k]) return BGIMG[k].ready;
+    const im=new Image(); const ready=new Promise(r=>{ im.onload=()=>{ bgCache.clear(); r(); }; im.onerror=()=>r(); });
+    im.src='bg/'+k+'.webp'; BGIMG[k]={im,ready}; return ready; })); }
 function background(T,W,H,scale){
-  const key=[T.id,W,H,scale,S.kit.name].join('|'); if(bgCache.has(key)) return bgCache.get(key);
+  const bimg=T.bg&&BGIMG[bgKey(T.id,W,H)]&&BGIMG[bgKey(T.id,W,H)].im;
+  const key=[T.id,W,H,scale,S.kit.name,bimg&&bimg.naturalWidth?'img':''].join('|'); if(bgCache.has(key)) return bgCache.get(key);
   const c=document.createElement('canvas'); c.width=Math.round(W*scale); c.height=Math.round(H*scale);
   const x=c.getContext('2d'); x.scale(scale,scale); const s=W/1080;
+  if(bimg&&bimg.naturalWidth&&!S.kit.name){ /* the brand's own background */
+    const k=Math.max(W/bimg.naturalWidth,H/bimg.naturalHeight), dw=bimg.naturalWidth*k, dh=bimg.naturalHeight*k;
+    x.drawImage(bimg,(W-dw)/2,(H-dh)/2,dw,dh);
+    if(bgCache.size>6) bgCache.delete(bgCache.keys().next().value); bgCache.set(key,c); return c; }
   if(T.metal){ const g=x.createLinearGradient(0,0,W,H); g.addColorStop(0,T.metal[0]); g.addColorStop(.45,T.metal[1]); g.addColorStop(.55,mix(T.metal[0],T.metal[1],.4)); g.addColorStop(1,T.metal[2]); x.fillStyle=g; }
   else x.fillStyle=T.c;
   x.fillRect(0,0,W,H);
@@ -808,7 +821,8 @@ function background(T,W,H,scale){
   if(bgCache.size>6) bgCache.delete(bgCache.keys().next().value);
   bgCache.set(key,c); return c;
 }
-function loadLogo(id){
+function loadLogo(id){ return Promise.all([loadLogo0(id),preloadBg(id),(THEMES.find(t=>t.id===id)||{}).bg?loadLogo0(id+'-w'):null]); }
+function loadLogo0(id){
   if(S.logos[id]) return S.logos[id].ready;
   const T=THEMES.find(t=>t.id===id);
   if(T&&T.base){ const rec={im:null,ok:false,url:''}; S.logos[id]=rec;
@@ -903,7 +917,8 @@ function renderBrand(ctx,W,H,src,scale){
   const side=sideFor(mediaY+mediaH,H,D,bm);
   let cutRect=null, logoRect=null;
   if(S.cut){ const corner = A.cutSide==='auto' ? (side==='left'?'right':'left') : A.cutSide; cutRect=drawCutout(ctx,W,H,s,corner,P.tag); }
-  const lg=S.logos[T.id];
+  const lgW=T.bg&&A.logoVar==='light'?S.logos[T.id+'-w']:null;
+  const lg=lgW&&lgW.ok?lgW:S.logos[T.id];
   if(A.logoShow==='on' && lg && lg.ok){ const im=lg.im, w=D*(im.naturalWidth||im.width)/(im.naturalHeight||im.height);
     const lx=(side==='left'?26*s:W-26*s-w)+A.logoX*s, ly=H-bm-D-A.logoY*s;
     ctx.save(); ctx.shadowColor='rgba(0,0,0,.28)'; ctx.shadowBlur=18*s; ctx.shadowOffsetY=4*s; ctx.drawImage(im,lx,ly,w,D); ctx.restore();

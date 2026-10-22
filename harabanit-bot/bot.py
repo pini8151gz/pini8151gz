@@ -234,10 +234,11 @@ ORIGINS = {o.strip().rstrip('/') for o in os.environ.get('SITE_ORIGINS', 'https:
 MAX_UPLOAD = 2 * 1024 * 1024 * 1024
 
 # The studio's 16 brand colours (id, emoji, name) for the colour buttons.
-COLORS = [('sky', '🩵', 'תכלת'), ('purple', '🟣', 'סגול'), ('indigo', '🟦', 'אינדיגו'), ('blue', '🔵', 'כחול'),
-          ('lime', '🟢', 'ליים'), ('forest', '🌲', 'ירוק כהה'), ('mint', '🌿', 'מנטה'), ('teal', '💠', 'טורקיז'),
-          ('pink', '🩷', 'ורוד'), ('magenta', '🌸', 'מג׳נטה'), ('red', '🔴', 'אדום'), ('coral', '🪸', 'אלמוג'),
-          ('orange', '🟠', 'כתום'), ('yellow', '🟡', 'צהוב'), ('silver', '⚪', 'כסף'), ('copper', '🟤', 'נחושת')]
+COLORS = [('red', '🔴', 'אדום'), ('orange', '🟠', 'כתום'), ('yellow', '🟡', 'צהוב'), ('lime', '🟢', 'ירוק'),
+          ('blue', '🔵', 'כחול'), ('purple', '🟣', 'סגול'),
+          ('sky', '🩵', 'תכלת'), ('indigo', '🟦', 'אינדיגו'), ('forest', '🌲', 'ירוק כהה'), ('mint', '🌿', 'מנטה'),
+          ('teal', '💠', 'טורקיז'), ('pink', '🩷', 'ורוד'), ('magenta', '🌸', 'מג׳נטה'), ('coral', '🪸', 'אלמוג'),
+          ('silver', '⚪', 'כסף'), ('copper', '🟤', 'נחושת')]
 COLOR = {c[0]: c for c in COLORS}
 
 
