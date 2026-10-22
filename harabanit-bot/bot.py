@@ -143,9 +143,7 @@ def color_label(theme):
 
 def preview_caption(s):
     info = s['state']['info']
-    what = 'סרטון' if s['state']['mode'] == 'video' else 'תמונה'
-    return (f'👀 <b>תצוגה מקדימה</b> · {fmt_name(info["format"])} · {color_label(info.get("theme"))}\n'
-            f'אפשר לשנות פורמט וצבע. כשמתאים – ✅ אשר{" והסרטון יוכן" if what == "סרטון" else ""}.')
+    return f'👀 &gt; <b>תצוגה מקדימה</b>\n· {fmt_name(info["format"])} · {color_label(info.get("theme"))}'
 
 
 def main_kb(s):
@@ -155,7 +153,7 @@ def main_kb(s):
         [{'text': ('✓ ' if f == 'story' else '') + 'סטורי 9:16', 'callback_data': f'f:story:{sid}'},
          {'text': ('✓ ' if f == 'post' else '') + 'פוסט 4:5', 'callback_data': f'f:post:{sid}'}],
         [{'text': f'צבע: {color_label(info.get("theme"))} ▾', 'callback_data': f'cm:{sid}'}]] + (
-        [[{'text': '⚡ הכן בטלפון (מהיר)', 'web_app': {'url': f'{SITE_URL}?tg={s["token"]}'}}],
+        [[{'text': '✏️ עריכה ושליחה מהטלפון (מהיר)', 'web_app': {'url': f'{SITE_URL}?tg={s["token"]}'}}],
          [{'text': '✅ אשר והכן בשרת', 'callback_data': f'ok:{sid}'}]] if phone_ok(s) else
         [[{'text': '✅ אשר' + (' והכן סרטון' if s['state']['mode'] == 'video' else ''), 'callback_data': f'ok:{sid}'}]])}
 
@@ -618,11 +616,18 @@ def phone_job(token):
     return s if s and phone_ok(s) else None
 
 
-def deliver_phone_result(s, path):
-    """A video built on the phone arrived: send it to the chat and close the preview."""
-    chat, info = s['chat'], s['state']['info']
+def deliver_phone_result(s, path, is_image=False):
+    """A result made on the phone arrived: send it to the chat and close the preview."""
+    chat = s['chat']
+    if is_image:
+        p = engine.probe(path)
+        caption = f'✅ מוכן · {fmt_name("story" if p["h"] / max(1, p["w"]) > 1.5 else "post")} · איכות מלאה'
+        r = api('sendDocument', {'chat_id': str(chat), 'caption': caption}, {'document': path}, timeout=300)
+        if not r.get('ok'):
+            raise RuntimeError(r.get('description', 'send failed'))
+        return close_session(s)
     path, p = engine.playable(path, s['work'])
-    caption = f'✅ מוכן · {fmt_name(info["format"])}'
+    caption = f'✅ מוכן · {fmt_name("story" if p["h"] / max(1, p["w"]) > 1.5 else "post")}'
     if BIG.enabled:
         BIG.send(chat, path, caption, video=True, w=p['w'], h=p['h'], dur=p['dur'])
     else:
@@ -631,9 +636,13 @@ def deliver_phone_result(s, path):
                 {'video': path}, timeout=600)
         if not r.get('ok'):
             raise RuntimeError(r.get('description', 'send failed'))
+    close_session(s)
+
+
+def close_session(s):
     sessions.pop(s['sid'], None)
     tokens.pop(s.get('token'), None)
-    api('deleteMessage', {'chat_id': chat, 'message_id': s['pmsg']})
+    api('deleteMessage', {'chat_id': s['chat'], 'message_id': s['pmsg']})
     shutil.rmtree(s['work'], ignore_errors=True)
 
 
@@ -730,7 +739,8 @@ class Hook(BaseHTTPRequestHandler):
             return self.reply(409, {'ok': False, 'error': 'busy'})
         s['busy'] = True
         try:
-            path = os.path.join(s['work'], f'phone_{uuid.uuid4().hex[:6]}.mp4')
+            is_image = (self.headers.get('Content-Type') or '').startswith('image/')
+            path = os.path.join(s['work'], f'phone_{uuid.uuid4().hex[:6]}.{"jpg" if is_image else "mp4"}')
             left = length
             with open(path, 'wb') as f:
                 while left > 0:
@@ -739,7 +749,7 @@ class Hook(BaseHTTPRequestHandler):
                         raise RuntimeError('upload cut')
                     f.write(chunk)
                     left -= len(chunk)
-            deliver_phone_result(s, path)
+            deliver_phone_result(s, path, is_image)
             self.reply(200, {'ok': True})
         except Exception as e:
             traceback.print_exc()
