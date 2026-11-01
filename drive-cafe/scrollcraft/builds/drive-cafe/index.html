@@ -5,21 +5,24 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Karantina:wght@400;700&display=swap">
 <link rel="stylesheet" href="scrollcraft.css">
 <style>
-/* Layout: a road stop told as one afternoon. Light warm grounds for daylight
-   acts, two painted dark grounds (the tabun, the dusk close). RTL throughout. */
+/* v2 layout: photo first, one line per section. Order sells: arrive, choose,
+   want (fire + dishes), be there (view), trust (people), go (visit).
+   Two motion moments only: the layered hero and the tabun. */
 :root {
-  --sc-canvas:     #F4EADC;   /* warm paper, the daylight ground */
-  --sc-surface:    #EADBC5;   /* raised: latte foam */
-  --sc-ink:        #2A1B12;   /* coffee */
-  --sc-ink-soft:   #6A5242;   /* milk coffee, tinted secondary */
-  --sc-accent:     #9A4F22;   /* caramel, deep enough for light text */
+  --sc-canvas:     #F3EADF;
+  --sc-surface:    #E9DCCB;
+  --sc-ink:        #26180F;
+  --sc-ink-soft:   #6A5444;
+  --sc-accent:     #9A4F22;   /* caramel */
   --sc-accent-ink: #FFF6EA;
-  --olive:         #626844;   /* soft olive: kashrut and "open" */
-  --gold:          #B8954A;   /* fine gold: hairlines and the seal only */
-  --night:         #1B120C;   /* the oven and dusk */
+  --coffee:        #9A4F22;
+  --grill:         #8A3626;
+  --olive:         #5E6440;
+  --gold:          #B8954A;
+  --night:         #1B120C;
   --night-ink:     #F6ECDF;
   --night-soft:    #CDB59E;
-  --ember:         #E8924F;   /* caramel, light stop for dark grounds */
+  --ember:         #E8924F;
   --sc-shadow-color: 24 45% 12%;
   --sc-font-display: "Karantina", "Assistant", "Arial Hebrew", system-ui, sans-serif;
   --sc-font-text:    "Assistant", "Arial Hebrew", system-ui, sans-serif;
@@ -28,237 +31,163 @@
 }
 html, body { background: var(--sc-canvas); color: var(--sc-ink); }
 body { direction: rtl; font-size: clamp(1.02rem, 0.98rem + 0.25vw, 1.2rem); }
-.sc-display { font-family: var(--sc-font-display); font-weight: 700; letter-spacing: 0; line-height: 0.92; margin: 0; text-wrap: balance; }
-.sc-body { text-wrap: pretty; }
-h1, h2, h3, p { margin: 0; }
-.wrap { width: 100%; max-width: var(--sc-maxw); margin-inline: auto; padding-left: var(--gx); padding-right: var(--gx); }
+h1, h2, h3, p, figure { margin: 0; }
+.d { font-family: var(--sc-font-display); font-weight: 700; line-height: 0.9; letter-spacing: 0; text-wrap: balance; }
+.wrap { width: 100%; max-width: 88rem; margin-inline: auto; padding-left: var(--gx); padding-right: var(--gx); }
+.sec { padding-block: clamp(5rem, 13vh, 9rem); }
+.sec__head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--sc-4); margin-bottom: var(--sc-7); }
+.sec__head h2 { font-size: clamp(3rem, 1.6rem + 4.4vw, 6.2rem); }
+.sec__head p { color: var(--sc-ink-soft); max-width: 30ch; }
+img { height: auto; }
 .btn {
   display: inline-flex; align-items: center; gap: var(--sc-2);
-  padding: 0.78em 1.35em; border-radius: var(--sc-r-pill);
+  padding: 0.8em 1.4em; border-radius: var(--sc-r-pill);
   background: var(--sc-accent); color: var(--sc-accent-ink);
   font-weight: 700; text-decoration: none; white-space: nowrap; line-height: 1.1;
   box-shadow: var(--sc-e2), inset 0 1px 0 rgb(255 255 255 / 0.22);
   transition: transform 140ms var(--sc-ease-out), background-color 160ms var(--sc-ease-out);
 }
 .btn:active { transform: scale(0.97); }
-@media (hover: hover) and (pointer: fine) { .btn:hover { background: #87441C; } }
-.btn--ghost { background: transparent; color: inherit; box-shadow: inset 0 0 0 1px currentColor; }
-@media (hover: hover) and (pointer: fine) { .btn--ghost:hover { background: color-mix(in oklab, currentColor 10%, transparent); } }
-.btn svg { width: 1.05em; height: 1.05em; flex: none; }
+.btn--ghost { background: transparent; color: inherit; box-shadow: inset 0 0 0 1.5px currentColor; }
+@media (hover: hover) and (pointer: fine) { .btn:hover { background: #87441C; } .btn--ghost:hover { background: color-mix(in oklab, currentColor 10%, transparent); } }
 
-/* ------------------------------------------------------------- top bar -- */
-.bar {
-  position: fixed; inset: 0 0 auto; z-index: var(--sc-z-chrome);
-  display: flex; align-items: center; justify-content: space-between; gap: var(--sc-4);
-  padding: calc(env(safe-area-inset-top, 0px) + var(--sc-3)) var(--gx) var(--sc-3);
-  transition: background-color 240ms var(--sc-ease-out), box-shadow 240ms var(--sc-ease-out);
-}
+/* top bar */
+.bar { position: fixed; inset: 0 0 auto; z-index: var(--sc-z-chrome); display: flex; align-items: center; justify-content: space-between; gap: var(--sc-4);
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sc-3)) var(--gx) var(--sc-3); transition: background-color 240ms var(--sc-ease-out), color 240ms var(--sc-ease-out); }
 .bar.is-solid { background: color-mix(in oklab, var(--sc-canvas) 92%, transparent); box-shadow: 0 1px 0 color-mix(in oklab, var(--sc-ink) 10%, transparent); backdrop-filter: blur(10px); }
-.bar.is-night { background: color-mix(in oklab, var(--night) 88%, transparent); color: var(--night-ink); box-shadow: 0 1px 0 rgb(255 255 255 / 0.06); }
-.mark { display: flex; align-items: baseline; gap: var(--sc-2); text-decoration: none; color: inherit; }
-.mark b { font-family: var(--sc-font-display); font-size: 2rem; line-height: 1; }
-.mark small { font-size: var(--sc-t-xs); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; direction: ltr; }
-.bar__end { display: flex; align-items: center; gap: var(--sc-3); }
+.bar.is-night { background: color-mix(in oklab, var(--night) 90%, transparent); color: var(--night-ink); box-shadow: none; }
+.mark { font-family: var(--sc-font-display); font-weight: 700; font-size: 2rem; line-height: 1; text-decoration: none; color: inherit; }
+.bar__end { display: flex; align-items: center; gap: var(--sc-4); }
 .status { display: inline-flex; align-items: center; gap: 0.45em; font-size: var(--sc-t-sm); font-weight: 600; white-space: nowrap; }
-.status i { width: 0.55em; height: 0.55em; border-radius: 50%; background: var(--olive); box-shadow: 0 0 0 3px color-mix(in oklab, var(--olive) 25%, transparent); }
-.status.is-closed i { background: #9A6A55; box-shadow: none; }
-.bar .btn { padding: 0.6em 1.1em; font-size: var(--sc-t-sm); }
+.status i { width: 0.55em; height: 0.55em; border-radius: 50%; background: #7E8A4E; box-shadow: 0 0 0 3px rgb(126 138 78 / 0.25); }
+.status.is-closed i { background: #A0705A; box-shadow: none; }
+.bar .btn { padding: 0.6em 1.15em; font-size: var(--sc-t-sm); }
 
-/* ----------------------------------------------------- 1 HERO: layers -- */
+/* 1 hero: layered planes */
 .hero { position: relative; height: 100svh; min-height: 560px; overflow: clip; background: #C88E6E; isolation: isolate; }
 .hero__plane { position: absolute; pointer-events: none; will-change: transform; max-width: none; }
 .hero__sky, .hero__ridge { inset: -6% 0 auto 0; width: 100%; height: 112%; object-fit: cover; object-position: 50% 62%; }
-.hero__sky { z-index: 0; }
-.hero__glow { z-index: 1; inset: 0; background: radial-gradient(60% 45% at 46% 58%, rgb(255 205 120 / 0.55), transparent 70%); mix-blend-mode: soft-light; }
+.hero__glow { z-index: 1; inset: 0; background: radial-gradient(60% 45% at 46% 58%, rgb(255 205 120 / 0.5), transparent 70%); mix-blend-mode: soft-light; }
 .hero__ridge { z-index: 2; }
-.hero__copy { position: absolute; z-index: 3; top: clamp(5.5rem, 15vh, 10rem); right: var(--gx); width: min(36rem, 46vw); display: grid; gap: var(--sc-5); justify-items: start; will-change: transform, opacity; }
-.hero__copy h1 { font-size: clamp(3.6rem, 1.4rem + 6.4vw, 8.4rem); color: var(--sc-ink); }
-.hero__copy p { color: var(--sc-ink); font-size: var(--sc-t-lg); line-height: 1.45; max-width: 30ch; font-weight: 600; }
-.hero__bus { z-index: 4; left: 2vw; bottom: 2vh; width: clamp(420px, 44vw, 900px); height: auto; filter: drop-shadow(0 18px 24px rgb(40 18 8 / 0.35)); transform-origin: 40% 100%; }
-.hero__frond { z-index: 5; left: 0; top: 14vh; width: clamp(110px, 13vw, 240px); height: auto; filter: blur(0.6px); transform-origin: 0 0; }
-.hero__shakes { z-index: 6; right: 3vw; bottom: -9vh; width: clamp(150px, 15vw, 280px); height: auto; filter: drop-shadow(-10px 16px 22px rgb(40 18 8 / 0.35)) sepia(0.12) saturate(1.05); transform-origin: 80% 100%; }
-.hero__floor { position: absolute; z-index: 7; inset: auto 0 0 0; height: 16vh; background: linear-gradient(to top, var(--sc-canvas), transparent); pointer-events: none; }
+.hero__copy { position: absolute; z-index: 3; top: clamp(6rem, 17vh, 11rem); right: var(--gx); display: grid; gap: var(--sc-6); justify-items: start; will-change: opacity; }
+.hero__copy h1 { font-size: clamp(3.8rem, 1.2rem + 5.6vw, 8.2rem); width: min(44rem, 50vw); color: var(--sc-ink); }
+.hero__where { font-weight: 700; font-size: var(--sc-t-lg); color: var(--sc-ink); }
+.hero__ctas { display: flex; gap: var(--sc-3); flex-wrap: wrap; }
+.hero__bus { z-index: 4; left: 2vw; bottom: 2vh; width: clamp(420px, 44vw, 900px); filter: drop-shadow(0 18px 24px rgb(40 18 8 / 0.35)); transform-origin: 40% 100%; }
+.hero__frond { z-index: 5; left: 0; top: 14vh; width: clamp(110px, 13vw, 240px); filter: blur(0.6px); }
+.hero__shakes { z-index: 6; right: 3vw; bottom: -9vh; width: clamp(150px, 15vw, 280px); filter: drop-shadow(-10px 16px 22px rgb(40 18 8 / 0.35)) sepia(0.12); }
+.hero__floor { position: absolute; z-index: 7; inset: auto 0 0 0; height: 14vh; background: linear-gradient(to top, var(--sc-canvas), transparent); pointer-events: none; }
 
-/* ------------------------------------------------ 2 RECOGNITION: pin -- */
-.road .sc-stage { display: grid; grid-template-columns: 1.05fr 1fr; align-items: center; gap: var(--sc-8); padding-left: var(--gx); padding-right: var(--gx); padding-block: 12vh 8vh; }
-.road__text { display: grid; align-self: center; }
-.road__text > * { grid-area: 1 / 1; align-self: center; }
-.road__text h2 { font-size: var(--sc-t-4xl); max-width: 11ch; }
-.road__text p { font-size: var(--sc-t-2xl); font-family: var(--sc-font-display); font-weight: 400; line-height: 1.02; max-width: 16ch; }
-.road__photo { position: relative; height: 76svh; border-radius: var(--sc-r-lg); overflow: hidden; box-shadow: var(--sc-e3); }
-.road__photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: scale(calc(1.14 - var(--sc-p, 0) * 0.14)); transform-origin: 50% 40%; }
-.road__photo figcaption { position: absolute; inset: auto var(--sc-4) var(--sc-4) auto; padding: 0.35em 0.8em; border-radius: var(--sc-r-pill); background: rgb(27 18 12 / 0.62); color: var(--night-ink); font-size: var(--sc-t-sm); }
+/* 2 trucks: three tall photos, one word each */
+.trucks__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sc-4); }
+.truck { position: relative; display: grid; gap: var(--sc-3); }
+.truck figure { position: relative; aspect-ratio: 3 / 4; border-radius: var(--sc-r-lg); overflow: hidden; box-shadow: var(--sc-e2); }
+.truck img { width: 100%; height: 100%; object-fit: cover; transition: transform 600ms var(--sc-ease-out); }
+@media (hover: hover) and (pointer: fine) { .truck:hover img { transform: scale(1.04); } }
+.truck h3 { position: absolute; z-index: 1; right: var(--sc-5); bottom: var(--sc-4); color: #FFF6EA; font-size: clamp(4.4rem, 2rem + 5vw, 7.6rem); text-shadow: 0 2px 24px rgb(20 10 4 / 0.45); }
+.truck figure::after { content: ""; position: absolute; inset: 45% 0 0 0; background: linear-gradient(to top, rgb(24 12 6 / 0.6), transparent); }
+.truck p { color: var(--sc-ink-soft); padding-inline: var(--sc-1); }
+.truck p b { color: var(--tc); font-weight: 700; }
+.truck--coffee { --tc: var(--coffee); } .truck--grill { --tc: var(--grill); } .truck--tabun { --tc: var(--olive); }
+.truck figure { box-shadow: var(--sc-e2), 0 -4px 0 0 var(--tc) inset; }
 
-/* ------------------------------------------------- 3 CHOICE: RTL pan -- */
-.trucks { --tint: #EBD6BC; }
-.trucks .sc-stage { background: var(--tint); transition: background-color 120ms linear; }
-.trucks__head { position: absolute; z-index: 2; top: calc(env(safe-area-inset-top, 0px) + 5.4rem); right: var(--gx); display: grid; gap: var(--sc-2); }
-.trucks__head h2 { font-size: var(--sc-t-3xl); }
-.trucks__head p { color: var(--sc-ink-soft); max-width: 40ch; }
-.rail { position: absolute; top: 31svh; right: 0; height: 62svh; display: flex; gap: 5vw; width: max-content; padding-right: var(--gx); padding-left: var(--gx);
-  transform: translate3d(calc(var(--sc-p, 0) * var(--over, 0) * 1px), 0, 0); will-change: transform; }
-.truck { position: relative; width: min(64vw, 1000px); height: 100%; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: var(--sc-6); align-items: end; }
-.truck__media { position: relative; height: 100%; }
-.truck__media img:first-child { width: 100%; height: 100%; object-fit: cover; border-radius: var(--sc-r-lg); box-shadow: var(--sc-e3); }
-.truck__media img + img { position: absolute; width: 42%; aspect-ratio: 3 / 4; height: auto; object-fit: cover; left: -5%; bottom: -6%; border-radius: var(--sc-r-md); box-shadow: var(--sc-e3), 0 0 0 6px var(--tint); }
-.truck__label { display: grid; gap: var(--sc-3); padding-bottom: var(--sc-4); }
-.truck__label h3 { font-family: var(--sc-font-display); font-size: clamp(4rem, 2rem + 6vw, 8rem); line-height: 0.86; }
-.truck__label p { color: var(--sc-ink-soft); max-width: 30ch; }
-.truck__label dl { display: grid; grid-template-columns: auto 1fr; gap: var(--sc-1) var(--sc-4); margin: var(--sc-2) 0 0; font-size: var(--sc-t-sm); border-top: 1px solid color-mix(in oklab, var(--gold) 60%, transparent); padding-top: var(--sc-3); }
-.truck__label dt { color: var(--sc-ink-soft); }
-.truck__label dd { margin: 0; font-weight: 600; }
-.rail__note { align-self: center; width: min(26rem, 70vw); font-family: var(--sc-font-display); font-size: var(--sc-t-2xl); line-height: 1; }
-
-/* -------------------------------------------------- 4 TRUST: quiet flow -- */
-.kosher { padding-block: clamp(6rem, 18vh, 12rem); }
-.kosher .wrap { display: grid; grid-template-columns: auto 1fr; gap: var(--sc-8); align-items: center; max-width: 64rem; }
-.seal { width: clamp(120px, 14vw, 180px); color: var(--olive); }
-.kosher h2 { font-size: var(--sc-t-3xl); }
-.kosher p { color: var(--sc-ink-soft); margin-top: var(--sc-3); max-width: 44ch; }
-
-/* ------------------------------------------- 5 THE FIRING (signature) -- */
-.tabun { background: var(--night); color: var(--night-ink); --sc-ink: var(--night-ink); --sc-ink-soft: var(--night-soft); }
+/* 3 the firing (signature) */
+.tabun { background: var(--night); color: var(--night-ink); }
 .tabun .sc-stage { background: radial-gradient(70% 60% at 30% 60%, #2A1A10 0%, var(--night) 70%); }
-.tabun__frame { position: absolute; z-index: 1; left: 9vw; top: 50%; height: min(84svh, 980px); aspect-ratio: 3 / 4; translate: 0 -50%; border-radius: var(--sc-r-lg); overflow: hidden; box-shadow: 0 30px 60px rgb(0 0 0 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.06); }
+.tabun__frame { position: absolute; z-index: 1; left: 9vw; top: 50%; height: min(84svh, 980px); aspect-ratio: 3 / 4; translate: 0 -50%; border-radius: var(--sc-r-lg); overflow: hidden; box-shadow: 0 30px 60px rgb(0 0 0 / 0.45); }
 .tabun__frame img { width: 100%; height: 100%; object-fit: cover; filter: brightness(var(--fire-b, 0.45)) saturate(var(--fire-s, 0.9)) contrast(1.05); }
-.tabun__glow { position: absolute; z-index: 2; pointer-events: none; width: 70vmin; aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; background: radial-gradient(closest-side, rgb(255 150 60 / 0.55), rgb(255 110 40 / 0.18) 55%, transparent); opacity: var(--glow, 0); mix-blend-mode: screen; }
+.tabun__glow { position: absolute; z-index: 2; pointer-events: none; width: 70vmin; aspect-ratio: 1; border-radius: 50%; translate: -50% -50%; background: radial-gradient(closest-side, rgb(255 150 60 / 0.55), rgb(255 110 40 / 0.18) 55%, transparent); opacity: 0; mix-blend-mode: screen; }
 .tabun canvas { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; pointer-events: none; }
-.tabun__pizza { position: absolute; z-index: 4; left: 0; top: 0; width: 900px; max-width: none; height: 528px; transform-origin: 50% 50%; opacity: 0; will-change: transform, opacity; filter: drop-shadow(0 40px 40px rgb(0 0 0 / 0.55)); }
+.tabun__pizza { position: absolute; z-index: 4; left: 0; top: 0; width: 900px; height: 528px; max-width: none; opacity: 0; will-change: transform, opacity; filter: drop-shadow(0 40px 40px rgb(0 0 0 / 0.55)); }
 .tabun__copy { position: absolute; z-index: 5; right: var(--gx); top: 50%; translate: 0 -50%; width: min(30rem, 36vw); display: grid; }
 .tabun__copy > * { grid-area: 1 / 1; align-self: center; }
-.tabun__copy h2 { font-size: var(--sc-t-4xl); }
-.tabun__copy p.big { font-family: var(--sc-font-display); font-size: var(--sc-t-3xl); line-height: 0.98; }
-.tabun__copy .fine { color: var(--night-soft); font-size: var(--sc-t-base); margin-top: var(--sc-4); font-family: var(--sc-font-text); }
+.tabun__copy .d { font-size: clamp(3.6rem, 1.6rem + 5vw, 7.4rem); }
 
-/* ------------------------------------------------ 6 APPETITE: the menu -- */
-.menu { background: var(--sc-canvas); padding-block: clamp(5rem, 14vh, 9rem) clamp(4rem, 10vh, 7rem); }
-.menu__head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--sc-5); }
-.menu__head h2 { font-size: var(--sc-t-4xl); }
-.menu__head p { color: var(--sc-ink-soft); max-width: 34ch; }
-.tabs { display: flex; gap: var(--sc-2); margin-top: var(--sc-7); overflow-x: auto; scrollbar-width: none; padding-bottom: var(--sc-2); }
-.tabs button { flex: none; border: 0; cursor: pointer; padding: 0.6em 1.15em; border-radius: var(--sc-r-pill); background: transparent; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--sc-ink) 22%, transparent); font-weight: 600; transition: background-color 160ms var(--sc-ease-out), color 160ms var(--sc-ease-out), transform 120ms var(--sc-ease-out); }
-.tabs button:active { transform: scale(0.97); }
-.tabs button[aria-selected="true"] { background: var(--sc-ink); color: var(--sc-canvas); box-shadow: none; }
-@media (hover: hover) and (pointer: fine) { .tabs button[aria-selected="false"]:hover { background: var(--sc-surface); } }
-.panel { display: grid; grid-template-columns: 1.25fr 1fr; gap: var(--sc-7); margin-top: var(--sc-6); align-items: start; }
-.panel[hidden] { display: none; }
-.panel__shots { display: grid; grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; gap: var(--sc-3); height: clamp(420px, 62vh, 640px); }
-.panel__shots img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--sc-r-md); }
-.panel__shots img:first-child { grid-row: 1 / 3; border-radius: var(--sc-r-lg); }
-.panel.is-entering .panel__shots img { animation: wipe 520ms var(--sc-ease-out) both; }
-.panel.is-entering .panel__shots img:nth-child(2) { animation-delay: 60ms; }
-.panel.is-entering .panel__shots img:nth-child(3) { animation-delay: 120ms; }
-@keyframes wipe { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
-.dishes { list-style: none; margin: 0; padding: 0; }
-.dishes li { display: grid; gap: 0.15em; padding-block: var(--sc-4); border-bottom: 1px solid color-mix(in oklab, var(--gold) 45%, transparent); }
-.dishes li:first-child { padding-top: 0; }
-.dishes b { font-family: var(--sc-font-display); font-weight: 700; font-size: var(--sc-t-xl); line-height: 1; }
-.dishes span { color: var(--sc-ink-soft); font-size: var(--sc-t-sm); }
-.menu__fine { margin-top: var(--sc-5); color: var(--sc-ink-soft); font-size: var(--sc-t-sm); }
+/* 4 signature dishes: big-small rhythm, names only */
+.dishes { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: clamp(150px, 15vw, 250px); gap: var(--sc-3); }
+.dish { position: relative; border-radius: var(--sc-r-md); overflow: hidden; }
+.dish img { width: 100%; height: 100%; object-fit: cover; transition: transform 600ms var(--sc-ease-out); }
+@media (hover: hover) and (pointer: fine) { .dish:hover img { transform: scale(1.05); } }
+.dish figcaption { position: absolute; right: var(--sc-4); bottom: var(--sc-3); color: #FFF6EA; font-family: var(--sc-font-display); font-weight: 700; font-size: clamp(1.7rem, 1rem + 1.4vw, 2.6rem); line-height: 1; text-shadow: 0 2px 16px rgb(20 10 4 / 0.55); }
+.dish::after { content: ""; position: absolute; inset: 55% 0 0 0; background: linear-gradient(to top, rgb(24 12 6 / 0.55), transparent); pointer-events: none; }
+.dish figcaption { z-index: 1; }
+.dish--xl { grid-column: span 2; grid-row: span 2; border-radius: var(--sc-r-lg); }
+.dish--xl figcaption { font-size: clamp(2.4rem, 1.4rem + 2.2vw, 4rem); }
+.dish--tall { grid-row: span 2; }
+.dish--wide { grid-column: span 2; }
 
-/* ------------------------------------------- 7 BELONGING: iris + list -- */
-.stay { background: var(--sc-canvas); padding-bottom: clamp(5rem, 14vh, 9rem); }
-.stay__view { position: relative; height: 92svh; margin: 0; }
-.stay__view img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 58%; }
-.stay__view figcaption { position: absolute; right: var(--gx); bottom: var(--sc-6); color: #FFF6EA; font-family: var(--sc-font-display); font-size: var(--sc-t-3xl); line-height: 0.95; max-width: 14ch; text-shadow: 0 2px 18px rgb(30 15 5 / 0.55); }
-.stay__scrim { position: absolute; inset: auto 0 0 0; height: 55%; background: linear-gradient(to top, rgb(30 16 8 / 0.62), transparent); pointer-events: none; }
-.stay__body { display: grid; grid-template-columns: 1fr 1.1fr; gap: var(--sc-9); margin-top: var(--sc-9); align-items: start; }
-.stay__list { list-style: none; margin: 0; padding: 0; }
-.stay__list li { display: grid; grid-template-columns: 9rem 1fr; gap: var(--sc-4); padding-block: var(--sc-5); border-top: 1px solid color-mix(in oklab, var(--gold) 50%, transparent); }
-.stay__list b { font-family: var(--sc-font-display); font-size: var(--sc-t-xl); line-height: 1; }
-.stay__list span { color: var(--sc-ink-soft); }
-.stay__pics { position: relative; height: clamp(380px, 56vh, 560px); }
-.stay__pics img { position: absolute; object-fit: cover; border-radius: var(--sc-r-lg); box-shadow: var(--sc-e3); }
-.stay__pics img:nth-child(1) { width: 62%; height: 86%; right: 0; top: 0; }
-.stay__pics img:nth-child(2) { width: 46%; height: 62%; left: 0; bottom: 0; box-shadow: var(--sc-e3), 0 0 0 6px var(--sc-canvas); }
-.ig { display: inline-flex; gap: 0.4em; align-items: center; margin-top: var(--sc-6); font-weight: 600; }
+/* 5 the view */
+.view { position: relative; height: 100svh; }
+.view img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 58%; }
+.view__scrim { position: absolute; inset: auto 0 0 0; height: 50%; background: linear-gradient(to top, rgb(28 14 6 / 0.6), transparent); pointer-events: none; }
+.view figcaption { position: absolute; right: var(--gx); bottom: clamp(2.5rem, 8vh, 5rem); color: #FFF6EA; display: grid; gap: var(--sc-3); }
+.view figcaption .d { font-size: clamp(3.4rem, 1.6rem + 5vw, 7.8rem); text-shadow: 0 2px 22px rgb(20 10 4 / 0.5); }
+.view figcaption p { font-weight: 600; font-size: var(--sc-t-lg); }
 
-/* ---------------------------------------------------- 8 RESOLVE: close -- */
-.visit { background: var(--night); color: var(--night-ink); --sc-ink: var(--night-ink); --sc-ink-soft: var(--night-soft); --sc-accent: var(--ember); --sc-accent-ink: var(--night); }
-.visit .sc-stage { display: grid; grid-template-rows: 1fr auto; background: radial-gradient(90% 70% at 70% 0%, #3A2516 0%, var(--night) 65%); }
-.visit__inner { align-self: center; display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--sc-9); padding-top: 4.5rem; }
-.visit h2 { font-size: var(--sc-t-4xl); }
+/* 6 people */
+.people__grid { display: grid; grid-template-columns: 1.7fr 1fr; grid-template-rows: 1fr 1fr; gap: var(--sc-3); height: clamp(520px, 78vh, 820px); }
+.people__grid figure { position: relative; border-radius: var(--sc-r-lg); overflow: hidden; }
+.people__grid figure:first-child { grid-row: 1 / 3; }
+.people__grid img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 7 visit + 8 footer */
+.visit { background: var(--night); color: var(--night-ink); --sc-accent: var(--ember); }
+.visit__card { display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--sc-9); padding-block: clamp(5rem, 14vh, 9rem); }
+.visit h2 { font-size: clamp(3.4rem, 1.6rem + 5vw, 7.4rem); }
 .visit__lead { display: grid; gap: var(--sc-5); align-content: start; }
 .visit__lead .status { font-size: var(--sc-t-lg); }
 .visit__lead .status i { background: #A9B27A; }
+.visit .where { color: var(--night-soft); }
 .visit .btn { background: var(--ember); color: var(--night); }
-@media (hover: hover) and (pointer: fine) { .visit .btn:hover { background: #F2A86B; } .visit .btn--ghost:hover { background: rgb(255 255 255 / 0.08); } }
 .visit .btn--ghost { background: transparent; color: var(--night-ink); }
+@media (hover: hover) and (pointer: fine) { .visit .btn:hover { background: #F2A86B; } .visit .btn--ghost:hover { background: rgb(255 255 255 / 0.08); } }
 .ctas { display: flex; flex-wrap: wrap; gap: var(--sc-3); }
-.hours { width: 100%; border-collapse: collapse; font-size: var(--sc-t-base); }
+.facts { display: grid; gap: var(--sc-5); align-content: start; }
+.hours { width: 100%; border-collapse: collapse; }
 .hours td { padding: 0.55em 0; border-bottom: 1px solid rgb(246 236 223 / 0.12); }
 .hours td + td { text-align: left; font-variant-numeric: tabular-nums; }
 .hours tr.is-today td { color: var(--ember); font-weight: 700; }
-.facts { display: grid; gap: var(--sc-4); align-content: start; }
-.facts h3 { font-size: var(--sc-t-sm); letter-spacing: 0.06em; color: var(--night-soft); font-weight: 600; }
 .phone { display: flex; align-items: center; gap: var(--sc-3); flex-wrap: wrap; }
 .phone output { font-size: var(--sc-t-xl); font-weight: 700; direction: ltr; user-select: all; font-variant-numeric: tabular-nums; }
-.copy { border: 0; background: rgb(255 255 255 / 0.08); color: var(--night-ink); padding: 0.4em 0.9em; border-radius: var(--sc-r-pill); cursor: pointer; font-size: var(--sc-t-sm); }
-.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--sc-3); padding-block: var(--sc-5) calc(var(--sc-5) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgb(246 236 223 / 0.1); font-size: var(--sc-t-xs); color: var(--night-soft); }
+.copy { border: 0; background: rgb(255 255 255 / 0.1); color: var(--night-ink); padding: 0.4em 0.9em; border-radius: var(--sc-r-pill); cursor: pointer; font-size: var(--sc-t-sm); }
+.kosher { display: flex; align-items: center; gap: var(--sc-4); color: var(--night-soft); }
+.kosher svg { width: 76px; flex: none; color: #C9B27A; }
+.stamps { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sc-5); padding-block: var(--sc-6) calc(var(--sc-6) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgb(246 236 223 / 0.1); }
+.stamps__card { display: flex; align-items: center; gap: var(--sc-4); }
+.stamps__card p { font-family: var(--sc-font-display); font-size: var(--sc-t-2xl); line-height: 1; }
+.stamp { width: 64px; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; border: 2px dashed rgb(246 236 223 / 0.35); font-family: var(--sc-font-display); font-weight: 700; font-size: 1.25rem; color: var(--night-soft); rotate: -8deg; cursor: pointer; background: none; padding: 0; transition: transform 160ms var(--sc-ease-out), background-color 160ms, color 160ms, border-color 160ms; }
+.stamp:nth-child(2) { rotate: 5deg; } .stamp:nth-child(3) { rotate: -3deg; }
+.stamp:active { transform: scale(0.94); }
+.stamp[aria-pressed="true"] { border-style: solid; border-color: var(--ember); background: var(--ember); color: var(--night); }
+.stamps small { color: var(--night-soft); font-size: var(--sc-t-sm); }
+.stamps a { color: var(--night-ink); }
 
-/* ========================================================== MOBILE ======
-   A separate composition, not a shrink. */
+/* mobile: its own composition */
 @media (max-width: 860px) {
-  .mark small, .bar .status { display: none; }
-  .hero { height: 100svh; }
+  .bar .status { display: none; }
   .hero__sky, .hero__ridge { object-position: 58% 64%; }
-  .hero__copy { top: calc(env(safe-area-inset-top, 0px) + 5.2rem); right: var(--gx); left: var(--gx); width: auto; gap: var(--sc-4); }
-  .hero__copy h1 { font-size: clamp(3.4rem, 15vw, 5.2rem); }
-  .hero__copy p { font-size: var(--sc-t-base); max-width: 26ch; }
+  .hero__copy { top: calc(env(safe-area-inset-top, 0px) + 5.6rem); left: var(--gx); gap: var(--sc-4); }
+  .hero__copy h1 { font-size: clamp(3.6rem, 15.5vw, 5.2rem); width: auto; }
   .hero__bus { width: 118vw; left: -14vw; bottom: 4vh; }
   .hero__frond { display: none; }
-  .hero__shakes { width: 34vw; bottom: -6vh; right: -3vw; }
-
-  .road .sc-stage { grid-template-columns: 1fr; grid-template-rows: 46svh 1fr; gap: var(--sc-5); padding-block: 5rem 4vh; align-items: start; }
-  .road__photo { height: 100%; }
-  .road__text { order: 2; }
-  .road__text h2 { font-size: clamp(2.8rem, 12vw, 4rem); }
-  .road__text p { font-size: clamp(1.9rem, 8.4vw, 2.6rem); }
-
-  .trucks__head { top: calc(env(safe-area-inset-top, 0px) + 4.6rem); left: var(--gx); }
-  .trucks__head h2 { font-size: var(--sc-t-2xl); }
-  .rail { top: 27svh; height: 68svh; gap: 7vw; }
-  .truck { width: 82vw; grid-template-columns: 1fr; grid-template-rows: 1fr auto; gap: var(--sc-3); }
-  .truck__media img + img { width: 38%; left: -4%; bottom: -5%; }
-  .truck__label { padding-bottom: 0; }
-  .truck__label h3 { font-size: 4.4rem; }
-  .truck__label p { font-size: var(--sc-t-sm); }
-  .truck__label dl { display: none; }
-
-  .kosher .wrap { grid-template-columns: 1fr; gap: var(--sc-5); justify-items: start; }
-  .seal { width: 112px; }
-
+  .hero__shakes { width: 32vw; bottom: -6vh; right: -3vw; }
+  .trucks__row { grid-template-columns: 1fr; gap: var(--sc-6); }
+  .truck figure { aspect-ratio: 4 / 5; }
   .tabun__frame { left: 0; top: 0; translate: none; width: 100%; height: 100%; aspect-ratio: auto; border-radius: 0; }
   .tabun__copy { top: calc(env(safe-area-inset-top, 0px) + 4.8rem); translate: none; left: var(--gx); width: auto; }
-  .tabun__copy h2 { font-size: clamp(2.8rem, 12vw, 4rem); }
-  .tabun__copy p.big { font-size: clamp(2.2rem, 10vw, 3.2rem); }
-  .tabun__scrim { position: absolute; z-index: 4; inset: 0 0 auto 0; height: 46%; background: linear-gradient(to bottom, rgb(27 18 12 / 0.9), transparent); pointer-events: none; }
-
-  .panel { grid-template-columns: 1fr; gap: var(--sc-5); }
-  .panel__shots { height: 300px; }
-  .menu__head h2 { font-size: clamp(3rem, 13vw, 4.4rem); }
-
-  .stay__view { height: 78svh; }
-  .stay__body { grid-template-columns: 1fr; gap: var(--sc-7); margin-top: var(--sc-7); }
-  .stay__list li { grid-template-columns: 1fr; gap: var(--sc-1); }
-  .stay__pics { height: 360px; }
-
-  .visit__inner { grid-template-columns: 1fr; gap: var(--sc-6); padding-top: 5rem; }
-  .visit h2 { font-size: clamp(3rem, 13vw, 4.4rem); }
-  .visit .sc-stage { height: auto; min-height: 100svh; }
+  .tabun__copy .d { font-size: clamp(3rem, 13vw, 4.4rem); }
+  .tabun__scrim { position: absolute; z-index: 4; inset: 0 0 auto 0; height: 40%; background: linear-gradient(to bottom, rgb(27 18 12 / 0.9), transparent); pointer-events: none; }
+  .dishes { grid-template-columns: 1fr 1fr; grid-auto-rows: 44vw; gap: var(--sc-2); }
+  .dish--wide { grid-column: span 2; }
+  .view { height: 86svh; }
+  .people__grid { grid-template-columns: 1fr 1fr; grid-template-rows: 56vw 64vw; height: auto; }
+  .people__grid figure:first-child { grid-row: auto; grid-column: 1 / 3; }
+  .visit__card { grid-template-columns: 1fr; gap: var(--sc-7); }
 }
 @media (min-width: 861px) { .tabun__scrim { display: none; } }
-
-/* ==================================================== REDUCED MOTION == */
 @media (prefers-reduced-motion: reduce) {
-  .hero__plane, .hero__copy { transform: none !important; }
-  .trucks { height: auto !important; }
-  .trucks .sc-stage { position: relative; height: auto; display: grid; gap: var(--sc-7); padding-block: 6rem; }
-  .trucks__head { position: relative; top: auto; right: auto; padding-inline: var(--gx); }
-  .rail { position: relative; top: auto; right: auto; height: auto; width: auto; display: grid; gap: var(--sc-8); transform: none !important; }
-  .truck { width: min(100%, 1000px); height: 70svh; margin-inline: auto; }
-  .rail__note { width: auto; }
-  .road__photo img { transform: none; }
+  .hero__plane { transform: none !important; }
+  .truck img, .dish img { transition: none; }
 }
 </style>
 
@@ -266,24 +195,26 @@ h1, h2, h3, p { margin: 0; }
 <div class="sc-grain" aria-hidden="true"></div>
 
 <header class="bar" id="bar">
-  <a class="mark" href="#top" aria-label="דרייב קפה, לראש העמוד"><b>דרייב קפה</b><small>Drive Cafe</small></a>
+  <a class="mark" href="#top" aria-label="דרייב קפה, לראש העמוד">דרייב קפה</a>
   <div class="bar__end">
     <span class="status" data-status aria-live="polite"><i></i><span>בודקים שעות...</span></span>
-    <a class="btn" href="https://waze.com/ul?q=%D7%93%D7%A8%D7%99%D7%99%D7%91%20%D7%A7%D7%A4%D7%94%20%D7%9E%D7%97%D7%9C%D7%A3%20%D7%A9%D7%95%D7%90%D7%91%D7%94&navigate=yes" target="_blank" rel="noopener">נווטו אלינו</a>
+    <a class="btn" data-nav href="#visit">נווטו אלינו</a>
   </div>
 </header>
 
 <main id="top">
 
-  <!-- 1 · ARRIVAL: layered planes, not pinned -->
   <section class="hero" id="hero" aria-labelledby="h1">
     <img class="hero__plane hero__sky" data-depth="0.30" src="assets/hero-sky.webp" alt="" width="1440" height="1079" fetchpriority="high">
     <div class="hero__plane hero__glow" data-depth="0.22" aria-hidden="true"></div>
     <img class="hero__plane hero__ridge" data-depth="0.17" src="assets/hero-ridge.webp" alt="" width="1440" height="1079">
     <div class="hero__copy" id="heroCopy">
-      <h1 id="h1" class="sc-display">קל להגיע. קשה להפסיק ליהנות.</h1>
-      <p>מתחם פודטראקים כשר במחלף שורש, על כביש 1 בין תל אביב לירושלים.</p>
-      <a class="btn" href="https://waze.com/ul?q=%D7%93%D7%A8%D7%99%D7%99%D7%91%20%D7%A7%D7%A4%D7%94%20%D7%9E%D7%97%D7%9C%D7%A3%20%D7%A9%D7%95%D7%90%D7%91%D7%94&navigate=yes" target="_blank" rel="noopener">נווטו אלינו</a>
+      <h1 id="h1" class="d">קל להגיע. קשה להפסיק ליהנות.</h1>
+      <p class="hero__where">מחלף שורש, כביש 1. כשר.</p>
+      <div class="hero__ctas">
+        <a class="btn" data-nav href="#visit">נווטו אלינו</a>
+        <a class="btn btn--ghost" href="#dishes">מה אוכלים</a>
+      </div>
     </div>
     <img class="hero__plane hero__bus" data-depth="0.06" data-grow="0.06" src="assets/hero-bus.webp" alt="האוטובוס של דרייב קפה מואר בשקיעה" width="1400" height="754">
     <img class="hero__plane hero__frond" data-depth="-0.26" src="assets/hero-frond.webp" alt="" width="217" height="274">
@@ -291,234 +222,123 @@ h1, h2, h3, p { margin: 0; }
     <div class="hero__floor" aria-hidden="true"></div>
   </section>
 
-  <!-- 2 · RECOGNITION: pin + kinetic -->
-  <section class="road" data-sc-act="pin" data-sc-span="2.4" data-sc-drift="#F1E4D1" aria-label="הדרך אלינו">
-    <div data-sc-stage>
-      <div class="road__text">
-        <h2 class="sc-display" data-sc-cue="0.02 0.42" data-sc-kinetic="lines">יוצאים מוקדם? אנחנו פתוחים מחמש בבוקר.</h2>
-        <p data-sc-cue="0.36 0.72">כביש 1, העלייה לירושלים. מחלף שואבה, מתחת לאנדרטת הפורצים.</p>
-        <p data-sc-cue="0.66 1">יורדים מהכביש, חונים, ויש קפה ביד לפני שהמנוע התקרר.</p>
+  <section class="sec" id="trucks" aria-labelledby="trucksH">
+    <div class="wrap">
+      <div class="sec__head" data-sc-in>
+        <h2 id="trucksH" class="d">שלושה טראקים. עצירה אחת.</h2>
       </div>
-      <figure class="road__photo" style="margin:0">
-        <img src="assets/junction.webp" alt="השלט של דרייב קפה בכניסה למתחם, מעל החניה" width="1200" height="1459">
-        <figcaption>השלט בכניסה. אי אפשר לפספס.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <!-- 3 · CHOICE: RTL pan, ground shifts per truck -->
-  <section class="trucks" id="trucks" data-sc-act="pin" data-sc-span="3.3" aria-label="שלושת הפודטראקים">
-    <div data-sc-stage>
-      <div class="trucks__head">
-        <h2 class="sc-display">שלושה טראקים. עצירה אחת.</h2>
-        <p>כל אחד עם מטבח משלו. בוחרים לפי מה שהבטן מבקשת.</p>
-      </div>
-      <div class="rail" id="rail">
-        <article class="truck" data-tint="#EBD6BC">
-          <div class="truck__media">
-            <img src="assets/truck-coffee.webp" alt="פודטראק הקפה עם הכוס הגדולה על הגג" width="943" height="1179" loading="lazy">
-            <img src="assets/truck-coffee-2.webp" alt="שלוש כוסות קפה מלמעלה" width="900" height="1200" loading="lazy">
-          </div>
-          <div class="truck__label">
-            <h3>קפה</h3>
-            <p>אספרסו, הפוך, קפה קר, שייקים, מאצ'ה קרה ומיץ תפוזים סחוט.</p>
-            <dl><dt>כשרות</dt><dd>חלבי</dd><dt>מתאים ל</dt><dd>יציאה מוקדמת, עצירה קצרה</dd></dl>
-          </div>
+      <div class="trucks__row" data-sc-in data-sc-stagger="80">
+        <article class="truck truck--coffee">
+          <figure><img src="assets/v2-coffeebar.webp" alt="דלפק הקפה של דרייב קפה, עם הלוגו על הבר" width="1200" height="1459" loading="lazy"><h3 class="d">קפה</h3></figure>
+          <p><b>חלבי.</b> הפוך, קר, שייקים ומאצ'ה.</p>
         </article>
-        <article class="truck" data-tint="#E6CBB8">
-          <div class="truck__media">
-            <img src="assets/truck-meat.webp" alt="המבורגר עם חסה ועגבנייה מוגש מהפודטראק הבשרי" width="1200" height="1600" loading="lazy">
-            <img src="assets/truck-meat-2.webp" alt="הכנת לחמניות על הפלנצ'ה" width="720" height="960" loading="lazy">
-          </div>
-          <div class="truck__label">
-            <h3>בשרי</h3>
-            <p>נקניקיות פרימיום (ברטוורסט, עגל, צ'וריסו ועוף), אסאדו מפורק בבריוש, המבורגר וצ'יפס טרי.</p>
-            <dl><dt>כשרות</dt><dd>בשרי</dd><dt>מתאים ל</dt><dd>צהריים, רעב אמיתי</dd></dl>
-          </div>
+        <article class="truck truck--grill">
+          <figure><img src="assets/v2-burger.webp" alt="המבורגר טרי מהטראק הבשרי" width="1200" height="1600" loading="lazy"><h3 class="d">בשרי</h3></figure>
+          <p><b>בשרי.</b> נקניקיות, אסאדו בבריוש, המבורגר.</p>
         </article>
-        <article class="truck" data-tint="#E2DDC2">
-          <div class="truck__media">
-            <img src="assets/truck-dairy.webp" alt="חצ'אפורי טרי נחתך ליד הטאבון" width="1200" height="1600" loading="lazy">
-            <img src="assets/truck-dairy-2.webp" alt="חצ'אפורי עם ביצה" width="720" height="960" loading="lazy">
-          </div>
-          <div class="truck__label">
-            <h3>טאבון</h3>
-            <p>פיצה, פוקאצ'ה, חצ'אפורי, שקשוקה, בורקס, סלטים ומאפים חמים.</p>
-            <dl><dt>כשרות</dt><dd>חלבי</dd><dt>מתאים ל</dt><dd>שולחן מלא, לחלוק</dd></dl>
-          </div>
+        <article class="truck truck--tabun">
+          <figure><img src="assets/v2-pizza-place.webp" alt="פיצה מהטאבון על שולחן במתחם, עם שני מיצים" width="1200" height="1500" loading="lazy"><h3 class="d">טאבון</h3></figure>
+          <p><b>חלבי.</b> פיצה, חצ'אפורי, שקשוקה, מאפים.</p>
         </article>
-        <p class="rail__note">מתלבטים? מתחילים בקפה. תמיד מתחילים בקפה.</p>
       </div>
     </div>
   </section>
 
-  <!-- 4 · TRUST: the quiet act before the peak -->
-  <section class="kosher" data-sc-act="flow" data-sc-drift="#F4EADC" aria-labelledby="kosherH">
-    <div class="wrap" data-sc-in data-sc-stagger="70">
-      <svg class="seal" viewBox="0 0 200 200" role="img" aria-label="חותמת כשרות">
-        <defs><path id="ring" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0"/></defs>
-        <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" stroke-width="2"/>
-        <circle cx="100" cy="100" r="58" fill="none" stroke="#B8954A" stroke-width="1.5"/>
-        <text font-family="Assistant, sans-serif" font-size="15" font-weight="700" fill="currentColor" letter-spacing="2"><textPath href="#ring" startOffset="0">רבנות מטה יהודה · בשרי · חלבי ·</textPath></text>
-        <text x="100" y="116" text-anchor="middle" font-family="Karantina, sans-serif" font-weight="700" font-size="52" fill="currentColor">כשר</text>
-      </svg>
-      <div>
-        <h2 id="kosherH" class="sc-display">כשר. בכשרות הרבנות מטה יהודה.</h2>
-        <p>הטראק הבשרי והטראק החלבי עובדים כל אחד במטבח משלו.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 5 · AWE: the firing. Signature move, largest span -->
-  <section class="tabun" id="tabun" data-sc-act="pin" data-sc-span="4.2" aria-label="הטאבון">
+  <section class="tabun" id="tabun" data-sc-act="pin" data-sc-span="3.2" aria-label="הטאבון">
     <div data-sc-stage>
-      <div class="tabun__frame" id="ovenFrame"><img src="assets/oven.webp" alt="פתח הטאבון עם להבות בפנים" width="720" height="960"></div>
+      <div class="tabun__frame" id="ovenFrame"><img src="assets/oven.webp" alt="פתח הטאבון עם להבות" width="720" height="960"></div>
       <div class="tabun__glow" id="ovenGlow" aria-hidden="true"></div>
       <canvas id="embers" aria-hidden="true"></canvas>
-      <img class="tabun__pizza" id="pizza" src="assets/pizza.webp" alt="פיצה עם פלפלים, זיתים וגבינה יוצאת מהטאבון" width="862" height="506">
+      <img class="tabun__pizza" id="pizza" src="assets/pizza.webp" alt="פיצה יוצאת מהטאבון" width="862" height="506">
       <div class="tabun__scrim" aria-hidden="true"></div>
       <div class="tabun__copy">
-        <h2 class="sc-display" data-sc-cue="0 0.3 0" data-sc-kinetic="lines">זה לא תנור. זה טאבון.</h2>
-        <p class="big" data-sc-cue="0.26 0.58">הפיצה נכנסת, האש עושה את שלה,</p>
-        <div data-sc-cue="0.54 1">
-          <p class="big">ויוצאת אליכם חמה.</p>
-          <p class="fine">פיצה, פוקאצ'ה, חצ'אפורי ומאפים. ישר מהאש.</p>
-        </div>
+        <h2 class="d" data-sc-cue="0 0.42 0" data-sc-kinetic="lines">זה לא תנור. זה טאבון.</h2>
+        <p class="d" data-sc-cue="0.48 1">ישר מהאש אליכם.</p>
       </div>
     </div>
   </section>
 
-  <!-- 6 · APPETITE: reveal + tabs -->
-  <section class="menu" id="menu" data-sc-act="flow" aria-labelledby="menuH">
+  <section class="sec" id="dishes" aria-labelledby="dishesH">
     <div class="wrap">
-      <div class="menu__head">
-        <h2 id="menuH" class="sc-display">מה יש על הדלפק</h2>
-        <p>הצצה למה שיוצא מהטראקים. התפריט המלא והמחירים מחכים בדוכנים.</p>
+      <div class="sec__head" data-sc-in>
+        <h2 id="dishesH" class="d">המנות שחוזרים בשבילן</h2>
+        <p>התפריט המלא מחכה בדוכנים.</p>
       </div>
-      <div class="tabs" role="tablist" aria-label="קטגוריות בתפריט">
-        <button role="tab" id="t-coffee" aria-controls="p-coffee" aria-selected="true">קפה ושתייה</button>
-        <button role="tab" id="t-meat" aria-controls="p-meat" aria-selected="false" tabindex="-1">בשרי</button>
-        <button role="tab" id="t-tabun" aria-controls="p-tabun" aria-selected="false" tabindex="-1">חלבי וטאבון</button>
-        <button role="tab" id="t-sweet" aria-controls="p-sweet" aria-selected="false" tabindex="-1">מתוקים</button>
+      <div class="dishes" data-sc-in data-sc-stagger="60">
+        <figure class="dish dish--xl"><img src="assets/v2-pour.webp" alt="קפה קר נמזג לכוס, מסביב כוסות ממותגות" width="1400" height="1867" loading="lazy"><figcaption>קפה קר</figcaption></figure>
+        <figure class="dish"><img src="assets/v2-shakshuka.webp" alt="שקשוקה במחבת עם באגט" width="1200" height="1600" loading="lazy"><figcaption>שקשוקה</figcaption></figure>
+        <figure class="dish dish--tall"><img src="assets/v2-khach.webp" alt="חצ'אפורי נחתך ליד הטאבון" width="1200" height="1600" loading="lazy"><figcaption>חצ'אפורי</figcaption></figure>
+        <figure class="dish"><img src="assets/v2-shakes.webp" alt="שני שייקים" width="1200" height="1600" loading="lazy"><figcaption>שייקים</figcaption></figure>
+        <figure class="dish dish--wide"><img src="assets/v2-pastrycase.webp" alt="ויטרינת מאפים טריים" width="1200" height="1402" loading="lazy"><figcaption>מאפים</figcaption></figure>
+        <figure class="dish"><img src="assets/v2-cheesecake.webp" alt="עוגת גבינה עם פירות יער" width="1200" height="1600" loading="lazy"><figcaption>עוגת גבינה</figcaption></figure>
+        <figure class="dish"><img src="assets/v2-soups.webp" alt="מגש מרקים עם קרוטונים" width="1200" height="1506" loading="lazy"><figcaption>מרק הבית</figcaption></figure>
       </div>
-      <div class="panel" id="p-coffee" role="tabpanel" aria-labelledby="t-coffee">
-        <div class="panel__shots" data-sc-reveal="left" data-sc-reveal-at="0.12 0.42">
-          <img src="assets/m-cappuccino.webp" alt="הפוך עם ציור בחלב" width="640" height="1138" loading="lazy">
-          <img src="assets/m-shakes.webp" alt="שייקים בכוסות ממותגות" width="900" height="1200" loading="lazy">
-          <img src="assets/m-matcha.webp" alt="מאצ'ה קרה בשתי כוסות" width="640" height="1137" loading="lazy">
-        </div>
-        <ul class="dishes">
-          <li><b>הפוך ואספרסו</b><span>הבוקר מתחיל פה, מחמש וחצי כבר יש תור קטן.</span></li>
-          <li><b>קפה קר ומאצ'ה קרה</b><span>לימים שהכביש לוהט.</span></li>
-          <li><b>שייקים</b><span>פירות, וניל ושייק בריאות.</span></li>
-          <li><b>מיץ תפוזים סחוט</b><span>טרי, בכוס גדולה.</span></li>
-          <li><b>סחלב</b><span>כשמתקרר בהרים.</span></li>
-        </ul>
-      </div>
-      <div class="panel" id="p-meat" role="tabpanel" aria-labelledby="t-meat" hidden>
-        <div class="panel__shots">
-          <img src="assets/m-burger.webp" alt="המבורגר בלחמנייה" width="900" height="1200" loading="lazy">
-          <img src="assets/m-sausage.webp" alt="לחמניות על הפלנצ'ה" width="720" height="960" loading="lazy">
-          <img src="assets/m-sandwich.webp" alt="כריך עטוף בנייר" width="900" height="1200" loading="lazy">
-        </div>
-        <ul class="dishes">
-          <li><b>נקניקיות פרימיום</b><span>ברטוורסט, עגל, צ'וריסו ועוף.</span></li>
-          <li><b>אסאדו מפורק</b><span>בלחמניית בריוש.</span></li>
-          <li><b>המבורגר</b><span>עם ירקים טריים.</span></li>
-          <li><b>צ'יפס טרי</b><span>ליד כל דבר.</span></li>
-        </ul>
-      </div>
-      <div class="panel" id="p-tabun" role="tabpanel" aria-labelledby="t-tabun" hidden>
-        <div class="panel__shots">
-          <img src="assets/m-pizza.webp" alt="פיצה מהטאבון ושתי כוסות מיץ" width="900" height="1125" loading="lazy">
-          <img src="assets/m-shakshuka.webp" alt="שקשוקה במחבת עם באגט" width="900" height="1200" loading="lazy">
-          <img src="assets/m-khachapuri.webp" alt="חצ'אפורי עם ביצה" width="720" height="960" loading="lazy">
-        </div>
-        <ul class="dishes">
-          <li><b>פיצה ופוקאצ'ה</b><span>מהטאבון, עם ירקים וגבינות.</span></li>
-          <li><b>שקשוקה</b><span>במחבת, עם באגט חם.</span></li>
-          <li><b>חצ'אפורי</b><span>בצק, גבינה וביצה באמצע.</span></li>
-          <li><b>לחם מחמצת עם מטבלים</b><span>וכריכים על מחמצת.</span></li>
-          <li><b>סלטים ומרק הבית</b><span>מרק בעונה.</span></li>
-        </ul>
-      </div>
-      <div class="panel" id="p-sweet" role="tabpanel" aria-labelledby="t-sweet" hidden>
-        <div class="panel__shots">
-          <img src="assets/m-mousse.webp" alt="עוגות מוס שוקולד" width="900" height="1176" loading="lazy">
-          <img src="assets/m-cheesecake.webp" alt="עוגת גבינה עם פירות יער" width="900" height="1200" loading="lazy">
-          <img src="assets/m-donuts.webp" alt="דונאטס ורודים" width="640" height="1137" loading="lazy">
-        </div>
-        <ul class="dishes">
-          <li><b>עוגת גבינה</b><span>עם רוטב פירות יער.</span></li>
-          <li><b>מוס שוקולד</b><span>שכבות, עם פניני שוקולד.</span></li>
-          <li><b>מאפים מתוקים</b><span>טריים בוויטרינה כל בוקר.</span></li>
-          <li><b>דונאטס</b><span>כשיש. ממהרים להיגמר.</span></li>
-        </ul>
-      </div>
-      <p class="menu__fine">המנות משתנות לפי העונה ולפי מה שיצא מהתנור היום.</p>
     </div>
   </section>
 
-  <!-- 7 · BELONGING: iris opens the view -->
-  <section class="stay" data-sc-act="flow" aria-labelledby="stayH">
-    <figure class="stay__view" data-sc-reveal="iris" data-sc-reveal-at="0.04 0.36">
-      <img src="assets/tables.webp" alt="שולחנות ערוכים בחוץ בשקיעה, עם כוסות יין ומפות משובצות" width="1200" height="1499" loading="lazy">
-      <div class="stay__scrim" aria-hidden="true"></div>
-      <figcaption>שולחן בחוץ, נוף לעמק.</figcaption>
+  <section class="view-sec" data-sc-act="flow" aria-labelledby="viewH">
+    <figure class="view" data-sc-reveal="iris" data-sc-reveal-at="0.04 0.34">
+      <img src="assets/v2-tables.webp" alt="שולחנות ערוכים בחוץ בשקיעה" width="1440" height="1799" loading="lazy">
+      <div class="view__scrim" aria-hidden="true"></div>
+      <figcaption><h2 id="viewH" class="d">שולחן בחוץ. נוף לעמק.</h2><p>שידורי ספורט ואירועים פרטיים.</p></figcaption>
     </figure>
+  </section>
+
+  <section class="sec" aria-labelledby="peopleH">
     <div class="wrap">
-      <div class="stay__body">
-        <div data-sc-in data-sc-stagger="70">
-          <h2 id="stayH" class="sc-display" style="font-size:var(--sc-t-3xl)">באים לקפה, נשארים לשקיעה.</h2>
-          <ul class="stay__list" style="margin-top:var(--sc-6)">
-            <li><b>ישיבה בחוץ</b><span>דק עץ, דשא ושמשיות, עם נוף לעמק ולכביש.</span></li>
-            <li><b>שידורי ספורט</b><span>המשחק על המסך, הקפה על השולחן.</span></li>
-            <li><b>אירועים פרטיים</b><span>יום הולדת, צוות, ערב סגור. כתבו לנו בוואטסאפ.</span></li>
-            <li><b>בשישי</b><span>המקום מתמלא מהר. כדאי להתקשר לפני.</span></li>
-          </ul>
-          <a class="ig" href="https://www.instagram.com/drive_cafe/" target="_blank" rel="noopener">עוד מהמקום באינסטגרם, ‎@drive_cafe</a>
-        </div>
-        <div class="stay__pics">
-          <img src="assets/garden.webp" alt="הדשא והשולחנות תחת עצים" width="900" height="1199" loading="lazy">
-          <img src="assets/bus-night.webp" alt="האוטובוס מואר בערב" width="1200" height="933" loading="lazy">
-        </div>
+      <div class="sec__head" data-sc-in>
+        <h2 id="peopleH" class="d">פותחים בחמש בבוקר.</h2>
+      </div>
+      <div class="people__grid" data-sc-in data-sc-stagger="70">
+        <figure><img src="assets/v2-pizzaiolo.webp" alt="מכין הפיצה פותח בצק מול חלון עם שקיעה" width="1300" height="1010" loading="lazy"></figure>
+        <figure><img src="assets/v2-barista.webp" alt="הבריסטה מכינה אספרסו" width="720" height="875" loading="lazy"></figure>
+        <figure><img src="assets/v2-deck.webp" alt="הדק עם השלט Eat Drink Dance" width="640" height="1137" loading="lazy" style="object-position:50% 70%"></figure>
       </div>
     </div>
   </section>
 
-  <!-- 8 · RESOLVE: dusk, live status, the way here -->
-  <section class="visit" id="visit" data-sc-act="pin" data-sc-span="1.25" aria-labelledby="visitH">
-    <div data-sc-stage data-sc-spotlight>
-      <div class="wrap visit__inner">
+  <section class="visit" id="visit" aria-labelledby="visitH">
+    <div class="wrap">
+      <div class="visit__card">
         <div class="visit__lead" data-sc-in data-sc-stagger="70">
-          <h2 id="visitH" class="sc-display">בדרך לירושלים? עצרו אצלנו.</h2>
+          <h2 id="visitH" class="d">בדרך? עצרו אצלנו.</h2>
           <span class="status" data-status><i></i><span>בודקים שעות...</span></span>
-          <p class="sc-body">מחלף שואבה (מחלף שורש), מתחת לאנדרטת הפורצים. כביש 1, הרי ירושלים.</p>
+          <p class="where">מחלף שואבה, מתחת לאנדרטת הפורצים.</p>
           <div class="ctas">
-            <a class="btn" data-sc-magnet="0.26" data-sc-rise="0" href="https://waze.com/ul?q=%D7%93%D7%A8%D7%99%D7%99%D7%91%20%D7%A7%D7%A4%D7%94%20%D7%9E%D7%97%D7%9C%D7%A3%20%D7%A9%D7%95%D7%90%D7%91%D7%94&navigate=yes" target="_blank" rel="noopener">נווטו אלינו</a>
+            <a class="btn" href="https://waze.com/ul?q=%D7%93%D7%A8%D7%99%D7%99%D7%91%20%D7%A7%D7%A4%D7%94%20%D7%9E%D7%97%D7%9C%D7%A3%20%D7%A9%D7%95%D7%90%D7%91%D7%94&navigate=yes" target="_blank" rel="noopener">Waze</a>
             <a class="btn btn--ghost" href="https://www.google.com/maps/search/?api=1&query=%D7%93%D7%A8%D7%99%D7%99%D7%91%20%D7%A7%D7%A4%D7%94%20%D7%9E%D7%97%D7%9C%D7%A3%20%D7%A9%D7%95%D7%A8%D7%A9" target="_blank" rel="noopener">Google Maps</a>
           </div>
         </div>
         <div class="facts" data-sc-in data-sc-stagger="60">
-          <h3>שעות פתיחה</h3>
-          <table class="hours" aria-label="שעות פתיחה">
-            <tbody>
-              <tr data-days="0,1,2,3,4"><td>ראשון עד חמישי</td><td>05:00 עד 21:00</td></tr>
-              <tr data-days="5"><td>שישי</td><td>06:00 עד 15:00</td></tr>
-              <tr data-days="6"><td>שבת</td><td>סגור</td></tr>
-            </tbody>
-          </table>
-          <h3>וואטסאפ להזמנות ואירועים</h3>
+          <table class="hours" aria-label="שעות פתיחה"><tbody>
+            <tr data-days="0,1,2,3,4"><td>ראשון עד חמישי</td><td>05:00 עד 21:00</td></tr>
+            <tr data-days="5"><td>שישי</td><td>06:00 עד 15:00</td></tr>
+            <tr data-days="6"><td>שבת</td><td>סגור</td></tr>
+          </tbody></table>
           <div class="phone">
             <output id="phone">053-443-3720</output>
             <button class="copy" type="button" id="copyBtn">העתקה</button>
             <a class="btn btn--ghost" href="https://wa.me/972534433720" target="_blank" rel="noopener">וואטסאפ</a>
           </div>
+          <div class="kosher">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <defs><path id="ring" d="M100,100 m-74,0 a74,74 0 1,1 148,0 a74,74 0 1,1 -148,0"/></defs>
+              <circle cx="100" cy="100" r="96" fill="none" stroke="currentColor" stroke-width="3"/>
+              <text font-family="Assistant, sans-serif" font-size="16" font-weight="700" fill="currentColor" letter-spacing="2"><textPath href="#ring">רבנות מטה יהודה · בשרי · חלבי ·</textPath></text>
+              <text x="100" y="118" text-anchor="middle" font-family="Karantina, sans-serif" font-weight="700" font-size="56" fill="currentColor">כשר</text>
+            </svg>
+            <p>כשר, רבנות מטה יהודה. בשרי וחלבי בנפרד.</p>
+          </div>
         </div>
       </div>
-      <footer class="foot wrap">
-        <span>דרייב קפה · מתחם פודטראקים כשר · רבנות מטה יהודה</span>
-        <a href="https://www.instagram.com/drive_cafe/" target="_blank" rel="noopener">‎@drive_cafe</a>
+      <footer class="stamps">
+        <div class="stamps__card">
+          <p>אספתם את שלושתם?</p>
+          <button class="stamp" type="button" aria-pressed="false">קפה</button>
+          <button class="stamp" type="button" aria-pressed="false">בשרי</button>
+          <button class="stamp" type="button" aria-pressed="false">טאבון</button>
+        </div>
+        <small><a href="https://www.instagram.com/drive_cafe/" target="_blank" rel="noopener">‎@drive_cafe</a></small>
       </footer>
     </div>
   </section>
@@ -533,96 +353,67 @@ ScrollCraft.mount(document.body);
   var $ = function (s) { return document.querySelector(s); };
   var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
   var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
-  var inOut = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
 
-  /* ---------- live open / closed, Jerusalem time ---------- */
+  /* live open / closed, Jerusalem time */
   var HOURS = { 0: [300, 1260], 1: [300, 1260], 2: [300, 1260], 3: [300, 1260], 4: [300, 1260], 5: [360, 900] };
   function jlmNow() {
     try {
       var f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-      var parts = {}; f.formatToParts(new Date()).forEach(function (p) { parts[p.type] = p.value; });
-      var day = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(parts.weekday);
-      return { day: day, min: (+parts.hour) * 60 + (+parts.minute) };
+      var p = {}; f.formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+      return { day: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(p.weekday), min: (+p.hour) * 60 + (+p.minute) };
     } catch (e) { var d = new Date(); return { day: d.getDay(), min: d.getHours() * 60 + d.getMinutes() }; }
   }
   function hhmm(m) { return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
   function nextOpen(n) {
-    for (var i = 0; i < 8; i++) {
-      var d = (n.day + i) % 7, h = HOURS[d];
-      if (h && (i > 0 || n.min < h[0])) return (i === 0 ? 'היום ב־' : i === 1 ? 'מחר ב־' : 'ב־') + hhmm(h[0]);
-    }
+    for (var i = 0; i < 8; i++) { var d = (n.day + i) % 7, h = HOURS[d];
+      if (h && (i > 0 || n.min < h[0])) return (i === 0 ? 'היום ב־' : i === 1 ? 'מחר ב־' : 'ב־') + hhmm(h[0]); }
     return '';
   }
   function status() {
     var n = jlmNow(), h = HOURS[n.day], open = h && n.min >= h[0] && n.min < h[1];
-    var txt = open ? 'פתוח עכשיו · עד ' + hhmm(h[1]) : 'סגור עכשיו · נפתח ' + nextOpen(n);
-    document.querySelectorAll('[data-status]').forEach(function (el) {
-      el.classList.toggle('is-closed', !open); el.querySelector('span').textContent = txt;
-    });
-    document.querySelectorAll('.hours tr').forEach(function (tr) {
-      tr.classList.toggle('is-today', tr.getAttribute('data-days').split(',').indexOf(String(n.day)) > -1);
-    });
+    var txt = open ? 'פתוח עכשיו, עד ' + hhmm(h[1]) : 'סגור עכשיו, נפתח ' + nextOpen(n);
+    document.querySelectorAll('[data-status]').forEach(function (el) { el.classList.toggle('is-closed', !open); el.querySelector('span').textContent = txt; });
+    document.querySelectorAll('.hours tr').forEach(function (tr) { tr.classList.toggle('is-today', tr.getAttribute('data-days').split(',').indexOf(String(n.day)) > -1); });
   }
   status(); setInterval(status, 60000);
 
-  /* ---------- copy number ---------- */
+  /* copy number */
   var copyBtn = $('#copyBtn');
   copyBtn.addEventListener('click', function () {
-    var t = $('#phone').textContent;
     var done = function () { copyBtn.textContent = 'הועתק'; setTimeout(function () { copyBtn.textContent = 'העתקה'; }, 1600); };
     var fallback = function () { var r = document.createRange(); r.selectNodeContents($('#phone')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); copyBtn.textContent = 'סמנו והעתיקו'; };
-    try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+    try { navigator.clipboard.writeText($('#phone').textContent).then(done, fallback); } catch (e) { fallback(); }
   });
 
-  /* ---------- menu tabs ---------- */
-  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
-  function select(tab) {
-    tabs.forEach(function (t) {
-      var on = t === tab, p = document.getElementById(t.getAttribute('aria-controls'));
-      t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; p.hidden = !on;
-      if (on && !RM) { p.classList.remove('is-entering'); void p.offsetWidth; p.classList.add('is-entering'); }
-    });
-  }
-  tabs.forEach(function (t, i) {
-    t.addEventListener('click', function () { select(t); });
-    t.addEventListener('keydown', function (e) {
-      var k = e.key, j = k === 'ArrowLeft' ? i + 1 : k === 'ArrowRight' ? i - 1 : k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : null;
-      if (j === null) return; e.preventDefault(); var nt = tabs[(j + tabs.length) % tabs.length]; select(nt); nt.focus();
+  /* stamp card: remembered per visitor */
+  var stamps = document.querySelectorAll('.stamp'), saved = [];
+  try { saved = JSON.parse(localStorage.getItem('dc-stamps') || '[]'); } catch (e) {}
+  stamps.forEach(function (b, i) {
+    if (saved[i]) b.setAttribute('aria-pressed', 'true');
+    b.addEventListener('click', function () {
+      var on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on);
+      var st = Array.prototype.map.call(stamps, function (s) { return s.getAttribute('aria-pressed') === 'true'; });
+      try { localStorage.setItem('dc-stamps', JSON.stringify(st)); } catch (e) {}
     });
   });
 
-  /* ---------- scroll-bound scenes ---------- */
+  /* scroll scenes: hero planes + the firing */
   var bar = $('#bar'), hero = $('#hero'), heroCopy = $('#heroCopy');
   var planes = Array.prototype.slice.call(hero.querySelectorAll('[data-depth]'));
-  var trucks = $('#trucks'), rail = $('#rail'), truckEls = rail.querySelectorAll('.truck');
-  var tabun = $('#tabun'), frame = $('#ovenFrame'), glow = $('#ovenGlow'), pizza = $('#pizza'), cv = $('#embers'), ctx = cv.getContext('2d');
+  var tabun = $('#tabun'), stage = tabun.querySelector('[data-sc-stage]'), frame = $('#ovenFrame'), glow = $('#ovenGlow'), pizza = $('#pizza'), cv = $('#embers'), ctx = cv.getContext('2d');
   var visit = $('#visit');
   var vw = innerWidth, vh = innerHeight, mobile = vw <= 860;
-
-  function hexToRgb(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
-  var tints = Array.prototype.map.call(truckEls, function (t) { return hexToRgb(t.getAttribute('data-tint')); });
-
   function measure() {
     vw = innerWidth; vh = innerHeight; mobile = vw <= 860;
-    rail.style.setProperty('--over', Math.max(0, rail.scrollWidth - vw));
     var dpr = Math.min(devicePixelRatio || 1, 2);
     cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  function actP(el) {
-    var r = el.getBoundingClientRect(); return clamp(-r.top / Math.max(1, r.height - vh), 0, 1);
-  }
-
-  /* embers: count follows the fire and how fast the reader is scrolling */
   var embers = [], lastY = scrollY, vel = 0, fire = 0, mouth = { x: 0, y: 0, w: 0 };
-  function spawn() {
-    embers.push({ x: mouth.x + (Math.random() - 0.5) * mouth.w * 0.8, y: mouth.y + (Math.random() - 0.3) * mouth.w * 0.2,
-      vx: (Math.random() - 0.5) * 0.6, vy: -(0.6 + Math.random() * 1.6), life: 1, r: 0.8 + Math.random() * 2.2 });
-  }
   function drawEmbers(active) {
     ctx.clearRect(0, 0, cv.clientWidth, cv.clientHeight);
     if (!active) { embers.length = 0; return; }
     var rate = fire * (1.2 + Math.min(vel, 40) / 8);
-    for (var k = 0; k < rate; k++) if (Math.random() < 0.6) spawn();
+    for (var k = 0; k < rate; k++) if (Math.random() < 0.6) embers.push({ x: mouth.x + (Math.random() - 0.5) * mouth.w * 0.8, y: mouth.y + (Math.random() - 0.3) * mouth.w * 0.2, vx: (Math.random() - 0.5) * 0.6, vy: -(0.6 + Math.random() * 1.6), life: 1, r: 0.8 + Math.random() * 2.2 });
     for (var i = embers.length - 1; i >= 0; i--) {
       var e = embers[i]; e.x += e.vx + Math.sin(e.y / 40) * 0.3; e.y += e.vy; e.life -= 0.012;
       if (e.life <= 0) { embers.splice(i, 1); continue; }
@@ -631,16 +422,11 @@ ScrollCraft.mount(document.body);
     }
     ctx.globalAlpha = 1;
   }
-
-  function frameTick() {
+  function tick() {
     var y = scrollY; vel = vel * 0.85 + Math.abs(y - lastY) * 0.15; lastY = y;
-
-    /* bar */
-    var hr = hero.getBoundingClientRect(), vr = visit.getBoundingClientRect(), tr = tabun.getBoundingClientRect();
+    var hr = hero.getBoundingClientRect(), tr = tabun.getBoundingClientRect(), vr = visit.getBoundingClientRect();
     bar.classList.toggle('is-solid', hr.bottom < 80);
     bar.classList.toggle('is-night', (tr.top < 60 && tr.bottom > 60) || vr.top < 60);
-
-    /* 1 hero planes: back recedes, front overtakes. Copy rides at 1x. */
     if (!RM && hr.bottom > 0) {
       var s = clamp(-hr.top / hr.height, 0, 1), H = hr.height;
       planes.forEach(function (p) {
@@ -650,41 +436,26 @@ ScrollCraft.mount(document.body);
       });
       heroCopy.style.opacity = clamp(1 - s * 1.6, 0, 1);
     }
-
-    /* 3 trucks: ground crossfades from one truck to the next */
-    var trr = trucks.getBoundingClientRect();
-    if (trr.top < vh && trr.bottom > 0) {
-      var tp = actP(trucks) * (tints.length - 1), i0 = Math.floor(clamp(tp, 0, tints.length - 1.001)), f = inOut(clamp(tp - i0, 0, 1));
-      var a = tints[i0], b = tints[Math.min(i0 + 1, tints.length - 1)];
-      trucks.style.setProperty('--tint', 'rgb(' + a.map(function (c, k) { return Math.round(c + (b[k] - c) * f); }).join(',') + ')');
-    }
-
-    /* 5 the firing */
     if (tr.top < vh && tr.bottom > 0) {
-      var p = RM ? 1 : actP(tabun);
-      fire = clamp(p / 0.42, 0, 1);
+      var p = RM ? 1 : clamp(-tr.top / Math.max(1, tr.height - vh), 0, 1);
+      fire = clamp(p / 0.4, 0, 1);
       frame.style.setProperty('--fire-b', (0.42 + 0.72 * fire).toFixed(3));
       frame.style.setProperty('--fire-s', (0.85 + 0.45 * fire).toFixed(3));
-      var fr = frame.getBoundingClientRect(), sr = tabun.querySelector('[data-sc-stage]').getBoundingClientRect();
+      var fr = frame.getBoundingClientRect(), sr = stage.getBoundingClientRect();
       mouth.x = fr.left - sr.left + fr.width * 0.47; mouth.y = fr.top - sr.top + fr.height * 0.58; mouth.w = fr.width * 0.52;
-      glow.style.left = (mouth.x) + 'px'; glow.style.top = (mouth.y) + 'px'; glow.style.opacity = (0.15 + 0.85 * fire).toFixed(3);
-      var t = ease(clamp((p - 0.3) / 0.52, 0, 1));
+      glow.style.left = mouth.x + 'px'; glow.style.top = mouth.y + 'px'; glow.style.opacity = (0.15 + 0.85 * fire).toFixed(3);
+      var t = ease(clamp((p - 0.28) / 0.55, 0, 1));
       var W0 = mouth.w * 0.7, W1 = mobile ? vw * 1.02 : Math.min(vw * 0.5, 900);
-      var cx0 = mouth.x, cy0 = mouth.y + mouth.w * 0.05;
       var cx1 = mobile ? vw * 0.5 : vw * 0.33, cy1 = mobile ? vh * 0.72 : vh * 0.6;
-      var cx = cx0 + (cx1 - cx0) * t, cy = cy0 + (cy1 - cy0) * t, w = W0 + (W1 - W0) * t;
-      var sc = w / 900, rx = 68 - 50 * t, rz = -10 * t;
-      pizza.style.opacity = clamp((p - 0.28) / 0.06, 0, 1).toFixed(3);
-      pizza.style.transform = 'translate3d(' + (cx - 450).toFixed(1) + 'px,' + (cy - 264).toFixed(1) + 'px,0) perspective(1400px) rotateX(' + rx.toFixed(2) + 'deg) rotateZ(' + rz.toFixed(2) + 'deg) scale(' + sc.toFixed(4) + ')';
+      var cx = mouth.x + (cx1 - mouth.x) * t, cy = mouth.y + (cy1 - mouth.y) * t, w = W0 + (W1 - W0) * t;
+      pizza.style.opacity = clamp((p - 0.26) / 0.06, 0, 1).toFixed(3);
+      pizza.style.transform = 'translate3d(' + (cx - 450).toFixed(1) + 'px,' + (cy - 264).toFixed(1) + 'px,0) perspective(1400px) rotateX(' + (68 - 50 * t).toFixed(2) + 'deg) rotateZ(' + (-10 * t).toFixed(2) + 'deg) scale(' + (w / 900).toFixed(4) + ')';
       drawEmbers(!RM);
-    } else if (embers.length) { drawEmbers(false); }
-
-    requestAnimationFrame(frameTick);
+    } else if (embers.length) drawEmbers(false);
+    requestAnimationFrame(tick);
   }
   addEventListener('resize', measure);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-  addEventListener('load', measure);
-  measure();
-  requestAnimationFrame(frameTick);
+  measure(); requestAnimationFrame(tick);
 })();
 </script>
