@@ -1,0 +1,128 @@
+# POSTS: file -> post URL
+001_1.jpg	https://www.instagram.com/drive_cafe/p/DebrRiAAm8C/
+001_2.jpg	https://www.instagram.com/drive_cafe/p/DebrRiAAm8C/
+001_3.jpg	https://www.instagram.com/drive_cafe/p/DebrRiAAm8C/
+004.jpg	https://www.instagram.com/drive_cafe/p/Ddn4x4GC2Gf/
+005.jpg	https://www.instagram.com/drive_cafe/p/DewnQFbCBvh/
+008_1.jpg	https://www.instagram.com/drive_cafe/p/DdHSAWCGNer/
+008_2.jpg	https://www.instagram.com/drive_cafe/p/DdHSAWCGNer/
+008_3.jpg	https://www.instagram.com/drive_cafe/p/DdHSAWCGNer/
+011_1.jpg	https://www.instagram.com/drive_cafe/p/DcRI1tGGATk/
+011_2.jpg	https://www.instagram.com/drive_cafe/p/DcRI1tGGATk/
+011_3.jpg	https://www.instagram.com/drive_cafe/p/DcRI1tGGATk/
+011_4.jpg	https://www.instagram.com/drive_cafe/p/DcRI1tGGATk/
+011_5.jpg	https://www.instagram.com/drive_cafe/p/DcRI1tGGATk/
+012_1.jpg	https://www.instagram.com/drive_cafe/p/DbdHR7_GNR4/
+012_2.jpg	https://www.instagram.com/drive_cafe/p/DbdHR7_GNR4/
+012_3.jpg	https://www.instagram.com/drive_cafe/p/DbdHR7_GNR4/
+013_1.jpg	https://www.instagram.com/drive_cafe/p/Db-ZIp5GCdU/
+013_2.jpg	https://www.instagram.com/drive_cafe/p/Db-ZIp5GCdU/
+015.jpg	https://www.instagram.com/drive_cafe/p/DasRCFDOa51/
+017_1.jpg	https://www.instagram.com/drive_cafe/p/DZ-cU90GMqK/
+017_2.jpg	https://www.instagram.com/drive_cafe/p/DZ-cU90GMqK/
+018.jpg	https://www.instagram.com/drive_cafe/p/DZupfhyuzHW/
+024_1.jpg	https://www.instagram.com/drive_cafe/p/DXCMyuRAkoN/
+024_2.jpg	https://www.instagram.com/drive_cafe/p/DXCMyuRAkoN/
+024_3.jpg	https://www.instagram.com/drive_cafe/p/DXCMyuRAkoN/
+025_1.jpg	https://www.instagram.com/drive_cafe/p/DWWARbUAvjE/
+025_2.jpg	https://www.instagram.com/drive_cafe/p/DWWARbUAvjE/
+025_3.jpg	https://www.instagram.com/drive_cafe/p/DWWARbUAvjE/
+025_4.jpg	https://www.instagram.com/drive_cafe/p/DWWARbUAvjE/
+028.jpg	https://www.instagram.com/drive_cafe/p/DVN6xOlgkY6/
+030_1.jpg	https://www.instagram.com/drive_cafe/p/DUYHuj9Akh-/
+030_2.jpg	https://www.instagram.com/drive_cafe/p/DUYHuj9Akh-/
+030_3.jpg	https://www.instagram.com/drive_cafe/p/DUYHuj9Akh-/
+033_1.jpg	https://www.instagram.com/drive_cafe/p/DTpra6gAnxZ/
+033_2.jpg	https://www.instagram.com/drive_cafe/p/DTpra6gAnxZ/
+033_3.jpg	https://www.instagram.com/drive_cafe/p/DTpra6gAnxZ/
+034_1.jpg	https://www.instagram.com/drive_cafe/p/DTaGuxdAtQl/
+034_2.jpg	https://www.instagram.com/drive_cafe/p/DTaGuxdAtQl/
+035_1.jpg	https://www.instagram.com/drive_cafe/p/DSpLIfoglMS/
+035_2.jpg	https://www.instagram.com/drive_cafe/p/DSpLIfoglMS/
+035_3.jpg	https://www.instagram.com/drive_cafe/p/DSpLIfoglMS/
+036_1.jpg	https://www.instagram.com/drive_cafe/p/DSP6llJAgBd/
+036_2.jpg	https://www.instagram.com/drive_cafe/p/DSP6llJAgBd/
+039.jpg	https://www.instagram.com/drive_cafe/p/DN3M2XpROLz/
+043.jpg	https://www.instagram.com/drive_cafe/p/DL49-3eta_-/
+044.jpg	https://www.instagram.com/drive_cafe/p/DLh25D5NjX6/
+046.jpg	https://www.instagram.com/drive_cafe/p/DKtw5njofr1/
+049_1.jpg	https://www.instagram.com/drive_cafe/p/DCMOpx6oglf/
+049_2.jpg	https://www.instagram.com/drive_cafe/p/DCMOpx6oglf/
+063.jpg	https://www.instagram.com/drive_cafe/p/CuhkfNgtXj5/
+064.jpg	https://www.instagram.com/drive_cafe/p/Cbx3eCvAfqK/
+065.jpg	https://www.instagram.com/drive_cafe/p/CHJ5HqigQgw/
+066.jpg	https://www.instagram.com/drive_cafe/p/CCarACpANnz/
+
+# SKIPPED reels/videos
+002	reel	https://www.instagram.com/drive_cafe/reel/De9VKc2iSTZ/
+003	reel	https://www.instagram.com/drive_cafe/reel/DerfO5Ei9LG/
+006	reel	https://www.instagram.com/drive_cafe/reel/DeHVOZkiLA7/
+007	reel	https://www.instagram.com/drive_cafe/reel/DdJNAvCOz0p/
+009	reel	https://www.instagram.com/drive_cafe/reel/DXgR_vsgmRW/
+010	reel	https://www.instagram.com/drive_cafe/reel/DckuuHeOK8q/
+014	reel	https://www.instagram.com/drive_cafe/reel/DbP7bo9Okbh/
+016	reel	https://www.instagram.com/drive_cafe/reel/DaSPIBjOAMu/
+019	reel	https://www.instagram.com/drive_cafe/reel/DZXkNOzOH8S/
+020	reel	https://www.instagram.com/drive_cafe/reel/DY14YuNOgWr/
+021	reel	https://www.instagram.com/drive_cafe/reel/DYUWdl3uDSX/
+022	reel	https://www.instagram.com/drive_cafe/reel/DX4GYZpu2Es/
+023	reel	https://www.instagram.com/drive_cafe/reel/DXTboYGgjkW/
+026	reel	https://www.instagram.com/drive_cafe/reel/DV_CgsQAg7_/
+027	reel	https://www.instagram.com/drive_cafe/reel/DVyLJLdgp5q/
+029	reel	https://www.instagram.com/drive_cafe/reel/DU0VYmWgo9r/
+031	reel	https://www.instagram.com/drive_cafe/reel/DUH9tuygjnT/
+032	reel	https://www.instagram.com/drive_cafe/reel/DT7ZTFhAiX0/
+037	reel	https://www.instagram.com/drive_cafe/reel/DSCRsH9jY3X/
+038	reel	https://www.instagram.com/drive_cafe/reel/DRufepKgnZx/
+040	reel	https://www.instagram.com/drive_cafe/reel/DNA9irMN8mq/
+041	reel	https://www.instagram.com/drive_cafe/reel/DMF7uqhN0Ga/
+042	reel	https://www.instagram.com/drive_cafe/reel/DMDBalntx0z/
+045	reel	https://www.instagram.com/drive_cafe/reel/DLh2RYANcl8/
+047	reel	https://www.instagram.com/drive_cafe/reel/DKWE_z0oaH7/
+050	reel	https://www.instagram.com/drive_cafe/reel/C6BK8YWoNCz/
+051	reel	https://www.instagram.com/drive_cafe/reel/C5Qxf3AIv1_/
+052	reel	https://www.instagram.com/drive_cafe/reel/C5BFYs2oNbQ/
+053	reel	https://www.instagram.com/drive_cafe/reel/C4yESOLI3cq/
+054	reel	https://www.instagram.com/drive_cafe/reel/C4qcxerIJHs/
+055	reel	https://www.instagram.com/drive_cafe/reel/C4LPTnoIlcp/
+056	reel	https://www.instagram.com/drive_cafe/reel/C4D6xZFIgEX/
+057	reel	https://www.instagram.com/drive_cafe/reel/C3zr9_doWGM/
+058	reel	https://www.instagram.com/drive_cafe/reel/C3xaYUToaK-/
+059	reel	https://www.instagram.com/drive_cafe/reel/C3nokynINny/
+060	reel	https://www.instagram.com/drive_cafe/reel/C3VEyDbI_mF/
+061	reel	https://www.instagram.com/drive_cafe/reel/C3QFYm4N3hi/
+062	reel	https://www.instagram.com/drive_cafe/reel/C3DJ6BANriX/
+048	video post (/p/ with video cover)	https://www.instagram.com/drive_cafe/p/DEwh60Bo4O_/
+
+# HIGHLIGHTS: file -> highlight name
+highlights/Place/01.jpg	Place	https://www.instagram.com/stories/highlights/17875339716499925/
+highlights/Place/02.jpg	Place	https://www.instagram.com/stories/highlights/17875339716499925/
+highlights/Sweet/01.jpg	Sweet	https://www.instagram.com/stories/highlights/17925259446207592/
+highlights/Sweet/02.jpg	Sweet	https://www.instagram.com/stories/highlights/17925259446207592/
+highlights/Sweet/03.jpg	Sweet	https://www.instagram.com/stories/highlights/17925259446207592/
+highlights/Sweet/04.jpg	Sweet	https://www.instagram.com/stories/highlights/17925259446207592/
+highlights/Sweet/05.jpg	Sweet	https://www.instagram.com/stories/highlights/17925259446207592/
+highlights/Coffee/01.jpg	Coffee	https://www.instagram.com/stories/highlights/17847914409468533/
+highlights/Coffee/02.jpg	Coffee	https://www.instagram.com/stories/highlights/17847914409468533/
+highlights/Foods/01.jpg	Foods	https://www.instagram.com/stories/highlights/17990768720810335/
+highlights/Foods/02.jpg	Foods	https://www.instagram.com/stories/highlights/17990768720810335/
+highlights/Foods/03.jpg	Foods	https://www.instagram.com/stories/highlights/17990768720810335/
+highlights/Foods/04.jpg	Foods	https://www.instagram.com/stories/highlights/17990768720810335/
+highlights/Foods/05.jpg	Foods	https://www.instagram.com/stories/highlights/17990768720810335/
+highlights/Foods/06.jpg	Foods	https://www.instagram.com/stories/highlights/17990768720810335/
+highlights/Drinks/01.jpg	Drinks	https://www.instagram.com/stories/highlights/17853899475434977/
+highlights/Drinks/02.jpg	Drinks	https://www.instagram.com/stories/highlights/17853899475434977/
+highlights/Drinks/03.jpg	Drinks	https://www.instagram.com/stories/highlights/17853899475434977/
+highlights/Shares/01.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/02.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/03.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/04.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/05.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/06.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/07.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/08.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/09.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Shares/10.jpg	Shares	https://www.instagram.com/stories/highlights/18414477400063177/
+highlights/Questions/01.jpg	Questions	https://www.instagram.com/stories/highlights/18063207145454616/
+highlights/Questions/02.jpg	Questions	https://www.instagram.com/stories/highlights/18063207145454616/
+highlights/Questions/03.jpg	Questions	https://www.instagram.com/stories/highlights/18063207145454616/
