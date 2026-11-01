@@ -28,6 +28,7 @@ changes only grammar and world will fail it.
 
 | Build | Grammar | Nav treatment | Hero device | Act-sequence shape | Close pattern | Signature move | World | Port |
 |---|---|---|---|---|---|---|---|---|
+| drive-cafe | Filmic one-shot (client named pin, kinetic, drift, layered hero) | Fixed bar: wordmark, live open/closed status, one CTA "נווטו אלינו" | Unpinned 6-plane photo parallax (sky, ridge, glow, bus, frond, shakes), copy at 1x | parallax > pin+kinetic > RTL pan with per-truck ground > quiet flow > bespoke pin (peak, 4.2) > flow+reveal tabs > flow+iris > pin close; 8 acts, ~15.8vh | Dark dusk pin, spotlight, magnetic CTA, live status, hours table, copyable WhatsApp | "The firing": scroll brightens the tabun, embers follow scroll speed, the pizza leaves the oven mouth toward the viewer | Photographic, client's own Instagram photos, RTL Hebrew | 4500 |
 
 *(empty: your first build has nothing to clear, so build whatever the interview
 points at. From the second onwards, this table is the constraint.)*
@@ -63,4 +64,3 @@ If you want to see what a filled-in table looks like, and which shapes tend to
 collide, read `EXAMPLES.md` in the scroll-craft repository. Treat it as
 illustration only: those rows are somebody else's builds and they do **not**
 constrain yours.
-| drive-cafe | Filmic one-shot (client named pin, kinetic, drift, layered hero) | Fixed bar: wordmark, live open/closed status, one CTA "נווטו אלינו" | Unpinned 6-plane photo parallax (sky, ridge, glow, bus, frond, shakes), copy at 1x | parallax > pin+kinetic > RTL pan with per-truck ground > quiet flow > bespoke pin (peak, 4.2) > flow+reveal tabs > flow+iris > pin close; 8 acts, ~15.8vh | Dark dusk pin, spotlight, magnetic CTA, live status, hours table, copyable WhatsApp | "The firing": scroll brightens the tabun, embers follow scroll speed, the pizza leaves the oven mouth toward the viewer | Photographic, client's own Instagram photos, RTL Hebrew | 4500 |
