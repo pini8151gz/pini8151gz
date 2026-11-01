@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+drive-cafe/scrollcraft/builds/*/local.html
+drive-cafe/scrollcraft/lab/
