@@ -104,7 +104,7 @@ def main():
                     help='layer whose 45° hatch strokes mark concrete walls (e.g. safe rooms, cores), '
                          'e.g. "fill #000000" (repeatable)')
     ap.add_argument("--grow", type=float, default=0.0,
-                    help="pt – grow the poche by the wall-outline stroke width (0 = walls are the fill itself)")
+                    help="pt – grow (+) or thin (−) the walls uniformly; 0 = walls exactly as filled. A non-zero value is a DERIVED correction")
     ap.add_argument("--min-wall", type=float, default=0.5,
                     help="pt – thinnest real wall; anything thinner is removed (0 = keep all)")
     ap.add_argument("--bbox", help="x0,y0,x1,y1 in pt – keep only this part of the page")
@@ -157,7 +157,7 @@ def main():
     # outline stroke on each side, so grow it by --grow (the outline stroke
     # width, see probe.json: median thickness of the outline layer). Growing
     # by a fraction of a point cannot bridge a door or window gap.
-    if a.grow > 0 and not walls.is_empty:
+    if a.grow != 0 and not walls.is_empty:
         walls = walls.buffer(a.grow, join_style="mitre", mitre_limit=3)
 
     # Drop slivers thinner than --min-wall so openings stay open.

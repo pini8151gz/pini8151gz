@@ -54,6 +54,12 @@ horizontal vs vertical scale 0.26% apart, room clear spans −35 mm on average,
 56 wall bodies, floor 17.73 × 49.03 m, QA PASS (IoU 0.9985).
 An independent run on page 6 that calibrated from dimension lines got 70.47 mm/pt.
 
+## Known variants
+
+- **Safe-room walls as solid black fill** (page 6 of the sample): `--hatch-layer` finds nothing there. Run `extract_walls.py` a second time on `fill #000000` with `--min-thickness 0.45 --min-area 6 --bbox <floor>`, keep only solid bands (open the result by ~0.8 pt to drop text and symbols), union with the first pass's `walls`, and mark the added walls DERIVED.
+- **Open-plan living/kitchen areas** do not close into rooms with `--room-close-mm 1000`; raising it merges whole apartments. Leave such names UNRESOLVED rather than inventing boundaries.
+- **Drawn walls thicker than dimensioned** (face bias −35…−45 mm in the sample): keep walls as drawn and report it; use a negative `--grow` only as an explicit, reported correction.
+
 ## Troubleshooting
 
 - `ModuleNotFoundError: scipy` from trimesh – something set `face_colors`; use PBR materials (build_model does).
