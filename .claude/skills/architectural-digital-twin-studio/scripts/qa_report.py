@@ -56,6 +56,7 @@ def main():
     ap.add_argument("model_dir")
     ap.add_argument("--walls", required=True)
     ap.add_argument("--pdf")
+    ap.add_argument("--scale", help="scale.json (default: the copy inside model.json)")
     ap.add_argument("--px-per-pt", type=float, default=8.0)
     ap.add_argument("--min-iou", type=float, default=0.97)
     a = ap.parse_args()
@@ -111,11 +112,18 @@ def main():
     ov.save(md / "overlay.png")
 
     # 2. scale
-    sc = M["scale"]
+    sc = read_json(Path(a.scale)) if a.scale else M["scale"]
     check("Scale from printed dimensions", sc["status"] == "VERIFIED",
-          f"{sc['mm_per_pt']} mm/pt, {sc['status']}: {sc['reason']}")
+          f"{sc['mm_per_pt']} mm/pt ({sc.get('method', 'walls')}), {sc['status']}: {sc['reason']}")
     dims = [{"label": d["label"], "stated_mm": d["stated_mm"], "model_mm": d["remeasured_mm"],
              "error_mm": d["error_mm"], "ok": d.get("within_tolerance", True)} for d in sc["samples"]]
+    faces = sc.get("face_checks") or []
+    bias = sc.get("face_bias_mm")
+    if faces:
+        tol = sc.get("tolerance", {}).get("mm", 40)
+        check("Room clear spans between model wall faces", bias is not None and abs(bias) <= tol,
+              f"mean deviation {bias:+.1f} mm over {len(faces)} spans (negative = walls drawn thicker than dimensioned)",
+              blocking=False)
 
     # 3. round-trips
     try:
@@ -157,6 +165,7 @@ def main():
         "verdict": "PASS" if not blocking_fail else "FAIL",
         "checks": checks,
         "dimensions": dims,
+        "face_checks": faces, "face_bias_mm": bias,
         "wall_status_counts": counts,
         "room_status_counts": rooms,
         "hatched_wall_area_m2": hatch_area,
@@ -172,6 +181,12 @@ def main():
     L += ["", "## Dimensions (stated on plan vs measured on model)", "", "| Dimension | Plan (mm) | Model (mm) | Error (mm) |", "|---|---:|---:|---:|"]
     for d in dims:
         L.append(f"| {d['label']} | {d['stated_mm']:.0f} | {d['model_mm']:.1f} | {d['error_mm']:+.1f} |")
+    if faces:
+        L += ["", "## Room clear spans (model wall faces vs plan, not used for the scale)", "",
+              "| Span | Plan (mm) | Model (mm) | Error (mm) |", "|---|---:|---:|---:|"]
+        for c in faces:
+            L.append(f"| {c['label']} | {c['stated_mm']:.0f} | {c['model_mm']:.1f} | {c['error_mm']:+.1f} |")
+        L.append(f"\nMean deviation: {bias:+.1f} mm.")
     L += ["", "## Element status", "",
           f"- Walls: " + ", ".join(f"{k} {v}" for k, v in counts.items()),
           f"- Spaces: " + ", ".join(f"{k} {v}" for k, v in rooms.items()),

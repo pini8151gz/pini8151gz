@@ -151,8 +151,10 @@ def main():
             "params": W["params"], "pt_bounds": [minx, miny, maxx, maxy],
             "underlay": W.get("underlay"),
         },
-        "scale": {"mm_per_pt": s, "status": S["status"], "reason": S["reason"],
-                  "worst_error_mm": S.get("worst_error_mm"), "samples": S["samples"]},
+        "scale": {"mm_per_pt": s, "status": S["status"], "reason": S["reason"], "method": S.get("method"),
+                  "worst_error_mm": S.get("worst_error_mm"), "samples": S["samples"],
+                  "face_checks": S.get("face_checks", []), "face_bias_mm": S.get("face_bias_mm"),
+                  "tolerance": S.get("tolerance")},
         "extent_mm": [round(bx0, 1), round(by0, 1), round(bx1, 1), round(by1, 1)],
         "levels": [{
             "name": a.level_name,

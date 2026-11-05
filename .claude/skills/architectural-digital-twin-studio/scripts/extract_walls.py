@@ -177,7 +177,7 @@ def main():
     pieces = list(iter_polygons(walls))
     minx, miny, maxx, maxy = walls.bounds
     data = {
-        "source_pdf": str(a.pdf),
+        "source_pdf": str(Path(a.pdf).resolve()),
         "page": a.page,
         "page_size_pt": [page.rect.width, page.rect.height],
         "layers": a.layer,

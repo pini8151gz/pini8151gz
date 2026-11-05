@@ -6,7 +6,7 @@ All scripts live in `scripts/` and import `adt_common.py`; run them with that fo
 |---|---|---|---|
 | 1 | `probe_pdf.py plan.pdf --out work/probe [--pages 3-6]` | PDF | `probe.json`, `page-N.png`, `page-N-layer-K.png`, `contact.png` |
 | 2 | `extract_walls.py plan.pdf --page N --layer ... --out work/F` | PDF | `walls.json`, `walls-grid.png`, `tiles/`, `plan-underlay.png` |
-| 3 | `calibrate.py work/F/walls.json --pair ... --out work/F/scale.json` | walls.json | `scale.json` |
+| 3 | `calibrate.py work/F/walls.json --dim ... [--check ...] --out work/F/scale.json` | walls.json + PDF | `scale.json` |
 | 4 | `build_model.py work/F/walls.json work/F/scale.json --out work/F/model` | both | `model.json`, `plan.dxf`, `model.glb`, `model.ifc`, `top.png` |
 | 5 | `qa_report.py work/F/model --walls work/F/walls.json --pdf plan.pdf` | model, walls | `qa_report.md/json`, `overlay.png` (exit 1 on FAIL) |
 | 6 | `build_viewer.py work/F/model [...] --out work/viewer` | model(s) | `viewer.html`, `viewer-standalone.html` |
@@ -39,18 +39,20 @@ Coordinates are PDF points, origin top-left, y down. The grid in `walls-grid.png
 
 ## Calibration tips
 
-- Dimension strings are usually centimetres. A chain like `25 | 90 | 370` gives you both small and large spans – prefer the larger, wall-to-wall ones.
-- `--faces clear` (default) snaps each end to the face that has wall behind it and room in front – the clear span. Use `--faces nearest` for an overall dimension measured to outer faces.
-- A dimension that refuses to snap ends on something that is not a wall (railing, axis line, slab edge) – choose another one.
-- Calibration snaps only to faces drawn in the PDF; hatch-derived walls are ignored.
-- If horizontal and vertical dimensions disagree consistently (>1%), the PDF may have been scaled non-uniformly: report it as UNRESOLVED rather than averaging.
+- Dimension strings are usually centimetres. A chain like `25 | 90 | 370` gives you both small and large spans – use several.
+- `--dim x,y,mm,label` is the preferred input: a point on/next to the dimension line. CAD exports draw each dimension line as its own tick-to-tick segment, so its length *is* the dimension on paper. Candidates within `--dim-search` (3.5 pt) are collected and a consensus scale is chosen; a dimension whose closest line disagrees by >3% is reported in `dimensions_not_found` and skipped.
+- `--pair x1,y1,x2,y2,mm` with `--snap dims` snaps ends to extension lines/ticks; with `--snap walls` to wall faces (only when a plan has no dimension line work – wall-thickness bias then leaks into the scale).
+- `--check` measures clear spans between the extracted wall faces using the final scale. The mean (`face_bias_mm`) tells you whether walls came out too thick (negative) or too thin (positive).
+- The script compares horizontal and vertical scales; >1% apart means a non-uniformly scaled PDF → UNRESOLVED.
 
 ## Sample result (the plan used to build this skill)
 
 `פסגות הגליל, בני ברק`, sales plan, 10 A4 pages, text outlined. Page 5 (`קומה א'`):
-`--layer "fill #989898" --erase-layer "fill #ffffff" --hatch-layer "fill #000000" --grow 0.28` →
-5 dimensions, scale 72.06 mm/pt (1:204 on the PDF, the title block said 1:100), worst error 20 mm,
-54 wall bodies (42 VERIFIED, 12 DERIVED concrete), floor 18.17 × 50.17 m, QA PASS (IoU 0.9987).
+`--layer "fill #989898" --erase-layer "fill #ffffff" --hatch-layer "fill #000000"` →
+8 dimension lines, scale 70.46 mm/pt (1:200 on the PDF; the title block says 1:100), worst error 14 mm,
+horizontal vs vertical scale 0.26% apart, room clear spans −35 mm on average,
+56 wall bodies, floor 17.73 × 49.03 m, QA PASS (IoU 0.9985).
+An independent run on page 6 that calibrated from dimension lines got 70.47 mm/pt.
 
 ## Troubleshooting
 

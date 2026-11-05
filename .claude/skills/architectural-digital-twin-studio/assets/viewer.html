@@ -48,7 +48,7 @@ input[type=range]{accent-color:var(--accent);width:120px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;cursor:pointer}
 .row:hover{background:var(--sel)}
 .row .n{font-weight:600}.row .s{font-size:12px;color:var(--muted)}
-.val{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px}
+.val{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px}
 .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .pill.VERIFIED{color:var(--verified);background:color-mix(in srgb,var(--verified) 15%,transparent)}
 .pill.DERIVED{color:var(--derived);background:color-mix(in srgb,var(--derived) 15%,transparent)}
@@ -102,12 +102,12 @@ const T={he:{dollhouse:'בית בובות',top:'מבט על',walk:'הליכה',o
   spaces:'חללים',info:'דיוק',lang:'EN',height:'גובה חתך',opacity:'שקיפות תוכנית',clear:'נקה',tapTwo:'הקש על שתי נקודות',
   walkHint:'גרור כדי להסתכל · WASD / ג׳ויסטיק כדי לזוז',scale:'קנה מידה',dims:'מידות מהתוכנית מול המודל',status:'סטטוס אלמנטים',
   walls:'קירות',rooms:'חללים',lim:'מגבלות',area:'שטח נטו',unnamed:'חלל ללא שם',plan:'תוכנית',model:'מודל',err:'סטייה',
-  colors:'צבע לפי סטטוס',floor:'קומה',extent:'מידות הקומה',verifiedNote:'מקור הגאומטריה: שכבת הקירות הווקטורית ב־PDF, ללא ניחוש.'},
+  colors:'צבע לפי סטטוס',faces:'סטיית מידות חדרים',facesNote:'ממוצע: רוחב חדר במודל מול המידה בתוכנית',floor:'קומה',extent:'מידות הקומה',verifiedNote:'מקור הגאומטריה: שכבת הקירות הווקטורית ב־PDF, ללא ניחוש.'},
  en:{dollhouse:'Dollhouse',top:'Top',walk:'Walk',orbit:'360°',section:'Section',compare:'2D/3D',measure:'Measure',
   spaces:'Spaces',info:'Accuracy',lang:'עב',height:'Cut height',opacity:'Plan opacity',clear:'Clear',tapTwo:'Tap two points',
   walkHint:'Drag to look · WASD / joystick to move',scale:'Scale',dims:'Plan dimensions vs model',status:'Element status',
   walls:'Walls',rooms:'Spaces',lim:'Limitations',area:'Net area',unnamed:'Unnamed space',plan:'Plan',model:'Model',err:'Error',
-  colors:'Colour by status',floor:'Floor',extent:'Floor extent',verifiedNote:'Geometry source: the PDF vector wall layer, nothing guessed.'}};
+  colors:'Colour by status',faces:'Room span deviation',facesNote:'Mean: model clear span vs plan dimension',floor:'Floor',extent:'Floor extent',verifiedNote:'Geometry source: the PDF vector wall layer, nothing guessed.'}};
 let lang='he';const t=k=>T[lang][k]||k;
 
 /* ---------- scene ---------- */
@@ -283,6 +283,7 @@ function buildSheets(){const l=L();
   $('sheetInfo').innerHTML=`<h3>${t('scale')}</h3><div class="row"><div><div class="n val">${sc.mm_per_pt.toFixed(3)} mm/pt</div><div class="s">${esc(sc.reason)}</div></div><span class="pill ${sc.status}">${sc.status}</span></div>
    <div class="row"><div class="n">${t('extent')}</div><div class="val">${((ex[2]-ex[0])/1000).toFixed(2)} × ${((ex[3]-ex[1])/1000).toFixed(2)} m</div></div>
    <div class="row"><div class="n">${lang==='he'?'גובה קירות':'Wall height'}</div><div style="display:flex;gap:8px;align-items:center"><span class="val">${(l.lv.wall_height_mm/1000).toFixed(2)} m</span><span class="pill ${l.lv.wall_height_status}">${l.lv.wall_height_status}</span></div></div>
+   ${sc.face_bias_mm!=null?`<div class="row"><div><div class="n">${t('faces')}</div><div class="s">${t('facesNote')}</div></div><span class="val">${sc.face_bias_mm>0?'+':''}${sc.face_bias_mm} mm</span></div>`:''}
    <h3>${t('dims')}</h3>`+sc.samples.map(s=>`<div class="row"><div><div class="n">${esc(s.label)}</div><div class="s">${t('plan')} ${s.stated_mm} · ${t('model')} ${s.remeasured_mm}</div></div><span class="val">${s.error_mm>0?'+':''}${s.error_mm} mm</span></div>`).join('')+
    `<h3>${t('status')}</h3><div class="row"><div class="n">${t('walls')}</div><div>${Object.entries(cnt).map(([k,v])=>`<span class="pill ${k}">${k} ${v}</span>`).join(' ')}</div></div>
    <div class="row"><div class="n">${t('rooms')}</div><div>${Object.entries(rc).map(([k,v])=>`<span class="pill ${k}">${k} ${v}</span>`).join(' ')}</div></div>

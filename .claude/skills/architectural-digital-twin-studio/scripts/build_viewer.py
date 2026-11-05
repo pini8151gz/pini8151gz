@@ -58,7 +58,8 @@ def main():
     data = {
         "project": M0["project"],
         "extent_mm": M0["extent_mm"],
-        "scale": {k: M0["scale"][k] for k in ("mm_per_pt", "status", "reason", "worst_error_mm", "samples")},
+        "scale": {k: M0["scale"].get(k) for k in ("mm_per_pt", "status", "reason", "worst_error_mm", "samples",
+                                                  "face_checks", "face_bias_mm")},
         "limitations": M0.get("limitations", []),
         "levels": levels,
     }
