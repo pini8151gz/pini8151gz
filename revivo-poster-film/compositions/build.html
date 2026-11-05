@@ -1,0 +1,179 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 45%, #0b1a2c 0%, #050a12 60%, #020408 100%);
+    }
+    #backdrop {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+    }
+    #cam {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1320px;
+      height: 1601px;
+      transform-origin: 0 0;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.75);
+    }
+    #cam img,
+    #cam .lyr {
+      position: absolute;
+      display: block;
+    }
+    #ghost,
+    #sharp {
+      left: 0;
+      top: 0;
+      width: 1320px;
+      height: 1601px;
+    }
+    #sharp {
+      opacity: 0;
+    }
+    #sheen-box {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1320px;
+      height: 1601px;
+      overflow: hidden;
+      mix-blend-mode: screen;
+    }
+    #sheen {
+      position: absolute;
+      top: -400px;
+      left: 0;
+      width: 360px;
+      height: 2400px;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(190, 230, 255, 0.35) 50%, rgba(255, 255, 255, 0) 100%);
+    }
+    #flash {
+      position: absolute;
+      inset: 0;
+      background: #eaf6ff;
+      opacity: 0;
+    }
+    .bar {
+      position: absolute;
+      left: 0;
+      width: 1920px;
+      height: 132px;
+      background: #000;
+    }
+    #bar-top {
+      top: 0;
+    }
+    #bar-bot {
+      bottom: 0;
+    }
+    #grain {
+      position: absolute;
+      inset: 0;
+      opacity: 0.07;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.6px, transparent 0.8px);
+      background-size: 3px 3px;
+    }
+  </style>
+  <div id="root" data-composition-id="build" data-width="1920" data-height="1080" data-layout-allow-overflow data-layout-allow-overlap>
+    <img id="backdrop" src="assets/backdrop.jpg" alt="" />
+    <div id="cam" data-layout-ignore>
+      <img id="ghost" src="assets/ghost.jpg" alt="" />
+      <img id="l-people" src="assets/people.png" alt="" style="left: 150px; top: 70px; width: 1030px; height: 580px" />
+      <img id="l-title" src="assets/title.png" alt="" style="left: 126px; top: 648px; width: 1074px; height: 242px" />
+      <img id="l-sub" src="assets/sub.png" alt="" style="left: 295px; top: 888px; width: 412px; height: 114px" />
+      <img id="l-c1" src="assets/c1.png" alt="" style="left: 980px; top: 1036px; width: 274px; height: 234px" />
+      <img id="l-c2" src="assets/c2.png" alt="" style="left: 677px; top: 1036px; width: 275px; height: 234px" />
+      <img id="l-c3" src="assets/c3.png" alt="" style="left: 374px; top: 1036px; width: 276px; height: 234px" />
+      <img id="l-c4" src="assets/c4.png" alt="" style="left: 70px; top: 1036px; width: 277px; height: 234px" />
+      <img id="l-c5" src="assets/c5.png" alt="" style="left: 980px; top: 1320px; width: 274px; height: 238px" />
+      <img id="l-c6" src="assets/c6.png" alt="" style="left: 677px; top: 1320px; width: 275px; height: 238px" />
+      <img id="l-c7" src="assets/c7.png" alt="" style="left: 374px; top: 1320px; width: 276px; height: 238px" />
+      <img id="l-stamp" src="assets/stamp.png" alt="" style="left: 80px; top: 1302px; width: 242px; height: 250px" />
+      <img id="sharp" src="assets/poster.jpg" alt="" />
+      <div id="sheen-box"><div id="sheen"></div></div>
+    </div>
+    <div id="flash"></div>
+    <div id="grain"></div>
+    <div id="bar-top" class="bar"></div>
+    <div id="bar-bot" class="bar"></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // Frame poster point (cx, cy) at the frame centre at scale s.
+      const shot = (cx, cy, s) => ({ x: 960 - cx * s, y: 540 - cy * s, scale: s });
+      const FIT = 1000 / 1601;
+
+      // 0 – 2.3: dark open, the ghost of the design surfaces while the camera glides over the top
+      tl.set("#cam", shot(545, 320, 1.8), 0);
+      tl.fromTo("#ghost", { opacity: 0.35 }, { opacity: 1, duration: 1.6, ease: "power2.inOut" }, 0);
+      tl.to("#cam", { ...shot(780, 320, 1.8), duration: 2.3, ease: "power2.inOut" }, 0);
+
+      // 2.3: the photo develops with a camera flash; camera settles on the three
+      tl.fromTo("#flash", { opacity: 0 }, { opacity: 0.85, duration: 0.06, ease: "none" }, 2.25);
+      tl.to("#flash", { opacity: 0, duration: 0.45, ease: "power2.out" }, 2.31);
+      tl.fromTo(
+        "#l-people",
+        { opacity: 0, scale: 1.12, filter: "blur(18px) brightness(1.8)" },
+        { opacity: 1, scale: 1, filter: "blur(0px) brightness(1)", duration: 1.0, ease: "expo.out" },
+        2.28,
+      );
+      tl.to("#cam", { ...shot(665, 360, 1.15), duration: 1.3, ease: "power3.inOut" }, 2.3);
+      tl.to("#cam", { ...shot(665, 400, 1.1), duration: 1.4, ease: "power1.inOut" }, 3.6);
+
+      // 5.0: tilt down to the title; it wipes in right-to-left, the Hebrew reading direction
+      tl.to("#cam", { ...shot(665, 790, 1.05), duration: 0.8, ease: "power3.inOut" }, 5.0);
+      tl.fromTo(
+        "#l-title",
+        { clipPath: "inset(0% 0% 0% 100%)", x: 60, filter: "blur(10px)" },
+        { clipPath: "inset(0% 0% 0% 0%)", x: 0, filter: "blur(0px)", duration: 0.8, ease: "expo.out" },
+        5.4,
+      );
+      tl.fromTo(
+        "#l-sub",
+        { opacity: 0, scale: 0.4, rotation: -8 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.6, ease: "back.out(1.6)" },
+        6.3,
+      );
+
+      // 7.0: down to the tour dates; cards drop in right-to-left, row by row
+      tl.to("#cam", { ...shot(700, 1260, 0.98), duration: 1.0, ease: "power3.inOut" }, 7.0);
+      tl.to("#cam", { ...shot(630, 1270, 0.98), duration: 2.6, ease: "power1.inOut" }, 8.0);
+      ["#l-c1", "#l-c2", "#l-c3", "#l-c4", "#l-c5", "#l-c6", "#l-c7"].forEach((id, i) => {
+        const at = 7.6 + i * 0.16 + (i >= 4 ? 0.25 : 0);
+        tl.fromTo(
+          id,
+          { opacity: 0, y: -90, scale: 1.15, filter: "blur(10px)" },
+          { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" },
+          at,
+        );
+      });
+      tl.fromTo(
+        "#l-stamp",
+        { opacity: 0, scale: 2.2, rotation: -260 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.9, ease: "expo.out" },
+        9.4,
+      );
+
+      // 10.6: pull back to the whole poster, bars open, backdrop glows in
+      tl.to("#cam", { ...shot(660, 800.5, FIT), duration: 1.8, ease: "power3.inOut" }, 10.6);
+      tl.to("#bar-top", { y: -132, duration: 1.0, ease: "power2.inOut" }, 10.9);
+      tl.to("#bar-bot", { y: 132, duration: 1.0, ease: "power2.inOut" }, 10.9);
+      tl.fromTo("#backdrop", { opacity: 0 }, { opacity: 1, duration: 1.4, ease: "power2.inOut" }, 10.9);
+
+      // 12.5: rack focus, the finished poster resolves; one sheen crosses it
+      tl.fromTo("#sharp", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power2.inOut" }, 12.5);
+      tl.fromTo("#sheen", { x: -500, rotation: 18 }, { x: 1700, rotation: 18, duration: 1.1, ease: "power2.inOut" }, 13.3);
+
+      window.__timelines["build"] = tl;
+    })();
+  </script>
+</template>
