@@ -1,0 +1,95 @@
+<template>
+  <style>
+    @font-face { font-family: 'BRubik'; font-weight: 400; src: url('assets/fonts/Rubik-400-4.ttf'); }
+    @font-face { font-family: 'BRubik'; font-weight: 500; src: url('assets/fonts/Rubik-500-5.ttf'); }
+    @font-face { font-family: 'BRubik'; font-weight: 800; src: url('assets/fonts/Rubik-800-7.ttf'); }
+    @font-face { font-family: 'BRubik'; font-weight: 900; src: url('assets/fonts/Rubik-900-8.ttf'); }
+    #root { position: absolute; inset: 0; direction: rtl; font-family: 'BRubik'; color: #fff;
+      background: radial-gradient(ellipse 95% 55% at 50% 42%, #17222f 0%, #0a0f16 55%, #040608 100%); overflow: hidden; }
+    .abs { position: absolute; left: 0; right: 0; text-align: center; }
+    #wm { top: 200px; font-weight: 900; font-size: 56px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+    #wm small { display: block; font-weight: 400; font-size: 28px; color: #8b97a6; }
+    #h1 { top: 330px; font-weight: 900; font-size: 128px; line-height: 1.05; letter-spacing: -2px; }
+    #h1 span { display: inline-block; }
+    #batt { position: absolute; left: 150px; top: 600px; width: 780px; height: 340px; }
+    #shell { position: absolute; left: 0; top: 0; width: 700px; height: 340px; border: 14px solid #e8edf3; border-radius: 40px; }
+    #cap { position: absolute; left: 712px; top: 112px; width: 60px; height: 116px; border-radius: 14px; background: #e8edf3; }
+    #bar { position: absolute; left: 28px; top: 28px; width: 644px; height: 284px; border-radius: 20px; background: #34c759; transform-origin: 0% 50%; }
+    #pct { position: absolute; left: 0; width: 700px; top: 0; height: 340px; display: flex; align-items: center; justify-content: center;
+      font-weight: 500; font-size: 128px; direction: ltr; color: #0b0f14; }
+    #boltwrap { position: absolute; left: 270px; top: 40px; width: 160px; height: 260px; }
+    #sub { top: 1010px; font-weight: 500; font-size: 64px; }
+    #sub em { font-style: normal; color: #FFC400; font-weight: 800; }
+    #sub span { display: inline-block; }
+    #cta { top: 1000px; }
+    #cta .lbl { font-weight: 500; font-size: 34px; color: #8b97a6; letter-spacing: 2px; }
+    #phone { margin-top: 14px; font-weight: 800; font-size: 132px; color: #FFC400; direction: ltr; letter-spacing: -3px;
+      text-shadow: 0 0 60px rgba(255,196,0,.28); white-space: nowrap; }
+    #phone span { display: inline-block; }
+    #area { top: 1250px; font-size: 30px; color: #9aa5b2; }
+    #area b { color: #fff; }
+    #glow { position: absolute; left: 140px; top: 1420px; width: 800px; height: 400px; border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255,196,0,.22), rgba(255,196,0,0) 70%); }
+  </style>
+  <div id="root" data-composition-id="story" data-width="1080" data-height="1920" data-layout-allow-overlap>
+    <div id="wm" class="abs"><div>
+      <svg width="28" height="56" viewBox="0 0 100 200" style="vertical-align:middle"><path d="M62 0 L8 112 H48 L30 200 L94 80 H54 L76 0 Z" fill="#FFC400"/></svg>
+      בוסטר<small>מכירה והתקנת מצברים עד אליך</small></div></div>
+    <div id="h1" class="abs"><span>האוטו</span> <span>לא</span> <span>מניע?</span></div>
+    <div id="batt">
+      <div id="shell"></div><div id="cap"></div><div id="bar"></div>
+      <div id="boltwrap"><svg width="160" height="260" viewBox="0 0 100 200"><path id="bolt" d="M62 0 L8 112 H48 L30 200 L94 80 H54 L76 0 Z" fill="#121212"/></svg></div>
+      <div id="pct">100%</div>
+    </div>
+    <div id="sub" class="abs"><span>שיחה אחת.</span> <span><em>ההמשך עלינו.</em></span></div>
+    <div id="cta" class="abs"><div class="lbl">חייגו עכשיו · שירות 24/6</div>
+      <div id="phone"><span>054</span><span>-</span><span>450</span><span>43</span><span>48</span></div></div>
+    <div id="area" class="abs"><b>אזור שירות:</b> בית שמש והסביבה, ירושלים ומודיעין</div>
+    <div id="glow"></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const pct = document.querySelector("#pct");
+      const st = { v: 100 };
+      const show = () => { pct.textContent = Math.round(st.v) + "%"; };
+
+      // 0.2 – 2.0: the charge drains, green to amber to red
+      tl.fromTo(st, { v: 100 }, { v: 2, duration: 1.8, ease: "power2.in", onUpdate: show }, 0.2);
+      tl.fromTo("#bar", { scaleX: 1, backgroundColor: "#34c759" },
+        { scaleX: 0.075, duration: 1.8, ease: "power2.in" }, 0.2);
+      tl.to("#bar", { backgroundColor: "#ffb020", duration: 0.6, ease: "none" }, 0.8);
+      tl.to("#bar", { backgroundColor: "#ff3b30", duration: 0.5, ease: "none" }, 1.5);
+      tl.to("#pct", { color: "#ff3b30", duration: 0.25, ease: "none" }, 1.45);
+      // dying flicker
+      tl.to("#bar", { opacity: 0.25, duration: 0.07, ease: "none", yoyo: true, repeat: 5 }, 2.05);
+      tl.fromTo("#batt", { x: 0 }, { x: 0, keyframes: { x: [0, -14, 12, -8, 5, 0] }, duration: 0.45, ease: "none" }, 2.05);
+
+      // 2.4: the question, word by word
+      tl.fromTo("#h1 span", { opacity: 0, filter: "blur(8px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.16, stagger: 0.09, ease: "power4.out" }, 2.4);
+
+      // 3.6: the answer
+      tl.fromTo("#sub span", { opacity: 0, filter: "blur(8px)" },
+        { opacity: 1, filter: "blur(0px)", duration: 0.18, stagger: 0.45, ease: "power4.out" }, 3.6);
+
+      // 5.0: bolt strikes, battery charges in brand yellow
+      tl.fromTo("#bolt", { scale: 0, transformOrigin: "50% 50%" }, { scale: 1, duration: 0.45, ease: "back.out(2.2)" }, 5.85);
+      tl.to("#bar", { opacity: 1, backgroundColor: "#FFC400", duration: 0.25, ease: "power2.out" }, 5.0);
+      tl.to("#bar", { scaleX: 1, duration: 1.2, ease: "power2.inOut" }, 5.1);
+      tl.fromTo(st, { v: 2 }, { v: 100, duration: 1.2, ease: "power2.inOut", immediateRender: false }, 5.1);
+      tl.to("#pct", { opacity: 0, filter: "blur(8px)", duration: 0.18, ease: "power2.in" }, 4.95);
+
+      // 6.2: the answer line hands over to the call to action
+      tl.to("#sub span", { opacity: 0, filter: "blur(8px)", duration: 0.18, stagger: 0.05, ease: "power2.in" }, 6.2);
+      tl.fromTo("#wm", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 6.3);
+      tl.fromTo("#cta .lbl", { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" }, 6.45);
+      tl.fromTo("#phone span", { opacity: 0, y: 30, filter: "blur(6px)" },
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.35, stagger: 0.07, ease: "expo.out" }, 6.55);
+      tl.fromTo("#area", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" }, 7.2);
+      tl.fromTo("#glow", { opacity: 0 }, { opacity: 1, duration: 1.0, ease: "power2.inOut" }, 6.4);
+
+      window.__timelines["story"] = tl;
+    })();
+  </script>
+</template>
