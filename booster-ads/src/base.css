@@ -1,0 +1,6 @@
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1620px;overflow:hidden}
+body{direction:rtl;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.bolt{display:inline-block;vertical-align:middle}
+.phone{white-space:nowrap}
