@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 hyperframes-skills-zips/
+# private client plans used as skill test inputs – keep them local
+.claude/skills/architectural-digital-twin-studio/evals/*/files/*.pdf

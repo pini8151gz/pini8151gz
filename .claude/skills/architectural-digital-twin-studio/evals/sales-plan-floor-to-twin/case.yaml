@@ -1,0 +1,10 @@
+schema_version: "1.1"
+name: sales-plan-floor-to-twin
+expected_outcome: |
+  A measured 1:1 model of the floor on page 6 of the sales plan, with IFC and DXF
+  files that open, a scale taken from several dimensions printed on the plan (not
+  from the 1:100 in the title block, which does not apply to this A4 PDF), and a
+  short accuracy report comparing plan dimensions with the model. Anything the
+  plan does not state, such as wall height, is reported as unresolved or assumed.
+context:
+  scaffold_script: place-files.sh
