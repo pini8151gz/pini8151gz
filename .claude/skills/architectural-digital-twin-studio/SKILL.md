@@ -86,29 +86,42 @@ python3 calibrate.py work/floor-1/walls.json --out work/floor-1/scale.json \
 - `VERIFIED` רק כשכל המידות בטולרנס (ברירת מחדל: max(40 מ"מ, 1.5%)). **אל תמשיך עם UNRESOLVED.**
 - שמור את הנקודות ב-`dims.txt` וב-`face-checks.txt` לשחזור.
 
+### 3b. אלמנטים – `extract_elements.py`
+
+```bash
+python3 extract_elements.py plan.pdf --page 5 --walls work/floor-1/walls.json --out work/floor-1/elements.json
+```
+- פתחים: כל חלק ממילוי הקיר שנמחק ע"י שכבה שנצבעה אחריו. רוחב לאורך הקיר, עומק לרוחבו.
+- כיוון פתיחת דלת: לכל פתח נבדקת קשת ברדיוס רוחב הפתח מכל משקוף, לכל צד של הקיר; הקשת שהכי מכוסה בקווים בתוכנית (גם מקווקוות) קובעת ציר וצד פתיחה (DERIVED). פתח רחב מ-1.3 מ' אינו דלת.
+- קווים דקים נשמרים לזיהוי מדרגות (קווים מקבילים במרווח 22–34 ס"מ בחדר מדרגות) ומעליות (X בתוך תא 1–2.5 מ', גם כשהאלכסונים קטועים סביב טקסט).
+- בדוק בעיניים: צייר את הפתחים והקשתות מעל התוכנית לפני שממשיכים.
+
 ### 4. בניית מודל CAD/BIM – `build_model.py`
 
 ```bash
 python3 build_model.py work/floor-1/walls.json work/floor-1/scale.json --out work/floor-1/model \
-   --rooms work/floor-1/rooms.json --level-name "קומה א'" \
+   --rooms work/floor-1/rooms.json --elements work/floor-1/elements.json --level-name "קומה א'" \
    --elevation-mm 3500 --elevation-status VERIFIED --wall-height-mm 2700 --project "שם הפרויקט"
 ```
-- יחידות מ"מ, 1:1. יוצא: `model.json`, `plan.dxf` (שכבות A-WALL / A-SLAB / A-ROOM), `model.glb` (מטרים, Y-up), `model.ifc` (IFC4 עם `ADT_Accuracy` לכל אלמנט), `top.png`.
-- `rooms.json`: שמות חללים שקראת בתוכנית + נקודה בתוך החלל (pt). כתוב רק מה שקראת בוודאות – אם מספר הדירה לא ברור, השמט אותו.
-- גובה: מפלס (+3.50 וכו') מופיע לרוב בתוכנית → VERIFIED. גובה קיר/תקרה כמעט אף פעם לא מופיע בתוכנית קומה → השאר UNRESOLVED (ברירת מחדל 2700) אלא אם יש חתך או הערה.
+- יחידות מ"מ, 1:1. יוצא: `model.json`, `plan.dxf`, `model.glb` (מטרים, Y-up), `model.ifc` (IFC4 עם `ADT_Accuracy` לכל אלמנט), `top.png`, `top-dimensioned.png`.
+- `rooms.json`: לכל חלל שקראת – `name`, `name_en`, `unit` (מספר הדירה מהתווית "דירה מס' X"; השמט אם לא בטוח), ונקודה בתוך החלל (`x`,`y` ב-pt). חללים פתוחים (סלון/מטבח) – תן את נקודת התווית גם אם החלל לא נסגר.
+- **שכבות נפרדות** (R20): גאומטריה מאומתת (`walls`), מידות (`dimensions`: קווי מידה מהתוכנית VERIFIED, רוחבי חדרים ומידות כוללות DERIVED), ריהוט (`furniture`, VISUAL ONLY), אלמנטים (`elements`) ושיוך לדירות (`apartments` → IfcZone).
+- אלמנטים: דלתות עם כיוון פתיחה, חלונות וזיגוג מלא (פתח חיצוני ≥1.5 מ'), משקופים מעל פתחים, מרפסות עם מעקות, מהלכי מדרגות (שלח מדוד מהתוכנית; רום UNRESOLVED), פירי מעליות.
+- ריהוט Modern Minimalist Luxury: כל קבוצה (מיטה, ספה, מטבח, שולחן עבודה) מוצמדת לקיר, בתוך רצפת החלל, בלי לחסום קשת פתיחה של דלת ובלי לחפוף ריהוט של חלל אחר. מה שלא נכנס – נרשם ב-`note` ולא נדחס.
+- גבהים שלא מודפסים לכל אלמנט (ראש דלת, אדן, מעקה, רום מדרגה, גובה קיר) → UNRESOLVED עם הערך שהונח (`--assume-*`). מפלס (+3.50) שמודפס → VERIFIED.
 
 ### 5. בקרת דיוק – `qa_report.py` (שער חובה)
 
 ```bash
-python3 qa_report.py work/floor-1/model --walls work/floor-1/walls.json --pdf plan.pdf
+python3 qa_report.py work/floor-1/model --walls work/floor-1/walls.json --pdf plan.pdf [--floor-below work/floor-0/model]
 ```
-- קורא מחדש את ה-DXF/GLB/IFC שיוצאו (בודק את הקבצים, לא את הזיכרון), משווה מבט אורתוגרפי עליון לקירות המקור (IoU, שטח חסר/עודף), ומדווח מידות תוכנית מול מודל.
-- הסתכל ב-`overlay.png` (אפור = התאמה, כחול = רק בתוכנית, אדום = רק במודל) **מעל רינדור הדף** – זו הבדיקה שתופסת קיר שהחילוץ פספס.
-- `FAIL` → חזור לשלב המתאים. אל תעבור לוויזואליזציה לפני `PASS`.
+- חוסם: overlay של ה-DXF שיוצא מול קירות המקור (IoU ≥ 0.97), קנה מידה VERIFIED, GLB ו-IFC נפתחים עם כל האלמנטים.
+- מדווח: סטיית פני קירות מול מידות חדרים, ספירת פתחים/דלתות/חלונות/מרפסות/מדרגות/מעליות, **בדיקת התנגשויות** (ריהוט בקירות, דלת שנפתחת לתוך ריהוט, ריהוט חופף), **רציפות בין קומות** עם `--floor-below` (יישור אוטומטי, מעליות תואמות, קירות בטון שעומדים זה על זה, מעטפת).
+- הסתכל ב-`overlay.png` מעל רינדור הדף. `FAIL` חוסם → חזור לשלב המתאים. אל תעבור לוויזואליזציה לפני `PASS`.
 
 ### 6. עיצוב פנים וריהוט
 
-שכבה נפרדת, VISUAL ONLY, שלא נוגעת בגאומטריה המאומתת. כרגע הצופה מציג את התוכנית המקורית כשכבת השוואה (2D/3D) במקום ריהוט תלת-ממדי; אם המשתמש מבקש ריהוט – הוסף אותו כ-mesh נפרד בצופה, בסגנון Modern Minimalist Luxury, ודווח שהוא אילוסטרטיבי.
+נבנה אוטומטית בשלב 4 כשכבה נפרדת (VISUAL ONLY) ולא משנה גאומטריה מאומתת. חומרים: עץ אלון ואגוז, פשתן ובוקלה, שיש וטרוורטין, פליז, זכוכית; בצופה – חומרי PBR, תאורת שמש וסביבה, צללים והשתקפויות סביבה. אין השתקפויות מישוריות אמיתיות (ray tracing) – דווח זאת.
 
 ### 7. סימולציה אינטראקטיבית – `build_viewer.py`
 
@@ -116,16 +129,25 @@ python3 qa_report.py work/floor-1/model --walls work/floor-1/walls.json --pdf pl
 python3 build_viewer.py work/floor-1/model [work/floor-2/model ...] --out work/viewer --title "פרויקט · תאום דיגיטלי"
 ```
 - `viewer.html` – לפרסום כ-Artifact (זה "הקישור הפעיל"). `viewer-standalone.html` – לפתיחה מקומית/אירוח.
-- מצבים: בית בובות, מבט על, הליכה (גרירה + WASD/ג'ויסטיק, מיני-מפה, התנגשות בקירות), 360°, חתך בגובה משתנה, השוואת 2D/3D עם התוכנית המקורית, מדידה שנצמדת לפינות קירות. בורר קומות, רשימת חללים עם מעבר בלחיצה, לוח "דיוק" עם כל המידות והסטטוסים, עברית/אנגלית (RTL/LTR), תמה בהירה/כהה, הפחתת אנימציות.
-- three.js נטען מ-cdnjs/jsdelivr; בסביבה בלי גישה ל-CDN, בדוק עם Playwright שמנתב את הבקשות לעותק מקומי (`npm pack three@0.128.0`).
-- צלם מסך לכל מצב ובדוק שאין שגיאות קונסול לפני פרסום.
+- מצבים: בית בובות, מבט על (עם מידות), הליכה (גרירה + WASD/ג'ויסטיק, מיני-מפה, התנגשות בקירות, תקרה, ג'ירוסקופ במובייל), 360°, חתך, השוואת 2D/3D, מדידה שנצמדת לפינות קירות. בורר קומות אמיתי, מתגי מידות וריהוט, רשימת חללים לפי דירות, לוח "דיוק".
+- שפת העיצוב: ראה "שפת עיצוב – Apple" למעלה.
+- גירוסקופ: עובד בגרסה העצמאית בדפדפן מובייל; בתוך claude.ai הדפדפן חוסם חיישני תנועה – דווח זאת.
+
+### 7b. הדמיות וסרטון – `render_views.js`
+
+```bash
+node render_views.js --viewer work/viewer/viewer-standalone.html --out work/renders [--three-dir DIR] [--size 1280x720] [--fps 24] [--max-rooms 6]
+```
+- `axonometric-furnished.png` + `axonometric-furnished-detail.png` (אקסונומטרי מרוהט), `top-dimensioned-3d.png`, `interiors/*.png` (גובה עין 1.6 מ', נקודת מבט מחושבת מרצפת החלל עצמו), `clips/*.mp4`, `walkthrough.mp4` (ירידה מהאוויר → כל חלל בתנועת מצלמה רכה → מבט על עם מידות, מעברי fade).
+- רינדור WebGL בזמן אמת (בלי GPU – במעבד, כ-2–3 שניות לפריים; סרטון של ~30 שניות ≈ 30–40 דקות). זו לא הדמיה פוטוריאליסטית – אמור זאת למשתמש.
+- `perf_test.js` – FPS, draw calls ומשולשים בדסקטופ ובאמולציית iPhone, ובדיקת גלישה אופקית. בלי GPU ה-FPS הוא רצפה בלבד; התקציב (calls/triangles) הוא החלק הנייד.
 
 ### 8. תוצרים
 
 ```bash
-python3 package_deliverables.py work/floor-1 [work/floor-2 ...] --viewer work/viewer --out work/<project>-digital-twin.zip
+python3 package_deliverables.py work/floor-1 [work/floor-2 ...] --viewer work/viewer --renders work/renders --out work/<project>-digital-twin.zip
 ```
-מסור למשתמש: קישור פעיל לצופה · ZIP (IFC / DXF / GLB / JSON / מבט עליון / overlay / דוח בקרה) · סיכום קצר: מה נמדד (קנה מידה, סטייה מקסימלית), מה DERIVED, מה UNRESOLVED ולמה.
+מסור למשתמש: קישור פעיל לצופה · ZIP (IFC / DXF / GLB / JSON / מבט עליון עם מידות / אקסונומטרי מרוהט / הדמיות פנים / סרטונים / overlay / דוח בקרה / בדיקת ביצועים) · סיכום קצר · **דיווח מול `references/requirements.md` לכל דרישה**.
 
 ## מתי לעצור ולדווח
 

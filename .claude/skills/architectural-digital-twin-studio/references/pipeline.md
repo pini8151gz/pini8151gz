@@ -7,10 +7,13 @@ All scripts live in `scripts/` and import `adt_common.py`; run them with that fo
 | 1 | `probe_pdf.py plan.pdf --out work/probe [--pages 3-6]` | PDF | `probe.json`, `page-N.png`, `page-N-layer-K.png`, `contact.png` |
 | 2 | `extract_walls.py plan.pdf --page N --layer ... --out work/F` | PDF | `walls.json`, `walls-grid.png`, `tiles/`, `plan-underlay.png` |
 | 3 | `calibrate.py work/F/walls.json --dim ... [--check ...] --out work/F/scale.json` | walls.json + PDF | `scale.json` |
-| 4 | `build_model.py work/F/walls.json work/F/scale.json --out work/F/model` | both | `model.json`, `plan.dxf`, `model.glb`, `model.ifc`, `top.png` |
-| 5 | `qa_report.py work/F/model --walls work/F/walls.json --pdf plan.pdf` | model, walls | `qa_report.md/json`, `overlay.png` (exit 1 on FAIL) |
+| 3b | `extract_elements.py plan.pdf --page N --walls work/F/walls.json --out work/F/elements.json` | PDF + walls | openings, door swings, line work |
+| 4 | `build_model.py work/F/walls.json work/F/scale.json --rooms R --elements E --out work/F/model` | all above | `model.json`, `plan.dxf`, `model.glb`, `model.ifc`, `top.png`, `top-dimensioned.png` |
+| 5 | `qa_report.py work/F/model --walls work/F/walls.json --pdf plan.pdf [--floor-below work/F0/model]` | model, walls | `qa_report.md/json`, `overlay.png` (exit 1 on FAIL) |
 | 6 | `build_viewer.py work/F/model [...] --out work/viewer` | model(s) | `viewer.html`, `viewer-standalone.html` |
-| 7 | `package_deliverables.py work/F [...] --viewer work/viewer --out x.zip` | all | ZIP |
+| 6b | `node render_views.js --viewer work/viewer/viewer-standalone.html --out work/renders` | viewer | axonometrics, interiors, clips, `walkthrough.mp4` |
+| 6c | `node perf_test.js --viewer work/viewer/viewer-standalone.html --out work/perf/perf.json` | viewer | FPS / calls / triangles, phone screenshots |
+| 7 | `package_deliverables.py work/F [...] --viewer work/viewer --renders work/renders --extra perf.json --out x.zip` | all | ZIP |
 
 ## Reading the probe
 
@@ -32,6 +35,7 @@ Render the candidate layer (`page-N-layer-K.png`) before choosing; never choose 
 | `--erase-layer` | none | layer painted over walls to open doors/windows (paint-order aware). |
 | `--grow` | 0 | outline stroke width when the poche is painted inside a separate outline. |
 | `--hatch-layer` | none | layer holding 45° concrete hatch; walls traced from it are DERIVED. |
+| `--solid-layer` | none | layer whose solid thick fills are walls too (safe-room walls drawn black); then `--bbox` the floor so title-block fills stay out. |
 | `--min-wall` | 0.5 pt | morphological opening that removes slivers (glass lines) – keep below the thinnest real wall. |
 | `--bbox` | page | restrict to one drawing on a sheet with several. |
 
@@ -56,7 +60,7 @@ An independent run on page 6 that calibrated from dimension lines got 70.47 mm/p
 
 ## Known variants
 
-- **Safe-room walls as solid black fill** (page 6 of the sample): `--hatch-layer` finds nothing there. Run `extract_walls.py` a second time on `fill #000000` with `--min-thickness 0.45 --min-area 6 --bbox <floor>`, keep only solid bands (open the result by ~0.8 pt to drop text and symbols), union with the first pass's `walls`, and mark the added walls DERIVED.
+- **Safe-room walls as solid black fill** (page 6 of the sample): `--hatch-layer` finds nothing there. Add `--solid-layer "fill #000000" --bbox <floor>`; solid bands ≥ 0.45 pt thick and ≥ 6 pt² are added and tagged "concrete (solid fill)". The continuity check (`--floor-below`) shows whether the safe-room walls now stack (94% in the sample, 32% without the pass).
 - **Open-plan living/kitchen areas** do not close into rooms with `--room-close-mm 1000`; raising it merges whole apartments. Leave such names UNRESOLVED rather than inventing boundaries.
 - **Drawn walls thicker than dimensioned** (face bias −35…−45 mm in the sample): keep walls as drawn and report it; use a negative `--grow` only as an explicit, reported correction.
 

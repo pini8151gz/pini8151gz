@@ -9,11 +9,11 @@
 ## 1. קליטה וניתוח
 | # | דרישה | סטטוס | איפה |
 |---|---|---|---|
-| R01 | קבלת קובץ PDF, מספר קבצים או קישור ישיר | ⚠️ | `probe_pdf.py` מקבל קובץ אחד; כמה קבצים = הרצה לכל קובץ; קישור = הורדה קודם |
-| R02 | אם סופק קישור – לאסוף את כל הנתונים, המידות והתמונות | ⚠️ | הוראה ב-SKILL.md; אין כלי ייעודי |
+| R01 | קבלת קובץ PDF, מספר קבצים או קישור ישיר | ✅ | `probe_pdf.py` per file/page; several floors combined in one viewer (`build_viewer.py` with several models) |
+| R02 | אם סופק קישור – לאסוף את כל הנתונים, המידות והתמונות | ⚠️ | download the link first; no crawler for linked image galleries |
 | R03 | זיהוי PDF וקטורי או סרוק | ✅ | `probe_pdf.py` |
 | R04 | חילוץ מידות, טקסטים וסימונים | ⚠️ | מידות: `calibrate.py`; טקסט מומר לקווים נקרא בעין |
-| R05 | זיהוי קומות, דירות וחללים משותפים בנפרד | ❌ | |
+| R05 | זיהוי קומות, דירות וחללים משותפים בנפרד | ✅ | floors = separate models; apartments from `unit` labels → `apartments` + IfcZone; stairs/lifts = common |
 | R06 | לא לאחד דירות ולא לערבב קומות | ✅ | |
 | R07 | לא להסיק מידות מגודל התמונה | ✅ | `calibrate.py` |
 | R08 | תוכנית לא קריאה – לעצור ולדווח | ✅ | נבדק במקרה הבדיקה "scanned-plan" |
@@ -23,36 +23,36 @@
 |---|---|---|---|
 | R09 | קנה מידה 1:1, מילימטרים | ✅ | |
 | R10 | שחזור מעטפת, קירות ועוביים | ✅ | `extract_walls.py` |
-| R11 | פתחים | ✅ | חיתוך לפי סדר ציור |
-| R12 | כיווני פתיחת דלתות | ❌ | |
-| R13 | חלונות | ❌ | |
-| R14 | מרפסות | ⚠️ | נכללות ברצפה, לא כאלמנט |
-| R15 | מדרגות | ❌ | |
-| R16 | מעליות ופירים | ❌ | |
+| R11 | פתחים | ✅ | openings cut by paint order; lintels above heads |
+| R12 | כיווני פתיחת דלתות | ⚠️ | doors in wall fill: swing from the drawn arc (DERIVED). Doors in partitions drawn only as lines are not detected |
+| R13 | חלונות | ✅ | exterior openings → windows / full-height glazing; sill & head UNRESOLVED (assumed) |
+| R14 | מרפסות | ✅ | slab outside the wall envelope → balconies + railings (height UNRESOLVED) |
+| R15 | מדרגות | ⚠️ | flights from tread lines (going measured); rise & direction UNRESOLVED; stair cores must be labelled in rooms.json |
+| R16 | מעליות ופירים | ⚠️ | lift shafts from the X car symbol ✅; service/plumbing shafts not detected |
 | R17 | שמירה על זוויות וקימורים מקוריים | ✅ | גאומטריה וקטורית |
 | R18 | לא להמציא מידות חסרות | ✅ | |
 | R19 | סימון כל אלמנט VERIFIED / DERIVED / UNRESOLVED (+ VISUAL ONLY) | ✅ | |
-| R20 | שכבות נפרדות: גאומטריה מאומתת / ריהוט / מידות | ⚠️ | יש גאומטריה; ריהוט ומידות חסרים |
+| R20 | שכבות נפרדות: גאומטריה מאומתת / ריהוט / מידות | ✅ | `walls` / `furniture` / `dimensions` / `elements` – separate in JSON, DXF layers, IFC classes, viewer toggles |
 | R21 | פורמטים IFC, DXF, GLB/glTF, JSON | ✅ | `build_model.py` |
 
 ## 3. בקרת דיוק
 | # | דרישה | סטטוס | איפה |
 |---|---|---|---|
 | R22 | מבט אורתוגרפי עליון והשוואה לתוכנית | ✅ | `qa_report.py` → `overlay.png` |
-| R23 | בדיקת מידות, פתחים, עוביי קירות וגבולות | ⚠️ | מידות ופני קירות; ספירת פתחים חסרה |
+| R23 | בדיקת מידות, פתחים, עוביי קירות וגבולות | ✅ | IoU overlay, plan dimensions, room spans (wall thickness), opening counts |
 | R24 | דוח השוואה עם סטיות | ✅ | `qa_report.md` |
 | R25 | לא לעבור לוויזואליזציה לפני סיום הבקרה | ✅ | שער PASS/FAIL |
-| R26 | בדיקת התנגשויות | ❌ | |
-| R27 | בדיקת רציפות בין קומות | ❌ | |
-| R28 | בדיקות ביצועים (FPS) | ❌ | |
-| R29 | בדיקת תאימות למובייל | ❌ | |
+| R26 | בדיקת התנגשויות | ✅ | `qa_report.py`: furniture vs walls, door swings vs furniture, furniture overlaps |
+| R27 | בדיקת רציפות בין קומות | ✅ | `qa_report.py --floor-below`: auto alignment, lifts, concrete walls, envelope |
+| R28 | בדיקות ביצועים (FPS) | ⚠️ | `perf_test.js` measures FPS/calls/triangles; without a GPU the FPS is only a floor |
+| R29 | בדיקת תאימות למובייל | ✅ | `perf_test.js`: iPhone portrait + landscape emulation, no overflow, no errors |
 
 ## 4. עיצוב פנים
 | # | דרישה | סטטוס | איפה |
 |---|---|---|---|
-| R30 | ריהוט בשכבה נפרדת | ❌ | |
-| R31 | סגנון Modern Minimalist Luxury | ❌ | |
-| R32 | חומרי PBR, תאורה טבעית, צללים והשתקפויות | ⚠️ | צללים ותאורה; אין השתקפויות |
+| R30 | ריהוט בשכבה נפרדת | ✅ | `furnish.py` – placed against walls, avoiding door swings and other spaces |
+| R31 | סגנון Modern Minimalist Luxury | ✅ | palette: oak, walnut, linen, bouclé, marble, travertine, brass, glass |
+| R32 | חומרי PBR, תאורה טבעית, צללים והשתקפויות | ⚠️ | PBR + sun + soft shadows + environment reflections; no ray-traced / planar mirror reflections |
 | R33 | לא לשנות גאומטריה מאומתת | ✅ | |
 
 ## 5. סימולציה בזמן אמת
@@ -62,20 +62,20 @@
 | R35 | מצבים: Dollhouse, Top View, Walkthrough, Orbit 360°, Floor Selector, Section, 2D/3D Comparison | ✅ | |
 | R36 | מערכת מדידה אינטראקטיבית אמיתית | ✅ | נצמדת לפינות קירות |
 | R37 | **חוויית משתמש ברמת Apple** – נקי, חלק, רספונסיבי, עברית + אנגלית | ✅ | ראה "שפת עיצוב" ב-SKILL.md |
-| R38 | ביצועים: 60FPS בדסקטופ, 30FPS+ במובייל | ❌ | לא נמדד |
+| R38 | ביצועים: 60FPS בדסקטופ, 30FPS+ במובייל | ⚠️ | budget measured (~106 draw calls, ~216k triangles); real-device FPS not measurable in this container |
 | R39 | RTL (עברית) ו-LTR (אנגלית) | ✅ | |
 | R40 | מיני-מפה | ✅ | |
 | R41 | מעבר בלחיצת כפתור בין חללים | ✅ | |
 | R42 | התאמה אוטומטית לפורטרט/לנדסקייפ | ✅ | |
-| R43 | תמיכה בגירוסקופ (מובייל) | ❌ | |
+| R43 | תמיכה בגירוסקופ (מובייל) | ⚠️ | walk mode gyroscope implemented; works in the standalone page on a phone, blocked inside claude.ai |
 | R44 | הפחתת אנימציות לנגישות | ✅ | |
 
 ## 6. תוצרים
 | # | דרישה | סטטוס | איפה |
 |---|---|---|---|
 | R45 | מודל מדיד (IFC / DXF / GLB) | ✅ | |
-| R46 | מבט אורתוגרפי עליון **עם מידות** | ⚠️ | יש מבט עליון; בלי מידות |
-| R47 | מבט אקסונומטרי מרוהט | ❌ | |
+| R46 | מבט אורתוגרפי עליון **עם מידות** | ✅ | `top-dimensioned.png` (+ `top-dimensioned-3d.png`), DXF layer A-DIMS |
+| R47 | מבט אקסונומטרי מרוהט | ✅ | `render_views.js` → `axonometric-furnished*.png` |
 | R48 | סימולציה אינטראקטיבית 360 עם ניווט ומדידות | ✅ | |
 | R49 | דוח בקרת דיוק | ✅ | |
 | R50 | קובץ ZIP מלא | ✅ | `package_deliverables.py` |
