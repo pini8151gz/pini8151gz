@@ -43,6 +43,8 @@ CAD-Accurate Modeling · Interactive 3D · Real-Time Architectural Visualization
 
 ## תהליך העבודה
 
+**כלים מותקנים מראש** (סקריפט ההתקנה של הסביבה): ספריות Python במערכת, Blender ב-`/opt/bvenv/bin/python` (במקום `bvenv/bin/python` בהמשך), ועותק three.js ב-`/opt/three/package` (העבר `--three-dir /opt/three/package` ל-`render_views.js` ו-`perf_test.js` כשה-CDN חסום). אם הם חסרים – התקן לפי הפקודות שבכל שלב.
+
 הסקריפטים ב-`scripts/` עושים את העבודה הדטרמיניסטית; התפקיד שלך הוא להסתכל, להחליט ולאמת. הרץ אותם מתיקיית `scripts/` (הם מייבאים את `adt_common.py`). תלויות: `pip install pymupdf shapely trimesh mapbox_earcut ezdxf ifcopenshell` (בלי `scipy` – הייצוא לא צריך אותו). פירוט פרמטרים ופתרון תקלות: `references/pipeline.md`.
 
 תיקיית עבודה מומלצת: `work/<floor-name>/` לכל קומה. דווח התקדמות למשתמש בין שלב לשלב.
