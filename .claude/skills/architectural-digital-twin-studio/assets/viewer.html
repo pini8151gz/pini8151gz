@@ -411,6 +411,7 @@ window.ADT={
       geometries:renderer.info.memory.geometries,pixelRatio:renderer.getPixelRatio(),size:[cv.clientWidth,cv.clientHeight]});}requestAnimationFrame(f);}),
   frame(){renderer.render(scene,cam);return true;}
 };
+{let bi=0,bn=-1;levels.forEach((l,i)=>{const n=(l.lv.furniture||[]).filter(f=>f.parts.length).length;if(n>bn){bn=n;bi=i;}});cur=bi;}
 levels.forEach((l,i)=>l.g.visible=i===cur);resize();buildAll();applyLayers();persp.position.set(ctr.x+R*.55,ctr.y+R*.75,ctr.z+R*.75);setMode('dollhouse');$('loading').hidden=true;requestAnimationFrame(loop);
 })();
 </script>
