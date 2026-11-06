@@ -133,21 +133,29 @@ python3 build_viewer.py work/floor-1/model [work/floor-2/model ...] --out work/v
 - שפת העיצוב: ראה "שפת עיצוב – Apple" למעלה.
 - גירוסקופ: עובד בגרסה העצמאית בדפדפן מובייל; בתוך claude.ai הדפדפן חוסם חיישני תנועה – דווח זאת.
 
-### 7b. הדמיות וסרטון – `render_views.js`
+### 7b. הדמיות פוטוריאליסטיות וסרטון – `render_photoreal.py` (ברירת המחדל)
 
+ההדמיות והסרטון חייבים להיראות **כמה שיותר מציאותיים**. הם מרונדרים ב-Blender Cycles (path tracing – סימולציית אור פיזיקלית), ישירות מ-`model.json`, כך שהגאומטריה בכל תמונה היא המודל המדוד.
 ```bash
-node render_views.js --viewer work/viewer/viewer-standalone.html --out work/renders [--three-dir DIR] [--size 1280x720] [--fps 24] [--max-rooms 6]
+python3.11 -m venv bvenv && bvenv/bin/pip install bpy        # פעם אחת – Blender כמודול Python
+bvenv/bin/python render_photoreal.py work/floor-1/model/model.json --out work/photoreal --size 1600x900 --samples 96
+bvenv/bin/python render_photoreal.py work/floor-1/model/model.json --out work/photoreal --only none \
+    --video --video-size 960x540 --video-samples 16 --render-fps 6 --fps 24
 ```
-- `axonometric-furnished.png` + `axonometric-furnished-detail.png` (אקסונומטרי מרוהט), `top-dimensioned-3d.png`, `interiors/*.png` (גובה עין 1.6 מ', נקודת מבט מחושבת מרצפת החלל עצמו), `clips/*.mp4`, `walkthrough.mp4` (ירידה מהאוויר → כל חלל בתנועת מצלמה רכה → מבט על עם מידות, מעברי fade).
-- רינדור WebGL בזמן אמת (בלי GPU – במעבד, כ-2–3 שניות לפריים; סרטון של ~30 שניות ≈ 30–40 דקות). זו לא הדמיה פוטוריאליסטית – אמור זאת למשתמש.
-- `perf_test.js` – FPS, draw calls ומשולשים בדסקטופ ובאמולציית iPhone, ובדיקת גלישה אופקית. בלי GPU ה-FPS הוא רצפה בלבד; התקציב (calls/triangles) הוא החלק הנייד.
+- חומרים: פרקט אלון עם סיבים, טיח, פשתן ובוקלה, שיש, טרוורטין, פליז, אלומיניום שחור, זכוכית אמיתית. ריהוט מפורט לפי `role` (כריות, רגליים, שמיכה, ידיות, כיור, ברז, טלוויזיה, ספרים, תמונות על הקיר).
+- אור: שמיים פיזיקליים + שמש דרך החלונות, תאורת תקרה חמה, מנורות; AgX, denoiser.
+- מצלמה בגובה עין 1.6 מ', עדשה רחבה, פרספקטיבה בשתי נקודות (קווים אנכיים ישרים) – כמו בצילום אדריכלי.
+- הסרטון: ירידה מהאוויר → כל חלל בתנועת מצלמה רכה → מעברי fade; פריימים מרונדרים ב-`--render-fps` ומוחלקים ל-24 פריימים בשנייה (interpolation).
+- זמן בלי GPU (4 ליבות): ~5–8 דקות לתמונה 1600×900; סרטון של ~30 שניות ≈ 1.5–2 שעות. עם GPU – פי 10–30 מהר יותר. הרץ ברקע ודווח למשתמש על הזמן הצפוי.
+- `render_views.js` (WebGL בזמן אמת) נשאר לתצוגה מקדימה מהירה בלבד, לא כתוצר סופי.
+- `perf_test.js` – FPS, draw calls ומשולשים בדסקטופ ובאמולציית iPhone, ובדיקת גלישה אופקית.
 
 ### 8. תוצרים
 
 ```bash
-python3 package_deliverables.py work/floor-1 [work/floor-2 ...] --viewer work/viewer --renders work/renders --out work/<project>-digital-twin.zip
+python3 package_deliverables.py work/floor-1 [work/floor-2 ...] --viewer work/viewer --renders work/photoreal --out work/<project>-digital-twin.zip
 ```
-מסור למשתמש: קישור פעיל לצופה · ZIP (IFC / DXF / GLB / JSON / מבט עליון עם מידות / אקסונומטרי מרוהט / הדמיות פנים / סרטונים / overlay / דוח בקרה / בדיקת ביצועים) · סיכום קצר · **דיווח מול `references/requirements.md` לכל דרישה**.
+מסור למשתמש: קישור פעיל לצופה · ZIP (IFC / DXF / GLB / JSON / מבט עליון עם מידות / אקסונומטרי מרוהט / הדמיות פנים פוטוריאליסטיות / סרטון / overlay / דוח בקרה / בדיקת ביצועים) · סיכום קצר · **דיווח מול `references/requirements.md` לכל דרישה**.
 
 ## מתי לעצור ולדווח
 

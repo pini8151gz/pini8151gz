@@ -52,7 +52,7 @@
 |---|---|---|---|
 | R30 | ריהוט בשכבה נפרדת | ✅ | `furnish.py` – placed against walls, avoiding door swings and other spaces |
 | R31 | סגנון Modern Minimalist Luxury | ✅ | palette: oak, walnut, linen, bouclé, marble, travertine, brass, glass |
-| R32 | חומרי PBR, תאורה טבעית, צללים והשתקפויות | ⚠️ | PBR + sun + soft shadows + environment reflections; no ray-traced / planar mirror reflections |
+| R32 | חומרי PBR, תאורה טבעית, צללים והשתקפויות | ✅ | הדמיות: path tracing – אור עקיף, צללים רכים, השתקפויות ושבירה אמיתיות; בצופה החי: PBR + השתקפויות סביבה |
 | R33 | לא לשנות גאומטריה מאומתת | ✅ | |
 
 ## 5. סימולציה בזמן אמת
@@ -75,14 +75,14 @@
 |---|---|---|---|
 | R45 | מודל מדיד (IFC / DXF / GLB) | ✅ | |
 | R46 | מבט אורתוגרפי עליון **עם מידות** | ✅ | `top-dimensioned.png` (+ `top-dimensioned-3d.png`), DXF layer A-DIMS |
-| R47 | מבט אקסונומטרי מרוהט | ✅ | `render_views.js` → `axonometric-furnished*.png` |
+| R47 | מבט אקסונומטרי מרוהט | ✅ | `render_photoreal.py` → `axonometric-furnished.png`, `axonometric-floor.png` |
 | R48 | סימולציה אינטראקטיבית 360 עם ניווט ומדידות | ✅ | |
 | R49 | דוח בקרת דיוק | ✅ | |
 | R50 | קובץ ZIP מלא | ✅ | `package_deliverables.py` |
 | R51 | קישור פעיל לסימולציה | ✅ | פרסום `viewer.html` כ-Artifact |
 | R52 | סיכום קצר + הקישור | ✅ | |
-| R53 | הדמיות פנים בגובה העין – תמונות וסרטונים עם מעברים חלקים וקולנועיים *(נוסף 2026-11-06)* | ✅ | `render_views.js` → `interiors/*.png` + `clips/*.mp4`; רינדור בזמן אמת, לא פוטוריאליסטי |
-| R54 | סרטון קולנועי של מעבר בין החללים *(נוסף 2026-11-06)* | ✅ | `walkthrough.mp4` – ירידה מהאוויר, חללים בתנועה רכה, מעברי fade, מבט על עם מידות |
+| R53 | הדמיות פנים בגובה העין – תמונות וסרטונים עם מעברים חלקים וקולנועיים *(נוסף 2026-11-06)* | ✅ | `render_photoreal.py` (Blender Cycles, path tracing) → `interiors/*.png` + סרטון |
+| R54 | סרטון קולנועי של מעבר בין החללים *(נוסף 2026-11-06)* | ✅ | `render_photoreal.py --video` → `film/walkthrough.mp4` – ירידה מהאוויר, חללים בתנועה רכה, מעברי fade |
 
 ## 7. כללי איכות
 | # | דרישה | סטטוס |

@@ -65,10 +65,11 @@ def _frame(poly):
     return r.centroid.x, r.centroid.y, ang, L, W
 
 
-def P(u, v, w, d, z0, h, mat):
+def P(u, v, w, d, z0, h, mat, role=""):
     """Part in group-local coordinates: u along the wall, v into the room
-    (the group's back edge is v = 0)."""
-    return (u, v, w, d, z0, h, mat)
+    (the group's back edge is v = 0). `role` lets renderers build a detailed
+    model of the part (sofa seat, mattress, lamp ...) on the same footprint."""
+    return (u, v, w, d, z0, h, mat, role)
 
 
 def part_polygon(p):
@@ -81,11 +82,11 @@ def _place(group, ax, ay, theta):
     """theta = direction of the wall (u axis); v axis points into the room."""
     out = []
     ct, st = math.cos(theta), math.sin(theta)
-    for (u, v, w, d, z0, h, mat) in group:
+    for (u, v, w, d, z0, h, mat, role) in group:
         x = ax + u * ct - v * st
         y = ay + u * st + v * ct
         out.append({"x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "d": round(d, 1),
-                    "rot": round(theta, 5), "z0": round(z0, 1), "h": round(h, 1), "mat": mat})
+                    "rot": round(theta, 5), "z0": round(z0, 1), "h": round(h, 1), "mat": mat, "role": role})
     return out
 
 
@@ -97,7 +98,7 @@ def _search(group, free, target, taken, step=150.0, inset=15.0):
     """Slide the group along every wall of `free`, back to the wall, and keep
     the fitting spot nearest to `target` that does not collide with `taken`."""
     from shapely.geometry.polygon import orient
-    width = max(abs(u) + w / 2 for (u, v, w, d, z0, h, m) in group) * 2
+    width = max(abs(g[0]) + g[2] / 2 for g in group) * 2
     best = None
     rings = [orient(free, 1.0).exterior]
     for ring in rings:
@@ -130,41 +131,42 @@ def _search(group, free, target, taken, step=150.0, inset=15.0):
 
 # ---------------------------------------------------------------- groups
 def _bed(bw):
-    g = [P(0, 1050, bw, 2100, 0, 300, "walnut"), P(0, 1080, bw - 40, 2000, 300, 220, "linen"),
-         P(0, 40, bw + 120, 80, 0, 1050, "oak"), P(0, 1650, bw - 20, 900, 520, 40, "charcoal")]
+    g = [P(0, 1050, bw, 2100, 0, 300, "walnut", "bed-frame"), P(0, 1080, bw - 40, 2000, 300, 220, "linen", "mattress"),
+         P(0, 40, bw + 120, 80, 0, 1050, "oak", "headboard"), P(0, 1650, bw - 20, 900, 520, 40, "charcoal", "throw")]
     for s in (-1, 1):
-        g += [P(s * (bw / 2 + 290), 230, 450, 400, 0, 450, "oak"), P(s * (bw / 2 + 290), 230, 130, 130, 450, 380, "brass")]
+        g += [P(s * (bw / 2 + 290), 230, 450, 400, 0, 450, "oak", "nightstand"),
+              P(s * (bw / 2 + 290), 230, 130, 130, 450, 380, "brass", "table-lamp")]
     return g
 
 
 def _rug(w, d, v):
-    return [P(0, v, w, d, 0, 8, "rug")]
+    return [P(0, v, w, d, 0, 8, "rug", "rug")]
 
 
 GROUPS = {
     "bedroom": [
         ("bed", [_bed(1600) + _rug(2800, 1600, 1500), _bed(1600), _bed(1400), _bed(900)], True),
-        ("wardrobe", [[P(0, 300, 1800, 600, 0, 2400, "lacquer")], [P(0, 300, 1200, 600, 0, 2400, "lacquer")]], False),
+        ("wardrobe", [[P(0, 300, 1800, 600, 0, 2400, "lacquer", "wardrobe")], [P(0, 300, 1200, 600, 0, 2400, "lacquer", "wardrobe")]], False),
     ],
     "living": [
-        ("sofa", [[P(0, 450, L_, 900, 0, 420, "bouclé"), P(0, 80, L_, 160, 0, 780, "bouclé"),
-                   P(0, 1450, 1200, 650, 0, 380, "travertine"), P(0, 1300, L_ + 600, 2200, 0, 8, "rug"),
-                   P(L_ / 2 + 330, 300, 420, 420, 0, 560, "brass")] for L_ in (2600, 2200, 1800)], True),
-        ("tv", [[P(0, 220, 2000, 420, 0, 480, "walnut")], [P(0, 220, 1500, 420, 0, 480, "walnut")]], False),
-        ("dining", [[P(0, 1100, 1800, 900, 720, 30, "oak"), P(0, 1100, 1500, 600, 0, 720, "black")] +
-                    [P(sx * 500, 1100 + sy * 650, 450, 450, 0, 450, "charcoal") for sx in (-1, 1) for sy in (-1, 1)]], False),
-        ("plant", [[P(0, 250, 380, 380, 0, 420, "travertine"), P(0, 250, 520, 520, 420, 650, "green")]], False),
+        ("sofa", [[P(0, 450, L_, 900, 0, 420, "bouclé", "sofa-seat"), P(0, 80, L_, 160, 0, 780, "bouclé", "sofa-back"),
+                   P(0, 1450, 1200, 650, 0, 380, "travertine", "coffee-table"), P(0, 1300, L_ + 600, 2200, 0, 8, "rug", "rug"),
+                   P(L_ / 2 + 330, 300, 420, 420, 0, 560, "brass", "side-lamp")] for L_ in (2600, 2200, 1800)], True),
+        ("tv", [[P(0, 220, 2000, 420, 0, 480, "walnut", "tv-unit")], [P(0, 220, 1500, 420, 0, 480, "walnut", "tv-unit")]], False),
+        ("dining", [[P(0, 1100, 1800, 900, 720, 30, "oak", "dining-top"), P(0, 1100, 1500, 600, 0, 720, "black", "dining-base")] +
+                    [P(sx * 500, 1100 + sy * 650, 450, 450, 0, 450, "charcoal", "chair") for sx in (-1, 1) for sy in (-1, 1)]], False),
+        ("plant", [[P(0, 250, 380, 380, 0, 420, "travertine", "planter"), P(0, 250, 520, 520, 420, 650, "green", "foliage")]], False),
     ],
     "kitchen": [
-        ("counter", [[P(0, 300, L_, 600, 0, 870, "lacquer"), P(0, 310, L_, 620, 870, 30, "marble"),
-                      P(0, 175, L_, 350, 1500, 700, "lacquer")] for L_ in (3600, 3000, 2400, 1800)], True),
-        ("table", [[P(0, 1000, 1400, 800, 720, 30, "oak"), P(0, 1000, 1100, 500, 0, 720, "black")]], False),
+        ("counter", [[P(0, 300, L_, 600, 0, 870, "lacquer", "base-cabinets"), P(0, 310, L_, 620, 870, 30, "marble", "worktop"),
+                      P(0, 175, L_, 350, 1500, 700, "lacquer", "wall-cabinets")] for L_ in (3600, 3000, 2400, 1800)], True),
+        ("table", [[P(0, 1000, 1400, 800, 720, 30, "oak", "dining-top"), P(0, 1000, 1100, 500, 0, 720, "black", "dining-base")]], False),
     ],
     "saferoom": [
-        ("desk", [[P(0, 360, W_, 700, 720, 30, "oak"), P(-W_ / 2 + 60, 360, 60, 650, 0, 720, "black"),
-                   P(W_ / 2 - 60, 360, 60, 650, 0, 720, "black"), P(0, 1000, 520, 520, 0, 460, "charcoal"),
-                   P(0, 1230, 480, 60, 460, 400, "charcoal")] for W_ in (1500, 1200)], True),
-        ("shelf", [[P(0, 180, 1200, 350, 0, 2000, "walnut")], [P(0, 180, 800, 350, 0, 2000, "walnut")]], False),
+        ("desk", [[P(0, 360, W_, 700, 720, 30, "oak", "desk-top"), P(-W_ / 2 + 60, 360, 60, 650, 0, 720, "black", "desk-leg"),
+                   P(W_ / 2 - 60, 360, 60, 650, 0, 720, "black", "desk-leg"), P(0, 1000, 520, 520, 0, 460, "charcoal", "chair-seat"),
+                   P(0, 1230, 480, 60, 460, 400, "charcoal", "chair-back")] for W_ in (1500, 1200)], True),
+        ("shelf", [[P(0, 180, 1200, 350, 0, 2000, "walnut", "bookshelf")], [P(0, 180, 800, 350, 0, 2000, "walnut", "bookshelf")]], False),
     ],
 }
 RECIPES = GROUPS
