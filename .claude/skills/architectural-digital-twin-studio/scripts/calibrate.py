@@ -102,6 +102,32 @@ def snap(p, u, edges, radius, inside=None, inward=1, max_dot=0.5):
     return best
 
 
+def _to_ticks(a_, b_, segs, reach=1.8):
+    """Move each end of a dimension-line segment to the tick or extension
+    line that crosses the line nearest to it. Some drawings break the line
+    at the ticks, others run it through them; tick to tick is the dimension."""
+    L = math.dist(a_, b_)
+    ux, uy = (b_[0] - a_[0]) / L, (b_[1] - a_[1]) / L
+    ts = []
+    for (p, q) in segs:
+        ex, ey = q[0] - p[0], q[1] - p[1]
+        le = math.hypot(ex, ey)
+        if le < 0.4 or le > 12 or abs((ex * ux + ey * uy) / le) > 0.8:
+            continue  # must cross the line (tick at 45° or extension line at 90°)
+        den = ux * ey - uy * ex
+        if abs(den) < 1e-9:
+            continue
+        t = ((p[0] - a_[0]) * ey - (p[1] - a_[1]) * ex) / den
+        s_ = ((p[0] - a_[0]) * uy - (p[1] - a_[1]) * ux) / den
+        if -0.05 <= s_ <= 1.05:
+            ts.append(t)
+    t0 = min((t for t in ts if abs(t) <= reach), key=abs, default=0.0)
+    t1 = min((t for t in ts if abs(t - L) <= reach), key=lambda t: abs(t - L), default=L)
+    na = (a_[0] + ux * t0, a_[1] + uy * t0)
+    nb = (a_[0] + ux * t1, a_[1] + uy * t1)
+    return na, nb, math.dist(na, nb)
+
+
 def dims_by_consensus(specs, segs, search):
     """For each dimension point, collect straight thin segments passing within
     `search` pt (candidate dimension lines). Every candidate implies a scale;
@@ -121,7 +147,7 @@ def dims_by_consensus(specs, segs, search):
             if L < 4:
                 continue
             if LineString([a_, b_]).distance(P) <= search:
-                cands.append((a_, b_, L))
+                cands.append(_to_ticks(a_, b_, segs))
         dims.append((label, real, cands, (x, y)))
     hyps = [real / c[2] for _, real, cands, _ in dims for c in cands]
     best = None
@@ -153,7 +179,7 @@ def dims_by_consensus(specs, segs, search):
         ux, uy = b_[0] - a_[0], b_[1] - a_[1]
         out.append({"label": label, "stated_mm": real, "axis": "x" if abs(ux) >= abs(uy) else "y",
                     "p1": [round(a_[0], 3), round(a_[1], 3)], "p2": [round(b_[0], 3), round(b_[1], 3)],
-                    "snapped": [True, True], "snap_to": "dimension line (tick to tick)",
+                    "snapped": [True, True], "snap_to": "dimension line, ends snapped to ticks",
                     "measured_pt": round(L, 4), "mm_per_pt": real / L})
     return out
 
@@ -256,6 +282,29 @@ def main():
     found = [x for x in samples if x["measured_pt"] == x["measured_pt"]]
     missing = [x["label"] for x in samples if x not in found]
     samples = found
+    # Some drafters stop every dimension line a fixed distance short of the
+    # extension lines (or overrun them). That is a constant per page, not a
+    # ratio, so fit value = scale × (length + gap) when the sample allows it:
+    # ≥ 5 dimensions whose lengths differ by at least ×1.5.
+    gap = 0.0
+    Ls = [x["measured_pt"] for x in samples]
+    if len(samples) >= 5 and max(Ls) / min(Ls) >= 1.5:
+        n_ = len(samples)
+        sx, sy = sum(Ls), sum(x["stated_mm"] for x in samples)
+        sxx = sum(L * L for L in Ls)
+        sxy = sum(L * x["stated_mm"] for L, x in zip(Ls, samples))
+        den = n_ * sxx - sx * sx
+        if den:
+            s_fit = (n_ * sxy - sx * sy) / den
+            k_fit = (sy - s_fit * sx) / n_
+            g = k_fit / s_fit
+            if abs(g) >= 0.15:  # below ~1 cm at 1:200 it is noise, keep a pure ratio
+                gap = g
+    if gap:
+        for x in samples:
+            x["line_pt"] = x["measured_pt"]
+            x["measured_pt"] = round(x["measured_pt"] + gap, 4)
+            x["mm_per_pt"] = x["stated_mm"] / x["measured_pt"]
     scale = lsq(samples)
     axis_scale = {}
     for ax in ("x", "y"):
@@ -308,6 +357,7 @@ def main():
         "mm_per_pt": round(scale, 5),
         "paper_scale_equivalent": f"1:{round(scale / (25.4 / 72))}",
         "method": a.snap,
+        "dimension_line_end_gap_pt": round(gap, 4),
         "status": status, "reason": why,
         "tolerance": {"mm": a.tolerance_mm, "pct": a.tolerance_pct},
         "worst_error_mm": round(worst, 1),
@@ -319,6 +369,8 @@ def main():
     }
     write_json(a.out, result)
     print(f"scale = {scale:.4f} mm/pt   ({result['paper_scale_equivalent']} on this PDF, method {a.snap})   {status}: {why}")
+    if gap:
+        print(f"  dimension lines stop {gap:+.3f} pt from the extension lines on this page (fitted, applied to every dimension)")
     if axis_scale:
         print(f"  per-axis: {axis_scale}" + (f"  (differ {aniso:.2f}%)" if aniso is not None else ""))
     for s_ in samples:

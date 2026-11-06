@@ -44,6 +44,8 @@ Coordinates are PDF points, origin top-left, y down. The grid in `walls-grid.png
 ## Calibration tips
 
 - Dimension strings are usually centimetres. A chain like `25 | 90 | 370` gives you both small and large spans – use several.
+- Each end of the chosen dimension line is snapped to the tick or extension line that crosses it within 1.8 pt. Some drawings break the line at the ticks, others run it through them (in the sample, floors ג׳/ד׳ vs ב׳: 1.32 pt per line, which would have meant a 1.8% scale error); tick to tick is the dimension.
+- With ≥ 5 dimensions of different lengths the script also fits a constant end gap per page (`dimension_line_end_gap_pt`) as a safety net.
 - `--dim x,y,mm,label` is the preferred input: a point on/next to the dimension line. CAD exports draw each dimension line as its own tick-to-tick segment, so its length *is* the dimension on paper. Candidates within `--dim-search` (3.5 pt) are collected and a consensus scale is chosen; a dimension whose closest line disagrees by >3% is reported in `dimensions_not_found` and skipped.
 - `--pair x1,y1,x2,y2,mm` with `--snap dims` snaps ends to extension lines/ticks; with `--snap walls` to wall faces (only when a plan has no dimension line work – wall-thickness bias then leaks into the scale).
 - `--check` measures clear spans between the extracted wall faces using the final scale. The mean (`face_bias_mm`) tells you whether walls came out too thick (negative) or too thin (positive).

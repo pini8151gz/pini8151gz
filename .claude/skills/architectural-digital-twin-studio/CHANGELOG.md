@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-06 – v3 (full-building run on the sample plan)
+- calibrate.py: dimension-line ends snapped to ticks before the consensus check; per-page end-gap fit. Fixed a 1.8% scale error on floors drawn with broken dimension lines.
+- Viewer opens on the most furnished floor; 7 floors tested (basement to penthouse).
+- Photoreal renders with Blender Cycles; ground, paving and building massing.
+
 ## 2026-11-05 – v2
 - Working pipeline: `probe_pdf.py`, `extract_walls.py`, `calibrate.py`, `build_model.py`, `qa_report.py`, `build_viewer.py`, `package_deliverables.py`.
 - Walls taken from the PDF's vector wall layer; openings respect paint order; concrete walls traced from 45° hatch (DERIVED).
