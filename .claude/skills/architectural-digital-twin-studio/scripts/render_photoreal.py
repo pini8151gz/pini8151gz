@@ -170,6 +170,9 @@ def build_materials():
     M["frame"] = _principled("aluminium-black", srgb((38, 38, 40)), 0.3, metal=0.9)[0]
     M["shaft"] = _principled("lift-steel", srgb((150, 150, 155)), 0.25, metal=1.0)[0]
     M["slab"] = mat_noise("concrete", srgb((180, 178, 172)), 0.85, 0.2, 20.0)
+    M["grass"] = mat_noise("grass", srgb((92, 118, 70)), 0.95, 0.4, 60.0)
+    M["paving"] = mat_noise("paving", srgb((196, 190, 180)), 0.8, 0.2, 12.0)
+    M["facade"] = mat_noise("facade", srgb((226, 220, 208)), 0.85, 0.1, 30.0)
     M["steel"] = _principled("brushed-steel", srgb((170, 170, 172)), 0.3, metal=1.0)[0]
     M["screen"] = _principled("tv-glass", srgb((8, 8, 10)), 0.05, coat=1.0)[0]
     M["shade"] = _principled("lamp-shade", srgb((240, 232, 214)), 0.9, transmission=0.4)[0]
@@ -445,6 +448,18 @@ def build_scene(M, MAT, cut=None, ceiling=True):
         prism("floor", [mm(p) for p in g["exterior"]], [[mm(p) for p in h] for h in g["holes"]], 0.0, 0.012, MAT["floor"], coll=coll)
         if ceiling:
             prism("ceiling", [mm(p) for p in g["exterior"]], [[mm(p) for p in h] for h in g["holes"]], H, 0.2, MAT["ceiling"], coll=coll)
+    # ground at street level (the floor's elevation below), paving near the
+    # building and grass beyond – context only, VISUAL ONLY
+    zg = -lv.get("elevation_mm", 0) / 1000.0 if lv.get("elevation_mm") else -0.2
+    x0, y0, x1, y1 = [v / 1000 for v in M["extent_mm"]]
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    prism("ground", [(cx - 400, cy - 400), (cx + 400, cy - 400), (cx + 400, cy + 400), (cx - 400, cy + 400)], [],
+          zg - 0.05, 0.05, MAT["grass"], coll=coll)
+    prism("paving", [(x0 - 8, y0 - 8), (x1 + 8, y0 - 8), (x1 + 8, y1 + 8), (x0 - 8, y1 + 8)], [],
+          zg, 0.02, MAT["paving"], coll=coll)
+    if zg < -0.5:  # the building below this floor, as a plain massing block
+        for g in lv["slab"]["geometry"]:
+            prism("below", [mm(p) for p in g["exterior"]], [], zg, -0.2 - zg, MAT["facade"], coll=coll)
     for w in lv["walls"]:
         g = w["geometry"]
         prism(w["id"], [mm(p) for p in g["exterior"]], [[mm(p) for p in h] for h in g["holes"]], 0.012, hw - 0.012, MAT["wall"], coll=coll)
@@ -708,7 +723,7 @@ def main():
             camera("axo-all", (cx + 60, cy - 60, 55), (cx, cy, 0), two_point=False, ortho=R * 0.82)
             log["stills"].append({"file": "axonometric-floor.png", "seconds": render(os.path.join(out, "axonometric-floor.png"))})
         if "aerial" in only:
-            camera("aerial", (cx + R * 0.55, cy - R * 0.55, R * 0.42), (cx, cy, 0), lens=35, two_point=False)
+            camera("aerial", (cx + R * 0.7, cy - R * 0.7, R * 0.5), (cx, cy, 0), lens=32, two_point=False)
             log["stills"].append({"file": "aerial.png", "seconds": render(os.path.join(out, "aerial.png"))})
         print("axonometric/aerial done", flush=True)
 
