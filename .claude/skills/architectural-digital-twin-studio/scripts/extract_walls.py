@@ -103,6 +103,11 @@ def main():
     ap.add_argument("--hatch-layer", action="append",
                     help='layer whose 45° hatch strokes mark concrete walls (e.g. safe rooms, cores), '
                          'e.g. "fill #000000" (repeatable)')
+    ap.add_argument("--solid-layer", action="append",
+                    help='layer whose SOLID thick fills are walls too (e.g. safe-room walls in "fill #000000")')
+    ap.add_argument("--solid-min-thickness", type=float, default=0.45)
+    ap.add_argument("--solid-min-area", type=float, default=6.0)
+    ap.add_argument("--solid-open", type=float, default=0.8, help="pt – keep only solid bands at least this thick")
     ap.add_argument("--grow", type=float, default=0.0,
                     help="pt – grow (+) or thin (−) the walls uniformly; 0 = walls exactly as filled. A non-zero value is a DERIVED correction")
     ap.add_argument("--min-wall", type=float, default=0.5,
@@ -151,6 +156,18 @@ def main():
     walls = union([p for _, p in keep])
     aux = union(thin)
     hatch_walls, n_hatch = hatched_walls(drawings, a, clip, erasers)
+    solid = union([])
+    if a.solid_layer:
+        sp = []
+        for d in drawings:
+            if layer_key(d) not in a.solid_layer:
+                continue
+            for p in drawing_polygons(d):
+                if p.area >= a.solid_min_area and thickness(p) >= a.solid_min_thickness and (clip is None or p.intersects(clip)):
+                    sp.append(p)
+        r_ = a.solid_open / 2
+        solid = union(sp).buffer(-r_, join_style="mitre").buffer(r_, join_style="mitre")
+        solid = union([q for q in iter_polygons(solid) if q.area >= a.solid_min_area])
 
     # Many plans paint the wall poche (fill) INSIDE a stroked outline of
     # another colour. The poche alone is thinner than the drawn wall by one
@@ -165,6 +182,10 @@ def main():
         r = a.min_wall / 2
         walls = walls.buffer(-r, join_style="mitre", mitre_limit=3).buffer(r, join_style="mitre", mitre_limit=3)
         walls = union([p for p in iter_polygons(walls) if p.area >= a.min_area])
+    if not solid.is_empty:
+        solid = solid.difference(walls)
+        solid = union([q for q in iter_polygons(solid) if q.area >= 1.0])
+        walls = union([walls, solid])
     if not hatch_walls.is_empty:
         hatch_walls = hatch_walls.difference(walls)
         hatch_walls = union([p for p in iter_polygons(hatch_walls) if p.area >= 1.0])
@@ -191,12 +212,14 @@ def main():
             "wall_pieces_cut_by_erasers": erased,
             "hatch_strokes_used": n_hatch,
             "hatched_wall_area_pt2": round(hatch_walls.area, 2),
+            "solid_wall_area_pt2": round(solid.area, 2),
             "wall_polygons": len(pieces),
             "wall_area_pt2": round(walls.area, 2),
             "bounds_pt": [round(v, 3) for v in (minx, miny, maxx, maxy)],
         },
         "walls": to_geojson(walls),
         "walls_from_hatch": to_geojson(hatch_walls),
+        "walls_from_solid": to_geojson(solid),
         "aux": to_geojson(aux),
     }
     write_json(out / "walls.json", data)

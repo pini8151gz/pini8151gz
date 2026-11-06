@@ -53,6 +53,12 @@ def main():
                            "geometry": slim_geom(w["geometry"])} for w in lv["walls"]],
                 "slab": {"status": lv["slab"]["status"], "geometry": [slim_geom(g) for g in lv["slab"]["geometry"]]},
                 "rooms": [{k: (slim_geom(v) if k == "geometry" else v) for k, v in r.items()} for r in lv["rooms"]],
+                "dimensions": lv.get("dimensions", []),
+                "furniture": lv.get("furniture", []),
+                "element_solids": lv.get("element_solids", []),
+                "doors": [{"id": d["id"], "width_mm": d["width_mm"], "swing": d["swing"]} for d in lv.get("elements", {}).get("doors", [])],
+                "apartments": lv.get("apartments", []),
+                "element_counts": {k: len(v) for k, v in lv.get("elements", {}).items()},
             })
 
     data = {
@@ -61,6 +67,7 @@ def main():
         "scale": {k: M0["scale"].get(k) for k in ("mm_per_pt", "status", "reason", "worst_error_mm", "samples",
                                                   "face_checks", "face_bias_mm")},
         "limitations": M0.get("limitations", []),
+        "materials": M0.get("materials", {}),
         "levels": levels,
     }
 
