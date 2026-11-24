@@ -1,6 +1,6 @@
 // Serves the static site straight from the GitHub repo (pinned commit) without a Git connection.
 // HTML is fetched here and returned as text/html; everything else is rewritten to jsDelivr in vercel.json.
-const SHA = '03a3e72c30544b305e7943fed0a02cb4711d0c15';
+const SHA = '8d2b9453efa06b110799da7db7529743f59f6006';
 const SOURCES = [
   'https://cdn.jsdelivr.net/gh/pini8151gz/pini8151gz@' + SHA + '/bennylaufer/site/',
   'https://raw.githubusercontent.com/pini8151gz/pini8151gz/' + SHA + '/bennylaufer/site/',
@@ -27,6 +27,10 @@ export default async function middleware(request) {
     'cache-control': 'public, max-age=0, must-revalidate',
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'strict-origin-when-cross-origin',
+    'x-frame-options': 'DENY',
+    'content-security-policy': "frame-ancestors 'none'",
+    'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
+    'cross-origin-opener-policy': 'same-origin',
   };
   // the real home is bennylaufer.com (canonical); keep this preview host out of search results
   if (url.hostname.endsWith('.vercel.app')) headers['x-robots-tag'] = 'noindex';
