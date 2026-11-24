@@ -792,6 +792,19 @@ html[lang="he"] .chips legend { letter-spacing: .04em; font-size: .88rem; }
   .moment { font-size: clamp(2rem, 9.4vw, 3rem); }
 }
 
+/* ---------- large and very large screens: scale the whole composition ---------- */
+@media (min-width: 1760px) {
+  :root { --max: 1480px; }
+  html { font-size: 112.5%; }
+  .reel { flex-basis: clamp(300px, 19vw, 400px); }
+}
+@media (min-width: 2240px) {
+  :root { --max: 1800px; }
+  html { font-size: 131.25%; }
+  .reel { flex-basis: clamp(360px, 18vw, 480px); }
+  .nav-inner { height: 76px; }
+}
+
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
