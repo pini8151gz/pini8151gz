@@ -50,4 +50,13 @@ After editing `main.css` or `main.js`, run the build again. That updates the `?v
 
 ## Deploy
 
-`site/` is a plain static folder. On Vercel, set the project's root directory to `bennylaufer/site` with no build command and no framework preset.
+Live preview: **https://bennylaufer.vercel.app** (also https://benny-laufer.vercel.app). Vercel project `bennylaufer`, team `pini`.
+
+The Vercel account has no GitHub connection, so the project is deployed from `vercel-edge/` (three small files):
+
+- `middleware.js` serves `/`, `/en/` and `/fr/` from the repo at a pinned commit and returns them as HTML. On `*.vercel.app` it adds `noindex`, because the canonical site is bennylaufer.com.
+- `vercel.json` rewrites `/assets`, `/media` and the icons to jsDelivr, at the same commit.
+
+To publish a change: push it, put the new commit SHA in both files, and redeploy them.
+
+Once GitHub is connected to Vercel (Account Settings, Authentication), connect the repo instead: root directory `bennylaufer/site`, no build command. Deploys then happen on every push.
