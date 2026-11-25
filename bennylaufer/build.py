@@ -101,25 +101,38 @@ def seo(t: dict, lang: str) -> str:
 
 
 def font_preload(lang: str, R: str) -> str:
-    files = (["frank-ruhl-libre-hebrew-wght-normal", "heebo-hebrew-wght-normal"] if lang == "he"
-             else ["bodoni-moda-latin-opsz-normal", "bodoni-moda-latin-opsz-italic", "inter-latin-wght-normal"])
+    files = ["noto-serif-hebrew-hebrew", "bellefair-latin"] if lang == "he" else ["bellefair-latin"]
     return "\n".join(
         f'<link rel="preload" href="{R}assets/fonts/{f}.woff2" as="font" type="font/woff2" crossorigin>' for f in files
     )
 
 
 def reels(t: dict, R: str) -> tuple[str, str]:
+    """The video stage: every card is a real player (full clip with sound, muted until asked)."""
     items, dots = [], []
     for i, n in enumerate(VIDEOS, 1):
-        label = esc(f'{t["vd_open"]} · {t["vd_item"]} {i}')
+        name = esc(f'{t["vd_item"]} {i}')
         items.append(
-            f'<li class="reel" data-full="{R}media/v{n}.mp4" data-poster="{R}assets/img/poster-{n}.jpg">'
-            f'<img src="{R}assets/img/poster-{n}.webp" alt="" loading="lazy" decoding="async" width="480" height="854">'
-            f'<video muted playsinline preload="none" data-src="{R}media/loop-{n}.mp4" aria-hidden="true"></video>'
-            f'<button class="reel-open" type="button" aria-label="{label}">'
-            f'<span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>{t["vd_open"]}</span></button></li>'
+            f'<li class="reel" data-i="{i - 1}">'
+            f'<div class="reel-media">'
+            f'<img class="reel-poster" src="{R}assets/img/poster-{n}.webp" alt="" loading="lazy" decoding="async" width="480" height="854">'
+            f'<video playsinline muted preload="none" poster="{R}assets/img/poster-{n}.webp" data-src="{R}media/v{n}.mp4" aria-label="{name}"></video>'
+            f'</div>'
+            f'<button class="reel-select" type="button" aria-label="{name}"></button>'
+            f'<div class="pc">'
+            f'<button class="pc-surface" type="button" aria-label="{esc(t["vd_play"])}"><span class="pc-big" aria-hidden="true"><svg><use href="#i-play"/></svg></span></button>'
+            f'<button class="pc-sound" type="button"><svg aria-hidden="true"><use href="#i-mute"/></svg><span>{t["vd_tap_sound"]}</span></button>'
+            f'<div class="pc-bar">'
+            f'<button class="pc-btn pc-play" type="button" aria-label="{esc(t["vd_pause"])}"><svg class="i-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="i-play" aria-hidden="true"><use href="#i-play"/></svg></button>'
+            f'<button class="pc-btn pc-mute" type="button" aria-pressed="false" aria-label="{esc(t["vd_unmute"])}"><svg class="i-mute" aria-hidden="true"><use href="#i-mute"/></svg><svg class="i-vol" aria-hidden="true"><use href="#i-vol"/></svg></button>'
+            f'<input class="pc-vol" type="range" min="0" max="1" step="0.05" value="1" aria-label="{esc(t["vd_volume"])}">'
+            f'<input class="pc-seek" type="range" min="0" max="1000" step="1" value="0" aria-label="{esc(t["vd_seek"])}">'
+            f'<button class="pc-btn pc-full" type="button" aria-label="{esc(t["vd_full"])}"><svg aria-hidden="true"><use href="#i-full"/></svg></button>'
+            f'</div>'
+            f'<p class="pc-error" hidden>{t["vd_error"]}</p>'
+            f'</div></li>'
         )
-        dots.append(f'<button class="dot" type="button" aria-label="{esc(t["vd_item"])} {i}"><i></i></button>')
+        dots.append(f'<button class="dot" type="button" aria-label="{name}"><i></i></button>')
     return "".join(items), "".join(dots)
 
 

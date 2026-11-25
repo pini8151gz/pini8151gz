@@ -137,170 +137,204 @@
   d.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 
   /* ------------------------------------------------------------------------
-     Video highlights carousel + theater
+     Video stage: every card is a real player. The active film plays muted
+     as soon as the section is on screen (phones allow that), sound is one tap
+     away, and if a phone refuses autoplay (e.g. iPhone Low Power Mode) a
+     play button takes over instead of a frozen picture.
      ------------------------------------------------------------------------ */
   const reels = $$('.reel');
   const track = $('.reels-track');
   const dots = $$('.dot');
-  const toggle = $('.reels-toggle');
   const reelsSec = $('#videos');
-  const theater = $('#theater');
-  const tVideo = theater ? $('.theater-video', theater) : null;
+  const VL = reelsSec ? reelsSec.dataset : {};
+  const canSetVolume = (() => { try { const t = d.createElement('video'); t.volume = 0.5; return Math.abs(t.volume - 0.5) < 0.01; } catch (e) { return false; } })();
+  html.classList.toggle('no-volume', !canSetVolume);
   let active = 0;
-  let autoplay = !reduce;
-  let reelsInView = false;
-  let theaterOpen = false;
-  let programmatic = false;
-  let progT, scrollT, rafId = 0;
-
+  let inView = false;
+  let wantSound = false;   // once the visitor turns sound on, the next films keep it
+  let userPaused = false;  // an explicit pause wins until they press play again
+  let byCode = 0;
+  let rafId = 0;
   const vidOf = (i) => reels[i] && $('video', reels[i]);
 
-  function loadVid(v) {
-    if (v && !v.getAttribute('src') && v.dataset.src) { v.src = v.dataset.src; v.load(); }
+  function load(v, how) {
+    if (!v) return;
+    if (!v.getAttribute('src') && v.dataset.src) { v.preload = how || 'auto'; v.src = v.dataset.src; }
+    else if (how === 'auto' && v.preload !== 'auto') v.preload = 'auto';
   }
   function centerReel(i, instant) {
     if (!track || !reels[i]) return;
-    // align the active clip to the content edge (start side), like a gallery
     const tr = track.getBoundingClientRect();
     const rr = reels[i].getBoundingClientRect();
-    const pad = parseFloat(getComputedStyle(track).paddingInlineStart) || 0;
-    const delta = rtl ? rr.right - (tr.right - pad) : rr.left - (tr.left + pad);
+    const delta = (rr.left + rr.width / 2) - (tr.left + tr.width / 2);
     if (Math.abs(delta) < 2) return;
-    programmatic = true;
-    clearTimeout(progT);
-    progT = setTimeout(() => { programmatic = false; }, 800);
+    byCode = Date.now();
     track.scrollBy({ left: delta, behavior: instant || reduce ? 'auto' : 'smooth' });
   }
-  function syncReels() {
-    reels.forEach((r, k) => {
-      const v = vidOf(k);
-      if (!v) return;
-      if (k === active && reelsInView && autoplay && !theaterOpen) {
-        loadVid(v);
-        v.muted = true;
-        const p = v.play();
-        if (p && p.catch) p.catch(() => {});
-      } else if (!v.paused) {
-        v.pause();
-      }
-    });
-    if (toggle) {
-      toggle.classList.toggle('is-paused', !autoplay);
-      toggle.setAttribute('aria-label', autoplay ? toggle.dataset.pause : toggle.dataset.play);
-    }
-    // warm up the next clip so the hand-off is seamless
-    if (reelsInView && autoplay) {
-      const next = vidOf((active + 1) % reels.length);
-      if (next && !next.getAttribute('src') && next.dataset.src) { next.preload = 'auto'; loadVid(next); }
-    }
+  function paint(i) {
+    const r = reels[i]; const v = vidOf(i);
+    if (!r || !v) return;
+    const muted = v.muted || v.volume === 0;
+    r.classList.toggle('is-playing', !v.paused);
+    r.classList.toggle('is-muted', muted);
+    $('.pc-play', r).setAttribute('aria-label', v.paused ? VL.play : VL.pause);
+    $('.pc-surface', r).setAttribute('aria-label', v.paused ? VL.play : (muted ? VL.unmute : VL.pause));
+    const mb = $('.pc-mute', r);
+    mb.setAttribute('aria-pressed', String(!muted));
+    mb.setAttribute('aria-label', muted ? VL.unmute : VL.mute);
+    const vol = $('.pc-vol', r);
+    if (vol && d.activeElement !== vol) { vol.value = muted ? 0 : v.volume; vol.style.setProperty('--p', (muted ? 0 : v.volume * 100) + '%'); }
   }
-  function setActive(i, opts) {
-    const o = opts || {};
+  async function start(i, opts = {}) {
+    const v = vidOf(i); const r = reels[i];
+    if (!v) return;
+    const sound = opts.sound ?? wantSound;
+    load(v, 'auto');
+    v.muted = !sound;
+    if (sound && v.volume < 0.05) v.volume = 1;
+    try {
+      await v.play();
+      r.classList.remove('is-blocked');
+    } catch (e) {
+      if (sound && !opts.gesture) {
+        // sound needs a tap on this browser: keep playing, quietly
+        v.muted = true;
+        try { await v.play(); } catch (e2) { r.classList.add('is-blocked'); }
+      } else {
+        r.classList.add('is-blocked'); // autoplay refused: the big play button stays up
+      }
+    }
+    paint(i);
+  }
+  function sync() {
+    reels.forEach((r, k) => { const v = vidOf(k); if (v && k !== active && !v.paused) v.pause(); });
+    const v = vidOf(active);
+    if (!v) return;
+    if (inView && !userPaused) start(active);
+    else if (!v.paused) v.pause();
+    if (inView) load(vidOf((active + 1) % reels.length), 'metadata'); // the next film is ready to go
+  }
+  function select(i, opts = {}) {
     if (!reels.length) return;
+    const prev = active;
     active = (i + reels.length) % reels.length;
     reels.forEach((r, k) => {
-      r.classList.toggle('is-active', k === active);
-      const v = vidOf(k);
-      if (v && k !== active) { try { v.currentTime = 0; } catch (e) { /* not loaded */ } }
+      const on = k === active;
+      r.classList.toggle('is-active', on);
+      $('.pc', r).inert = !on;
+      $('.reel-select', r).tabIndex = on ? -1 : 0;
     });
     dots.forEach((dt, k) => {
       dt.classList.toggle('is-active', k === active);
       dt.setAttribute('aria-current', k === active ? 'true' : 'false');
-      const bar = $('i', dt);
-      if (bar) bar.style.transform = 'scaleX(0)';
+      const bar = $('i', dt); if (bar) bar.style.transform = 'scaleX(0)';
     });
-    if (o.scroll !== false) centerReel(active, o.instant);
-    syncReels();
+    if (prev !== active) { const pv = vidOf(prev); if (pv) { pv.pause(); try { if (pv.currentTime) pv.currentTime = 0; } catch (e) { /* not loaded */ } } }
+    if (opts.scroll !== false) centerReel(active, opts.instant);
+    if (opts.play !== false) sync();
   }
   function tick() {
-    const v = vidOf(active);
-    const bar = dots[active] && $('i', dots[active]);
-    if (v && bar && v.duration) bar.style.transform = 'scaleX(' + Math.min(1, v.currentTime / v.duration).toFixed(4) + ')';
+    const v = vidOf(active); const r = reels[active];
+    if (v && r && v.duration) {
+      const p = v.currentTime / v.duration;
+      const seek = $('.pc-seek', r);
+      if (seek && d.activeElement !== seek) { seek.value = String(Math.round(p * 1000)); seek.style.setProperty('--p', (p * 100).toFixed(2) + '%'); }
+      const bar = dots[active] && $('i', dots[active]);
+      if (bar) bar.style.transform = `scaleX(${p.toFixed(4)})`;
+    }
     rafId = requestAnimationFrame(tick);
+  }
+  function unmute(k) {
+    const v = vidOf(k);
+    wantSound = true; userPaused = false;
+    v.muted = false;
+    if (v.volume < 0.05) v.volume = 1;
+    if (v.paused) start(k, { sound: true, gesture: true });
+    paint(k);
   }
 
   reels.forEach((r, k) => {
     const v = vidOf(k);
-    if (v) {
-      v.muted = true;
-      v.addEventListener('playing', () => v.classList.add('is-ready'));
-      v.addEventListener('ended', () => { if (k === active && autoplay && !theaterOpen) setActive(active + 1); });
-    }
-    const btn = $('.reel-open', r);
-    if (btn) btn.addEventListener('click', () => { setActive(k); openTheater(k); });
+    if (!v) return;
+    ['play', 'pause', 'volumechange'].forEach((ev) => v.addEventListener(ev, () => paint(k)));
+    v.addEventListener('playing', () => { r.classList.add('is-ready'); r.classList.remove('is-buffering', 'is-blocked'); $('.pc-error', r).hidden = true; });
+    v.addEventListener('waiting', () => { if (k === active) r.classList.add('is-buffering'); });
+    v.addEventListener('canplay', () => r.classList.remove('is-buffering'));
+    v.addEventListener('error', () => { if (!v.getAttribute('src')) return; r.classList.remove('is-buffering'); $('.pc-error', r).hidden = false; });
+    v.addEventListener('ended', () => { if (k === active) select(active + 1); });
+
+    $('.reel-select', r).addEventListener('click', () => { userPaused = false; select(k); });
+    $('.pc-surface', r).addEventListener('click', () => {
+      if (v.paused) { userPaused = false; wantSound = true; start(k, { sound: true, gesture: true }); }
+      else if (v.muted || v.volume === 0) unmute(k);
+      else { userPaused = true; v.pause(); }
+    });
+    $('.pc-sound', r).addEventListener('click', () => unmute(k));
+    $('.pc-play', r).addEventListener('click', () => {
+      if (v.paused) { userPaused = false; start(k, { sound: !v.muted, gesture: true }); }
+      else { userPaused = true; v.pause(); }
+    });
+    $('.pc-mute', r).addEventListener('click', () => {
+      if (v.muted || v.volume === 0) unmute(k);
+      else { v.muted = true; wantSound = false; paint(k); }
+    });
+    const vol = $('.pc-vol', r);
+    vol.addEventListener('input', () => {
+      const x = Number(vol.value);
+      v.volume = x; v.muted = x === 0; wantSound = x > 0;
+      vol.style.setProperty('--p', (x * 100) + '%');
+      if (x > 0 && v.paused) start(k, { sound: true, gesture: true });
+    });
+    const seek = $('.pc-seek', r);
+    seek.addEventListener('input', () => {
+      if (v.duration) v.currentTime = (Number(seek.value) / 1000) * v.duration;
+      seek.style.setProperty('--p', (Number(seek.value) / 10) + '%');
+    });
+    $('.pc-full', r).addEventListener('click', () => {
+      if (v.requestFullscreen) { v.controls = true; v.requestFullscreen().catch(() => { v.controls = false; }); }
+      else if (v.webkitEnterFullscreen) { load(v, 'auto'); v.webkitEnterFullscreen(); } // iPhone
+    });
   });
-  dots.forEach((dt, k) => dt.addEventListener('click', () => setActive(k)));
-  if (toggle) toggle.addEventListener('click', () => { autoplay = !autoplay; syncReels(); });
+  d.addEventListener('fullscreenchange', () => { if (!d.fullscreenElement) reels.forEach((r, k) => { const v = vidOf(k); if (v) v.controls = false; }); });
+
+  dots.forEach((dt, k) => dt.addEventListener('click', () => { userPaused = false; select(k); }));
+  const prevBtn = $('.reels-prev');
+  const nextBtn = $('.reels-next');
+  if (prevBtn) prevBtn.addEventListener('click', () => { userPaused = false; select(active - 1); });
+  if (nextBtn) nextBtn.addEventListener('click', () => { userPaused = false; select(active + 1); });
 
   if (track) {
+    let t;
     track.addEventListener('scroll', () => {
-      if (programmatic) return;
-      clearTimeout(scrollT);
-      scrollT = setTimeout(() => {
+      if (Date.now() - byCode < 700) return;
+      clearTimeout(t);
+      t = setTimeout(() => {
         const tr = track.getBoundingClientRect();
-        const pad = parseFloat(getComputedStyle(track).paddingInlineStart) || 0;
-        const edge = rtl ? tr.right - pad : tr.left + pad;
-        let best = active, bestD = Infinity;
-        reels.forEach((r, k) => {
-          const rr = r.getBoundingClientRect();
-          const dd = Math.abs((rtl ? rr.right : rr.left) - edge);
-          if (dd < bestD) { bestD = dd; best = k; }
-        });
-        if (best !== active) setActive(best, { scroll: false });
-      }, 140);
+        const mid = tr.left + tr.width / 2;
+        let best = active; let bestD = Infinity;
+        reels.forEach((r, k) => { const rr = r.getBoundingClientRect(); const dd = Math.abs(rr.left + rr.width / 2 - mid); if (dd < bestD) { bestD = dd; best = k; } });
+        if (best !== active) { userPaused = false; select(best, { scroll: false }); }
+      }, 120);
     }, { passive: true });
     track.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.target.matches('input[type="range"]')) return;
       e.preventDefault();
-      const forward = (e.key === 'ArrowRight') !== rtl;
-      setActive(active + (forward ? 1 : -1));
+      userPaused = false;
+      select(active + ((e.key === 'ArrowRight') !== rtl ? 1 : -1));
     });
   }
 
   if (reelsSec && 'IntersectionObserver' in window) {
-    new IntersectionObserver((entries) => {
-      reelsInView = entries[0].isIntersecting;
-      if (reelsInView && !rafId) tick();
-      if (!reelsInView && rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-      syncReels();
-    }, { threshold: .35 }).observe(reelsSec);
+    new IntersectionObserver(([e]) => {
+      inView = e.isIntersecting;
+      if (inView && !rafId) tick();
+      if (!inView && rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+      if (inView) sync(); else { const v = vidOf(active); if (v && !v.paused) v.pause(); }
+    }, { threshold: 0.35 }).observe(reelsSec);
   }
-  if (reels.length) setActive(0, { scroll: false });
-
-  // Theater (full video with sound)
-  let tIndex = 0;
-  function theaterLoad(i) {
-    tIndex = (i + reels.length) % reels.length;
-    const r = reels[tIndex];
-    tVideo.poster = r.dataset.poster || '';
-    tVideo.src = r.dataset.full;
-    const p = tVideo.play();
-    if (p && p.catch) p.catch(() => {});
-  }
-  function openTheater(i) {
-    if (!theater || !tVideo) return;
-    if (typeof theater.showModal !== 'function') { window.open(reels[i].dataset.full, '_blank', 'noopener'); return; }
-    theaterOpen = true;
-    syncReels();
-    stopScroll();
-    theater.showModal();
-    theaterLoad(i);
-  }
-  if (theater && tVideo) {
-    $('.theater-close', theater).addEventListener('click', () => theater.close());
-    $('.theater-prev', theater).addEventListener('click', () => theaterLoad(tIndex - 1));
-    $('.theater-next', theater).addEventListener('click', () => theaterLoad(tIndex + 1));
-    theater.addEventListener('click', (e) => { if (e.target === theater || e.target.classList.contains('theater-inner')) theater.close(); });
-    theater.addEventListener('close', () => {
-      tVideo.pause();
-      tVideo.removeAttribute('src');
-      tVideo.load();
-      theaterOpen = false;
-      startScroll();
-      setActive(tIndex);
-    });
-    tVideo.addEventListener('ended', () => theaterLoad(tIndex + 1));
-  }
+  d.addEventListener('visibilitychange', () => { if (d.hidden) { const v = vidOf(active); if (v && !v.paused) v.pause(); } else if (inView) sync(); });
+  if (reels.length) select(0, { scroll: false, play: false });
 
   /* ------------------------------------------------------------------------
      Hero strings: five gold staff lines you can pluck
@@ -458,10 +492,12 @@
     const contact = $('#contact');
     const hero = $('.hero');
     if (dock && 'IntersectionObserver' in window) {
-      let heroIn = true, contactIn = false;
-      const upd = () => dock.classList.toggle('is-visible', !heroIn && !contactIn);
+      let heroIn = true, contactIn = false, stageIn = false;
+      const upd = () => dock.classList.toggle('is-visible', !heroIn && !contactIn && !stageIn);
       new IntersectionObserver((e) => { heroIn = e[0].isIntersecting; upd(); }).observe(hero);
       new IntersectionObserver((e) => { contactIn = e[0].isIntersecting; upd(); }).observe(contact);
+      // the bar steps aside while the films are on screen so it never covers their controls
+      new IntersectionObserver((e) => { stageIn = e[0].isIntersecting; upd(); }).observe($('.reels'));
     }
     return;
   }
@@ -593,8 +629,11 @@
   /* ---------- Mobile dock ---------- */
   const dock = $('#dock');
   if (dock) {
-    let pastHero = false, atContact = false;
-    const upd = () => dock.classList.toggle('is-visible', pastHero && !atContact);
+    let pastHero = false, atContact = false, stageIn = false;
+    const upd = () => dock.classList.toggle('is-visible', pastHero && !atContact && !stageIn);
+    // the bar steps aside while the films are on screen so it never covers their controls
+    const stage = $('.reels');
+    if (stage) new IntersectionObserver(([e]) => { stageIn = e.isIntersecting; upd(); }).observe(stage);
     ScrollTrigger.create({ trigger: '#about', start: 'top bottom', end: 'max', onEnter: () => { pastHero = true; upd(); }, onLeaveBack: () => { pastHero = false; upd(); } });
     ScrollTrigger.create({ trigger: '#contact', start: 'top 85%', end: 'max', onEnter: () => { atContact = true; upd(); }, onLeaveBack: () => { atContact = false; upd(); } });
   }
