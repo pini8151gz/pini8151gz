@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zTrH1uRjqNVLl1LjdbQJ3ylCqM324d50PBZX2aAfYR8='; style-src 'self'; img-src 'self' data:; media-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>Benny Laufer Orchestra | Jewish &amp; Chassidic Live Music for Chuppah, Weddings &amp; Concerts</title>
 <meta name="description" content="Benny Laufer Orchestra: live Jewish, Chassidic and religious music for moving chuppah ceremonies, weddings, gala evenings, concerts and performances. Luxury productions, traveling anywhere in the world.">
-<meta name="theme-color" content="#0c0b0a">
-<meta name="color-scheme" content="dark">
-<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark light">
 <link rel="canonical" href="https://bennylaufer.com/en/">
 <link rel="alternate" hreflang="he" href="https://bennylaufer.com/">
 <link rel="alternate" hreflang="en" href="https://bennylaufer.com/en/">
@@ -34,30 +32,44 @@
 <link rel="preload" href="../assets/fonts/bodoni-moda-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../assets/fonts/bodoni-moda-latin-opsz-italic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="../assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/css/main.css?v=6c9e98374c">
-<script>(function(d){var h=d.documentElement;h.classList.add('js');if(!matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('fx');})(document);</script>
-<script src="../assets/js/main.js?v=6c9e98374c" defer></script>
+<link rel="preload" as="image" href="../assets/img/gallery-1-1280.avif" type="image/avif" media="(min-width: 700px)">
+<link rel="stylesheet" href="../assets/css/main.css?v=7bae6e3586">
+<script>
+  /* Motion-enabled layout is decided before first paint so nothing jumps. */
+  (function(d){var h=d.documentElement;h.classList.add('js');if(!matchMedia('(prefers-reduced-motion: reduce)').matches){h.classList.add('fx');}})(document);
+</script>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#about">Skip to content</a>
+<div class="progress" aria-hidden="true"><span></span></div>
+<div class="grain" aria-hidden="true"></div>
 
-<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
-  <symbol id="i-mono" viewBox="0 0 2430 1770"><g transform="translate(0,1770) scale(1,-1)"><path d="M355 1766 c-9 -32 -47 -75 -94 -106 -18 -12 -70 -40 -74 -40 -2 0 -53 -26 -70 -36 -98 -59 -127 -133 -93 -242 2 -9 3 -11 12 -33 12 -32 17 -35 12 -9 -7 42 -2 94 14 126 20 41 46 61 153 114 60 30 81 42 102 58 4 4 7 6 8 6 3 0 3 0 3 -794 1 -833 0 -795 4 -795 1 0 153 76 462 229 106 54 219 110 250 125 72 36 75 38 104 56 73 44 114 94 128 155 5 19 5 20 5 293 1 294 0 340 -2 341 -2 0 -18 -8 -268 -133 -482 -240 -535 -266 -537 -266 -2 1 -2 1 -3 478 0 262 -1 477 -1 477 0 0 -26 0 -57 0 -57 0 -57 0 -58 -4z m783 -664 c3 -4 1 -164 -2 -191 -6 -65 -22 -111 -48 -140 -11 -12 -16 -16 -96 -55 -135 -68 -428 -214 -472 -236 -29 -14 -44 -21 -46 -21 -3 1 -5 307 -2 312 1 1 74 39 214 108 117 58 266 133 331 165 123 62 119 60 121 58z m1 -355 c2 -6 -1 -155 -3 -173 -8 -66 -25 -111 -51 -138 -13 -13 15 1 -388 -199 -51 -25 -120 -60 -156 -78 -44 -22 -65 -32 -67 -32 -3 1 -5 282 -2 288 1 2 23 13 83 43 46 22 166 82 268 133 101 51 204 102 229 114 24 12 52 27 63 33 21 12 23 12 24 9z M1494 1768 c-18 -56 -76 -106 -173 -150 -168 -77 -207 -163 -144 -315 10 -25 14 -27 10 -6 -11 71 3 130 42 168 24 23 44 35 140 82 44 22 67 36 86 51 9 8 11 9 13 7 0 -1 1 -359 1 -795 0 -744 1 -793 2 -794 2 -1 5 0 16 6 8 4 72 36 143 71 275 137 626 312 639 319 95 53 140 104 151 174 2 13 3 66 0 68 -2 3 -136 3 -138 1 -1 -2 -2 -9 -2 -37 -2 -88 -15 -141 -44 -176 -9 -11 -15 -14 -79 -46 -34 -17 -152 -76 -263 -131 -112 -56 -220 -110 -241 -120 -31 -16 -38 -19 -40 -18 -1 1 -2 42 -2 822 l0 821 -58 0 c-54 0 -58 0 -59 -2z"/></g></symbol>
-  <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2Zm0 17.7c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9Zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.8-1.9c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.1 1.6 2.5 4 3.5 1.5.6 2 .7 2.7.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1l-.5-.3Z"/></symbol>
-  <symbol id="i-phone" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M6.6 3.5h2.6l1.4 4-1.9 1.3a11.6 11.6 0 0 0 6.5 6.5l1.3-1.9 4 1.4v2.6a2 2 0 0 1-2.2 2A16.7 16.7 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2Z"/></symbol>
-  <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m4 7 8 6 8-6"/></g></symbol>
-  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.6v12.8a.8.8 0 0 0 1.2.7l10-6.4a.8.8 0 0 0 0-1.4l-10-6.4A.8.8 0 0 0 8 5.6Z"/></symbol>
-  <symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6.5" y="5" width="3.4" height="14" rx=".6"/><rect x="14.1" y="5" width="3.4" height="14" rx=".6"/></g></symbol>
-  <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5"/></symbol>
-  <symbol id="i-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M8 16 16 8m-6.5 0H16v6.5"/></symbol>
-  <symbol id="i-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6e7b0"/>
+      <stop offset=".35" stop-color="#d4b35c"/>
+      <stop offset=".6" stop-color="#b08f2e"/>
+      <stop offset="1" stop-color="#e8cf87"/>
+    </linearGradient>
+    <symbol id="i-mono" viewBox="0 0 2430 1770"><g transform="translate(0,1770) scale(1,-1)"><path d="M355 1766 c-9 -32 -47 -75 -94 -106 -18 -12 -70 -40 -74 -40 -2 0 -53 -26 -70 -36 -98 -59 -127 -133 -93 -242 2 -9 3 -11 12 -33 12 -32 17 -35 12 -9 -7 42 -2 94 14 126 20 41 46 61 153 114 60 30 81 42 102 58 4 4 7 6 8 6 3 0 3 0 3 -794 1 -833 0 -795 4 -795 1 0 153 76 462 229 106 54 219 110 250 125 72 36 75 38 104 56 73 44 114 94 128 155 5 19 5 20 5 293 1 294 0 340 -2 341 -2 0 -18 -8 -268 -133 -482 -240 -535 -266 -537 -266 -2 1 -2 1 -3 478 0 262 -1 477 -1 477 0 0 -26 0 -57 0 -57 0 -57 0 -58 -4z m783 -664 c3 -4 1 -164 -2 -191 -6 -65 -22 -111 -48 -140 -11 -12 -16 -16 -96 -55 -135 -68 -428 -214 -472 -236 -29 -14 -44 -21 -46 -21 -3 1 -5 307 -2 312 1 1 74 39 214 108 117 58 266 133 331 165 123 62 119 60 121 58z m1 -355 c2 -6 -1 -155 -3 -173 -8 -66 -25 -111 -51 -138 -13 -13 15 1 -388 -199 -51 -25 -120 -60 -156 -78 -44 -22 -65 -32 -67 -32 -3 1 -5 282 -2 288 1 2 23 13 83 43 46 22 166 82 268 133 101 51 204 102 229 114 24 12 52 27 63 33 21 12 23 12 24 9z M1494 1768 c-18 -56 -76 -106 -173 -150 -168 -77 -207 -163 -144 -315 10 -25 14 -27 10 -6 -11 71 3 130 42 168 24 23 44 35 140 82 44 22 67 36 86 51 9 8 11 9 13 7 0 -1 1 -359 1 -795 0 -744 1 -793 2 -794 2 -1 5 0 16 6 8 4 72 36 143 71 275 137 626 312 639 319 95 53 140 104 151 174 2 13 3 66 0 68 -2 3 -136 3 -138 1 -1 -2 -2 -9 -2 -37 -2 -88 -15 -141 -44 -176 -9 -11 -15 -14 -79 -46 -34 -17 -152 -76 -263 -131 -112 -56 -220 -110 -241 -120 -31 -16 -38 -19 -40 -18 -1 1 -2 42 -2 822 l0 821 -58 0 c-54 0 -58 0 -59 -2z"/></g></symbol>
+    <symbol id="i-wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2Zm0 17.7c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9Zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4.2-.4v-.4l-.8-1.9c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2.9 2.4c.1.1 1.6 2.5 4 3.5 1.5.6 2 .7 2.7.6.4-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1l-.5-.3Z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M6.6 3.5h2.6l1.4 4-1.9 1.3a11.6 11.6 0 0 0 6.5 6.5l1.3-1.9 4 1.4v2.6a2 2 0 0 1-2.2 2A16.7 16.7 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2Z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></g></symbol>
+    <symbol id="i-yt" viewBox="0 0 24 24"><path fill="currentColor" d="M21.6 7.2a2.6 2.6 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.6 2.6 0 0 0 2.4 7.2 27 27 0 0 0 2 12a27 27 0 0 0 .4 4.8 2.6 2.6 0 0 0 1.8 1.8c1.6.4 7.8.4 7.8.4s6.2 0 7.8-.4a2.6 2.6 0 0 0 1.8-1.8A27 27 0 0 0 22 12a27 27 0 0 0-.4-4.8ZM10 15V9l5.2 3L10 15Z"/></symbol>
+    <symbol id="i-ig" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4.1"/><circle cx="17.4" cy="6.6" r=".6" fill="currentColor"/></g></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.6v12.8a.8.8 0 0 0 1.2.7l10-6.4a.8.8 0 0 0 0-1.4l-10-6.4A.8.8 0 0 0 8 5.6Z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor"><rect x="6.5" y="5" width="3.6" height="14" rx="1"/><rect x="13.9" y="5" width="3.6" height="14" rx="1"/></g></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+  </defs>
 </svg>
 
 <header class="nav" id="nav">
-  <div class="nav-in">
-    <a class="brand" href="#top" aria-label="Benny Laufer">
-      <svg class="brand-mono" aria-hidden="true"><use href="#i-mono"/></svg>
-      <span class="brand-word">Benny <span>Laufer</span></span>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#top" aria-label="Benny Laufer">
+      <svg class="nav-mono" aria-hidden="true"><use href="#i-mono"/></svg>
+      <span class="nav-word">Benny <span>Laufer</span></span>
     </a>
     <nav class="nav-links" aria-label="Main">
       <a href="#about">About</a>
@@ -67,252 +79,329 @@
     </nav>
     <div class="nav-end">
       <div class="lang" role="group" aria-label="Language"><a href="/" hreflang="he" lang="he">עב</a><a href="/en/" hreflang="en" lang="en" aria-current="page">EN</a><a href="/fr/" hreflang="fr" lang="fr">FR</a></div>
-      <a class="btn btn--line btn--sm" href="#contact">Check a date</a>
+      <a class="nav-cta" href="#contact">Check a date</a>
       <button class="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menu"><span></span><span></span></button>
     </div>
   </div>
 </header>
 
 <div class="menu" id="menu" hidden>
-  <nav aria-label="Main">
-    <ul class="menu-links">
-      <li><a href="#about">About</a></li>
-      <li><a href="#videos">Watch</a></li>
-      <li><a href="#services">Services</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ul>
+  <nav class="menu-links" aria-label="Main">
+    <a href="#about"><span>About</span></a>
+    <a href="#videos"><span>Watch</span></a>
+    <a href="#services"><span>Services</span></a>
+    <a href="#contact"><span>Contact</span></a>
   </nav>
   <div class="menu-foot">
     <div class="lang" role="group" aria-label="Language"><a href="/" hreflang="he" lang="he">עב</a><a href="/en/" hreflang="en" lang="en" aria-current="page">EN</a><a href="/fr/" hreflang="fr" lang="fr">FR</a></div>
-    <a class="menu-wa js-wa-hello" href="https://wa.me/972559330757" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span dir="ltr">055-933-0757</span></a>
+    <a class="menu-wa" href="https://wa.me/972559330757" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span dir="ltr">+972 55-933-0757</span></a>
   </div>
 </div>
 
-<main id="main" tabindex="-1">
+<main id="main">
 
+  <!-- ░░ HERO ░░ -->
   <section class="hero" id="top" aria-labelledby="hero-title">
     <div class="hero-pin">
-      <div class="hero-light" aria-hidden="true"></div>
-      <canvas class="staff" aria-hidden="true"></canvas>
-      <div class="hero-copy">
-        <svg class="hero-mono" viewBox="0 0 2430 1770" aria-hidden="true"><g transform="translate(0,1770) scale(1,-1)"><path pathLength="1" d="M355 1766 c-9 -32 -47 -75 -94 -106 -18 -12 -70 -40 -74 -40 -2 0 -53 -26 -70 -36 -98 -59 -127 -133 -93 -242 2 -9 3 -11 12 -33 12 -32 17 -35 12 -9 -7 42 -2 94 14 126 20 41 46 61 153 114 60 30 81 42 102 58 4 4 7 6 8 6 3 0 3 0 3 -794 1 -833 0 -795 4 -795 1 0 153 76 462 229 106 54 219 110 250 125 72 36 75 38 104 56 73 44 114 94 128 155 5 19 5 20 5 293 1 294 0 340 -2 341 -2 0 -18 -8 -268 -133 -482 -240 -535 -266 -537 -266 -2 1 -2 1 -3 478 0 262 -1 477 -1 477 0 0 -26 0 -57 0 -57 0 -57 0 -58 -4z m783 -664 c3 -4 1 -164 -2 -191 -6 -65 -22 -111 -48 -140 -11 -12 -16 -16 -96 -55 -135 -68 -428 -214 -472 -236 -29 -14 -44 -21 -46 -21 -3 1 -5 307 -2 312 1 1 74 39 214 108 117 58 266 133 331 165 123 62 119 60 121 58z m1 -355 c2 -6 -1 -155 -3 -173 -8 -66 -25 -111 -51 -138 -13 -13 15 1 -388 -199 -51 -25 -120 -60 -156 -78 -44 -22 -65 -32 -67 -32 -3 1 -5 282 -2 288 1 2 23 13 83 43 46 22 166 82 268 133 101 51 204 102 229 114 24 12 52 27 63 33 21 12 23 12 24 9z M1494 1768 c-18 -56 -76 -106 -173 -150 -168 -77 -207 -163 -144 -315 10 -25 14 -27 10 -6 -11 71 3 130 42 168 24 23 44 35 140 82 44 22 67 36 86 51 9 8 11 9 13 7 0 -1 1 -359 1 -795 0 -744 1 -793 2 -794 2 -1 5 0 16 6 8 4 72 36 143 71 275 137 626 312 639 319 95 53 140 104 151 174 2 13 3 66 0 68 -2 3 -136 3 -138 1 -1 -2 -2 -9 -2 -37 -2 -88 -15 -141 -44 -176 -9 -11 -15 -14 -79 -46 -34 -17 -152 -76 -263 -131 -112 -56 -220 -110 -241 -120 -31 -16 -38 -19 -40 -18 -1 1 -2 42 -2 822 l0 821 -58 0 c-54 0 -58 0 -59 -2z"/></g></svg>
-        <p class="hero-kicker">Jewish & Chassidic music for chuppah, weddings & concerts</p>
-        <h1 class="hero-name" id="hero-title"><span class="hero-name-a">Benny</span> <span class="hero-name-b">Laufer</span></h1>
-        <p class="hero-lead">Live orchestral music for life's great occasions. We travel anywhere in the world.</p>
-        <div class="hero-actions">
-          <a class="btn btn--gold" href="#contact">Check if your date is free</a>
-          <a class="btn btn--line" href="#videos"><svg class="ico" aria-hidden="true"><use href="#i-play"/></svg>Watch performances</a>
+      <div class="hero-stage" aria-hidden="true">
+        <div class="beams"><i></i><i></i><i></i></div>
+        <canvas class="strings"></canvas>
+        <div class="hero-vignette"></div>
+      </div>
+
+      <div class="hero-content">
+        <svg class="hero-mono" viewBox="0 0 2430 1770" aria-hidden="true">
+          <g transform="translate(0,1770) scale(1,-1)"><path d="M355 1766 c-9 -32 -47 -75 -94 -106 -18 -12 -70 -40 -74 -40 -2 0 -53 -26 -70 -36 -98 -59 -127 -133 -93 -242 2 -9 3 -11 12 -33 12 -32 17 -35 12 -9 -7 42 -2 94 14 126 20 41 46 61 153 114 60 30 81 42 102 58 4 4 7 6 8 6 3 0 3 0 3 -794 1 -833 0 -795 4 -795 1 0 153 76 462 229 106 54 219 110 250 125 72 36 75 38 104 56 73 44 114 94 128 155 5 19 5 20 5 293 1 294 0 340 -2 341 -2 0 -18 -8 -268 -133 -482 -240 -535 -266 -537 -266 -2 1 -2 1 -3 478 0 262 -1 477 -1 477 0 0 -26 0 -57 0 -57 0 -57 0 -58 -4z m783 -664 c3 -4 1 -164 -2 -191 -6 -65 -22 -111 -48 -140 -11 -12 -16 -16 -96 -55 -135 -68 -428 -214 -472 -236 -29 -14 -44 -21 -46 -21 -3 1 -5 307 -2 312 1 1 74 39 214 108 117 58 266 133 331 165 123 62 119 60 121 58z m1 -355 c2 -6 -1 -155 -3 -173 -8 -66 -25 -111 -51 -138 -13 -13 15 1 -388 -199 -51 -25 -120 -60 -156 -78 -44 -22 -65 -32 -67 -32 -3 1 -5 282 -2 288 1 2 23 13 83 43 46 22 166 82 268 133 101 51 204 102 229 114 24 12 52 27 63 33 21 12 23 12 24 9z M1494 1768 c-18 -56 -76 -106 -173 -150 -168 -77 -207 -163 -144 -315 10 -25 14 -27 10 -6 -11 71 3 130 42 168 24 23 44 35 140 82 44 22 67 36 86 51 9 8 11 9 13 7 0 -1 1 -359 1 -795 0 -744 1 -793 2 -794 2 -1 5 0 16 6 8 4 72 36 143 71 275 137 626 312 639 319 95 53 140 104 151 174 2 13 3 66 0 68 -2 3 -136 3 -138 1 -1 -2 -2 -9 -2 -37 -2 -88 -15 -141 -44 -176 -9 -11 -15 -14 -79 -46 -34 -17 -152 -76 -263 -131 -112 -56 -220 -110 -241 -120 -31 -16 -38 -19 -40 -18 -1 1 -2 42 -2 822 l0 821 -58 0 c-54 0 -58 0 -59 -2z"/></g>
+        </svg>
+        <p class="eyebrow hero-eyebrow">Jewish & Chassidic music for chuppah, weddings & concerts</p>
+        <h1 class="hero-title" id="hero-title">
+          <span class="line"><span class="li">Benny</span></span>
+          <span class="line"><em class="li gold-text">Laufer</em></span>
+        </h1>
+        <p class="hero-latin" lang="en" aria-hidden="true">Orchestra</p>
+        <p class="hero-lead">Live orchestral music for life's great occasions: the chuppah, the wedding, the gala evening and the concert. We travel anywhere in the world.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-gold magnetic js-wa" id="ctaWa" href="#contact" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg><span>Check if your date is free</span></a>
+          <a class="btn btn-ghost magnetic" href="#videos"><svg class="ico ico-sm" aria-hidden="true"><use href="#i-play"/></svg><span>Watch performances</span></a>
         </div>
       </div>
+
+      <div class="scroll-cue" aria-hidden="true"><span>Scroll</span><i></i></div>
+
       <figure class="hero-photo">
         <picture>
           <source type="image/avif" srcset="../assets/img/gallery-1-640.avif 640w, ../assets/img/gallery-1-900.avif 900w, ../assets/img/gallery-1-1280.avif 1280w" sizes="100vw">
           <source type="image/webp" srcset="../assets/img/gallery-1-640.webp 640w, ../assets/img/gallery-1-900.webp 900w, ../assets/img/gallery-1-1280.webp 1280w" sizes="100vw">
-          <img src="../assets/img/gallery-1-1280.jpg" alt="Benny Laufer conducting under stage lights" width="1280" height="853" decoding="async" fetchpriority="low">
+          <img src="../assets/img/gallery-1-1280.jpg" alt="Benny Laufer conducting under stage lights" width="1280" height="853" fetchpriority="high" decoding="async">
         </picture>
-        <figcaption class="moment"><span>This moment happens once.</span> <span class="moment-b">Give it an orchestra.</span></figcaption>
+        <figcaption class="moment">
+          <span class="line"><span>This moment happens once.</span></span>
+          <span class="line"><span class="gold-text">Give it an orchestra.</span></span>
+        </figcaption>
       </figure>
     </div>
   </section>
 
-  <section class="manifesto" aria-label="A live orchestra moves the guest who understands every word and the one who understands none.">
+  <!-- ░░ MANIFESTO ░░ -->
+  <section class="manifesto" aria-label="Hear it. See it. Feel it.">
     <div class="wrap">
-      <p class="manifesto-a" data-fill>A live orchestra moves the guest who understands every word and the one who understands none.</p>
-      <p class="manifesto-b" data-reveal>At the chuppah, the gala or the concert, we bring a sound every room in the world recognizes, and shape it around your customs and your story. And we come to you, anywhere in the world.</p>
+      <p class="fill-text" data-fill>A live orchestra moves the guest who understands every word and the one who understands none.</p>
+      <p class="manifesto-sub" data-reveal>At the chuppah, the gala or the concert, we bring a sound every room in the world recognizes, and shape it around your customs and your story. And we come to you, anywhere in the world.</p>
     </div>
   </section>
 
+  <!-- ░░ ABOUT ░░ -->
   <section class="about" id="about" aria-labelledby="about-title">
     <div class="wrap about-grid">
-      <figure class="about-photo" data-reveal="media">
+      <figure class="about-media" data-clip data-parallax>
         <picture>
-          <source type="image/avif" srcset="../assets/img/about-640.avif 640w, ../assets/img/about-1000.avif 1000w, ../assets/img/about-1500.avif 1500w" sizes="(max-width: 860px) 100vw, 50vw">
-          <source type="image/webp" srcset="../assets/img/about-640.webp 640w, ../assets/img/about-1000.webp 1000w, ../assets/img/about-1500.webp 1500w" sizes="(max-width: 860px) 100vw, 50vw">
+          <source type="image/avif" srcset="../assets/img/about-640.avif 640w, ../assets/img/about-1000.avif 1000w, ../assets/img/about-1500.avif 1500w" sizes="(max-width: 860px) 100vw, 55vw">
+          <source type="image/webp" srcset="../assets/img/about-640.webp 640w, ../assets/img/about-1000.webp 1000w, ../assets/img/about-1500.webp 1500w" sizes="(max-width: 860px) 100vw, 55vw">
           <img src="../assets/img/about-1500.jpg" alt="Benny Laufer conducting a live orchestra on stage" width="1500" height="1002" loading="lazy" decoding="async">
         </picture>
       </figure>
       <div class="about-copy">
-        <h2 class="h2" id="about-title" data-reveal>Musician, arranger and conductor</h2>
+        <p class="eyebrow" data-reveal>About Benny</p>
+        <h2 class="h2" id="about-title" data-split>Musician, arranger and conductor</h2>
         <p class="about-lede" data-reveal>Benny Laufer is an Israeli musician, arranger, composer and conductor, and <em>the son of the music legend Moshe Laufer.</em></p>
         <p class="about-text" data-reveal>The orchestra carries his name, and he conducts it in every production. Every event begins with a conversation about what matters to you and your family's customs, and from there we build the musical program together.</p>
+        <ul class="roles" aria-label="Musician, arranger and conductor"><li>Musician</li><li>Arranger</li><li>Composer</li><li>Conductor</li></ul>
       </div>
     </div>
   </section>
 
+  <!-- ░░ MARQUEE ░░ -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track"><div class="marquee-group"><span dir="ltr">Chuppah</span><i></i><span dir="ltr">Weddings</span><i></i><span dir="ltr">Gala evenings</span><i></i><span dir="ltr">Dinners</span><i></i><span dir="ltr">Concerts</span><i></i><span dir="ltr">Tailored productions</span><i></i></div><div class="marquee-group"><span dir="ltr">Chuppah</span><i></i><span dir="ltr">Weddings</span><i></i><span dir="ltr">Gala evenings</span><i></i><span dir="ltr">Dinners</span><i></i><span dir="ltr">Concerts</span><i></i><span dir="ltr">Tailored productions</span><i></i></div></div>
+  </div>
+
+  <!-- ░░ ON STAGE ░░ -->
   <section class="stage" id="stage" aria-labelledby="stage-title">
-    <div class="wrap">
-      <h2 class="h2" id="stage-title" data-reveal>Live on stage</h2>
+    <div class="wrap head">
+      <p class="eyebrow" data-reveal>Gallery</p>
+      <h2 class="h2" id="stage-title" data-split>Live on stage</h2>
     </div>
     <figure class="stage-wide">
-      <div class="stage-frame">
-        <picture>
-          <source type="image/avif" srcset="../assets/img/gallery-3-640.avif 640w, ../assets/img/gallery-3-900.avif 900w, ../assets/img/gallery-3-1280.avif 1280w" sizes="100vw">
-          <source type="image/webp" srcset="../assets/img/gallery-3-640.webp 640w, ../assets/img/gallery-3-900.webp 900w, ../assets/img/gallery-3-1280.webp 1280w" sizes="100vw">
-          <img src="../assets/img/gallery-3-1280.jpg" alt="On stage with a full orchestra" width="1280" height="853" loading="lazy" decoding="async">
-        </picture>
-      </div>
-      <figcaption class="wrap caption">With the full orchestra</figcaption>
+      <picture>
+        <source type="image/avif" srcset="../assets/img/gallery-3-640.avif 640w, ../assets/img/gallery-3-900.avif 900w, ../assets/img/gallery-3-1280.avif 1280w" sizes="100vw">
+        <source type="image/webp" srcset="../assets/img/gallery-3-640.webp 640w, ../assets/img/gallery-3-900.webp 900w, ../assets/img/gallery-3-1280.webp 1280w" sizes="100vw">
+        <img src="../assets/img/gallery-3-1280.jpg" alt="On stage with a full orchestra" width="1280" height="853" loading="lazy" decoding="async">
+      </picture>
+      <figcaption>With the full orchestra</figcaption>
     </figure>
-    <div class="wrap stage-second">
-      <figure data-reveal="media">
+    <div class="wrap stage-pair">
+      <figure class="stage-sq" data-clip data-parallax>
         <picture>
-          <source type="image/avif" srcset="../assets/img/gallery-2-720.avif 720w, ../assets/img/gallery-2-1100.avif 1100w" sizes="(max-width: 760px) 100vw, 42vw">
-          <source type="image/webp" srcset="../assets/img/gallery-2-720.webp 720w, ../assets/img/gallery-2-1100.webp 1100w" sizes="(max-width: 760px) 100vw, 42vw">
+          <source type="image/avif" srcset="../assets/img/gallery-2-720.avif 720w, ../assets/img/gallery-2-1100.avif 1100w" sizes="(max-width: 760px) 100vw, 50vw">
+          <source type="image/webp" srcset="../assets/img/gallery-2-720.webp 720w, ../assets/img/gallery-2-1100.webp 1100w" sizes="(max-width: 760px) 100vw, 50vw">
           <img src="../assets/img/gallery-2-1100.jpg" alt="Benny Laufer at the keyboard in warm stage light" width="1100" height="1100" loading="lazy" decoding="async">
         </picture>
-        <figcaption class="caption">At the keys</figcaption>
+        <figcaption>At the keys</figcaption>
+      </figure>
+      <figure class="stage-tall" data-clip data-parallax>
+        <picture>
+          <source type="image/avif" srcset="../assets/img/gallery-1-640.avif 640w, ../assets/img/gallery-1-900.avif 900w, ../assets/img/gallery-1-1280.avif 1280w" sizes="(max-width: 760px) 100vw, 50vw">
+          <source type="image/webp" srcset="../assets/img/gallery-1-640.webp 640w, ../assets/img/gallery-1-900.webp 900w, ../assets/img/gallery-1-1280.webp 1280w" sizes="(max-width: 760px) 100vw, 50vw">
+          <img src="../assets/img/gallery-1-1280.jpg" alt="Benny Laufer conducting under stage lights" width="1280" height="853" loading="lazy" decoding="async">
+        </picture>
+        <figcaption>Conducting</figcaption>
       </figure>
     </div>
   </section>
 
-  <section class="videos" id="videos" aria-labelledby="videos-title">
-    <div class="wrap videos-head">
-      <h2 class="h2" id="videos-title" data-reveal>Hear it. See it. Feel it.</h2>
-      <p class="videos-hint" data-reveal>Tap a video to watch it with sound</p>
+  <!-- ░░ VIDEO HIGHLIGHTS ░░ -->
+  <section class="reels-sec" id="videos" aria-labelledby="videos-title">
+    <div class="wrap head center">
+      <p class="eyebrow" data-reveal>Video</p>
+      <h2 class="h2" id="videos-title" data-split>Hear it. See it. Feel it.</h2>
+      <p class="reels-hint" data-reveal>Tap a video to watch it with sound</p>
     </div>
     <div class="reels" role="region" aria-roledescription="carousel" aria-label="Video">
-      <ul class="reels-track" tabindex="0"><li class="reel" data-full="../media/v4.mp4" data-poster="../assets/img/poster-4.jpg"><img src="../assets/img/poster-4.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-4.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound: Video 1"><span class="reel-label"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button><span class="reel-progress" aria-hidden="true"></span></li><li class="reel" data-full="../media/v3.mp4" data-poster="../assets/img/poster-3.jpg"><img src="../assets/img/poster-3.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-3.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound: Video 2"><span class="reel-label"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button><span class="reel-progress" aria-hidden="true"></span></li><li class="reel" data-full="../media/v5.mp4" data-poster="../assets/img/poster-5.jpg"><img src="../assets/img/poster-5.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-5.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound: Video 3"><span class="reel-label"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button><span class="reel-progress" aria-hidden="true"></span></li><li class="reel" data-full="../media/v2.mp4" data-poster="../assets/img/poster-2.jpg"><img src="../assets/img/poster-2.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-2.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound: Video 4"><span class="reel-label"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button><span class="reel-progress" aria-hidden="true"></span></li><li class="reel" data-full="../media/v7.mp4" data-poster="../assets/img/poster-7.jpg"><img src="../assets/img/poster-7.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-7.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound: Video 5"><span class="reel-label"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button><span class="reel-progress" aria-hidden="true"></span></li></ul>
+      <ul class="reels-track"><li class="reel" data-full="../media/v4.mp4" data-poster="../assets/img/poster-4.jpg"><img src="../assets/img/poster-4.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-4.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound · Video 1"><span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button></li><li class="reel" data-full="../media/v3.mp4" data-poster="../assets/img/poster-3.jpg"><img src="../assets/img/poster-3.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-3.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound · Video 2"><span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button></li><li class="reel" data-full="../media/v5.mp4" data-poster="../assets/img/poster-5.jpg"><img src="../assets/img/poster-5.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-5.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound · Video 3"><span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button></li><li class="reel" data-full="../media/v2.mp4" data-poster="../assets/img/poster-2.jpg"><img src="../assets/img/poster-2.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-2.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound · Video 4"><span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button></li><li class="reel" data-full="../media/v7.mp4" data-poster="../assets/img/poster-7.jpg"><img src="../assets/img/poster-7.webp" alt="" loading="lazy" decoding="async" width="480" height="854"><video muted playsinline preload="none" data-src="../media/loop-7.mp4" aria-hidden="true"></video><button class="reel-open" type="button" aria-label="Watch with sound · Video 5"><span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>Watch with sound</span></button></li></ul>
     </div>
-    <div class="wrap reels-bar">
-      <p class="reels-count" aria-live="polite"><span class="js-count">1</span> of 5</p>
-      <div class="reels-ctl">
-        <button class="icon-btn js-prev" type="button" aria-label="Previous video"><svg class="ico-prev" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-        <button class="icon-btn js-toggle" type="button" aria-label="Pause" data-play="Play" data-pause="Pause"><svg class="i-pause" aria-hidden="true"><use href="#i-pause"/></svg><svg class="i-play" aria-hidden="true"><use href="#i-play"/></svg></button>
-        <button class="icon-btn js-next" type="button" aria-label="Next video"><svg class="ico-next" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-      </div>
-    </div>
-    <div class="wrap channels">
-      <p class="channels-title">More performances</p>
-      <ul class="channels-list">
-        <li><a href="https://www.youtube.com/@bennylaufer" target="_blank" rel="noopener"><span class="ch-name">YouTube <svg aria-hidden="true"><use href="#i-out"/></svg></span><span class="ch-desc">Performances and videos on the official channel.</span></a></li>
-        <li><a href="https://www.instagram.com/benny_laufer" target="_blank" rel="noopener"><span class="ch-name">Instagram <svg aria-hidden="true"><use href="#i-out"/></svg></span><span class="ch-desc">Moments from events, rehearsals and behind the scenes.</span></a></li>
-      </ul>
+    <div class="reels-ui">
+      <div class="dots" role="group" aria-label="Video"><button class="dot" type="button" aria-label="Video 1"><i></i></button><button class="dot" type="button" aria-label="Video 2"><i></i></button><button class="dot" type="button" aria-label="Video 3"><i></i></button><button class="dot" type="button" aria-label="Video 4"><i></i></button><button class="dot" type="button" aria-label="Video 5"><i></i></button></div>
+      <button class="round-btn reels-toggle" type="button" aria-label="Pause" data-play="Play" data-pause="Pause">
+        <svg class="i-pause" aria-hidden="true"><use href="#i-pause"/></svg>
+        <svg class="i-play" aria-hidden="true"><use href="#i-play"/></svg>
+      </button>
     </div>
   </section>
 
-  <div class="paper">
+  <!-- ░░ LIGHT CHAPTER: SERVICES + PROCESS ░░ -->
+  <div class="sheet sheet-light">
+    <div class="sheet-bg" aria-hidden="true"></div>
+
     <section class="services" id="services" aria-labelledby="services-title">
-      <div class="wrap">
-        <h2 class="h2" id="services-title" data-reveal>Music for every kind of occasion</h2>
-        <ol class="ledger">
-          <li data-reveal><span class="ledger-n" aria-hidden="true">I</span><h3>Chuppah & ceremony music</h3><p>Music for the entrance, the blessings and the breaking of the glass, shaped around your family's customs.</p></li>
-          <li data-reveal><span class="ledger-n" aria-hidden="true">II</span><h3>Wedding orchestra</h3><p>A complete live program, from the reception to the last dance.</p></li>
-          <li data-reveal><span class="ledger-n" aria-hidden="true">III</span><h3>Gala evenings & dinners</h3><p>Elegant music throughout the evening, with a featured set for the high point.</p></li>
-          <li data-reveal><span class="ledger-n" aria-hidden="true">IV</span><h3>Concerts</h3><p>Full concert programs for communities, venues and cultural events.</p></li>
-          <li data-reveal><span class="ledger-n" aria-hidden="true">V</span><h3>Tailored productions</h3><p>Repertoire, ensemble size and staging built around your event.</p></li>
-        </ol>
+      <div class="wrap head">
+        <p class="eyebrow" data-reveal>What we produce</p>
+        <h2 class="h2" id="services-title" data-split>Music for every kind of occasion</h2>
+      </div>
+      <div class="wrap bento">
+        <article class="tile t1 spot" data-tile>
+          <span class="num">I</span>
+          <svg class="art" viewBox="0 0 240 210" aria-hidden="true">
+            <path d="M120 14v-8M116 10h8"/>
+            <path d="M22 66C52 34 86 20 120 20s68 14 98 46"/>
+            <path d="M22 66h196"/>
+            <path d="M22 66q16 20 32 0q16 20 32 0q16 20 34 0q16 20 32 0q16 20 32 0q16 20 34 0"/>
+            <path d="M54 66v14M86 66v14M120 66v14M152 66v14M186 66v14"/>
+            <path d="M30 66v130M210 66v130"/>
+            <path d="M58 92v88M182 92v88"/>
+            <path d="M6 196h228"/>
+            <path d="M58 180h124"/>
+          </svg>
+          <h3>Chuppah & ceremony music</h3>
+          <p>Music for the entrance, the blessings and the breaking of the glass, shaped around your family's customs.</p>
+        </article>
+        <article class="tile t2 spot" data-tile>
+          <span class="num">II</span>
+          <svg class="icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M18 35V12l20-5v23"/><path d="M18 17l20-5"/><ellipse cx="13.5" cy="35.5" rx="5" ry="3.8" transform="rotate(-18 13.5 35.5)"/><ellipse cx="33.5" cy="30.5" rx="5" ry="3.8" transform="rotate(-18 33.5 30.5)"/></svg>
+          <h3>Wedding orchestra</h3>
+          <p>A complete live program, from the reception to the last dance.</p>
+        </article>
+        <article class="tile t3 spot" data-tile>
+          <span class="num">III</span>
+          <svg class="icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M15 6h12c0 9-2.6 14-6 14s-6-5-6-14Z"/><path d="M21 20v17M15.5 41h11"/><path d="M33 9h8c0 6-1.7 9.5-4 9.5S33 15 33 9Z"/><path d="M37 18.5V30M33.5 33h7"/><path d="M29 4l1-2.5M31.5 6.5l2.5-1"/></svg>
+          <h3>Gala evenings & dinners</h3>
+          <p>Elegant music throughout the evening, with a featured set for the high point.</p>
+        </article>
+        <article class="tile t4 spot" data-tile>
+          <span class="num">IV</span>
+          <svg class="icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M11 9h26l-3 18H14Z"/><path d="M15 14h18M14.5 18h19M14 22h20"/><path d="M24 27v14M17 41h14"/></svg>
+          <h3>Concerts</h3>
+          <p>Full concert programs for communities, venues and cultural events.</p>
+        </article>
+        <article class="tile t5 spot" data-tile>
+          <span class="num">V</span>
+          <svg class="icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M12 6v36M24 6v36M36 6v36"/><rect x="8" y="12" width="8" height="5.5" rx="2"/><rect x="20" y="27" width="8" height="5.5" rx="2"/><rect x="32" y="18" width="8" height="5.5" rx="2"/></svg>
+          <h3>Tailored productions</h3>
+          <p>Repertoire, ensemble size and staging built around your event.</p>
+        </article>
       </div>
     </section>
 
-    <section class="steps" id="process" aria-labelledby="steps-title">
-      <div class="wrap">
-        <h2 class="h2" id="steps-title" data-reveal>Reserve your date</h2>
-        <ol class="steps-list">
-          <li data-reveal><span class="steps-n" aria-hidden="true">01</span><h3>One message</h3><p>Tell us about your day: the event, the date and the place. One WhatsApp message is enough.</p></li>
-          <li data-reveal><span class="steps-n" aria-hidden="true">02</span><h3>A program made for you</h3><p>Repertoire, ensemble and timing tailored to your family's customs and your taste.</p></li>
-          <li data-reveal><span class="steps-n" aria-hidden="true">03</span><h3>You simply enjoy</h3><p>We take care of everything else, from rehearsal to the final note.</p></li>
+    <section class="process" id="process" aria-labelledby="process-title">
+      <div class="wrap process-grid">
+        <div class="process-sticky">
+          <p class="eyebrow" data-reveal>Reserve your date</p>
+          <h2 class="h2" id="process-title" data-split>From one message to the final note.</h2>
+          <a class="btn btn-ink magnetic js-wa" id="ctaWa2" href="#contact" target="_blank" rel="noopener" data-reveal><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg><span>Check if your date is free</span></a>
+        </div>
+        <ol class="steps">
+          <li class="rail" aria-hidden="true"><i></i></li>
+          <li class="step"><span class="step-n">01</span><h3>One message</h3><p>Tell us about your day: the event, the date and the place. One WhatsApp message is enough.</p></li>
+          <li class="step"><span class="step-n">02</span><h3>A program made for you</h3><p>Repertoire, ensemble and timing tailored to your family's customs and your taste.</p></li>
+          <li class="step"><span class="step-n">03</span><h3>You simply enjoy</h3><p>We take care of everything else, from rehearsal to the final note.</p></li>
         </ol>
       </div>
     </section>
   </div>
 
-  <section class="contact" id="contact" aria-labelledby="contact-title">
-    <div class="wrap contact-grid">
-      <div class="contact-copy">
-        <h2 class="h2" id="contact-title" data-reveal>Let's talk about your event</h2>
-        <p class="contact-text" data-reveal>Fill in three details and we'll open a ready-made WhatsApp message, or reach us directly.</p>
-        <ul class="direct" data-reveal>
-          <li><a class="js-wa-hello" href="https://wa.me/972559330757" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg><span class="direct-label">WhatsApp</span><span class="direct-value" dir="ltr">+972 55-933-0757</span></a></li>
-          <li><a href="tel:+972559330757"><svg aria-hidden="true"><use href="#i-phone"/></svg><span class="direct-label">Phone</span><span class="direct-value" dir="ltr">055-933-0757</span></a></li>
-          <li><a href="mailto:bennylaufermusic.com@gmail.com"><svg aria-hidden="true"><use href="#i-mail"/></svg><span class="direct-label">Email</span><span class="direct-value" dir="ltr">bennylaufermusic.com@gmail.com</span></a></li>
-        </ul>
-      </div>
+  <!-- ░░ DARK FINALE: WATCH + CONTACT + FOOTER ░░ -->
+  <div class="sheet sheet-dark">
+    <div class="sheet-bg" aria-hidden="true"></div>
 
-      <form class="inquiry" id="inq" novalidate data-reveal>
-        <fieldset class="chips">
-          <legend class="label">Type of event</legend>
-          <div class="chips-row">
+    <section class="watch" id="media" aria-labelledby="media-title">
+      <div class="wrap head">
+        <p class="eyebrow" data-reveal>Watch</p>
+        <h2 class="h2" id="media-title" data-split>See and hear us</h2>
+      </div>
+      <div class="wrap watch-grid">
+        <a class="watch-card spot" href="https://www.youtube.com/@bennylaufer" target="_blank" rel="noopener" data-reveal>
+          <img src="../assets/img/poster-4.webp" alt="" loading="lazy" decoding="async">
+          <svg class="brand-ico" aria-hidden="true"><use href="#i-yt"/></svg>
+          <h3>YouTube</h3>
+          <p>Performances and videos on the official channel.</p>
+          <span class="go"><span dir="ltr">@bennylaufer</span><span class="go-cta">Watch <svg aria-hidden="true"><use href="#i-arrow"/></svg></span></span>
+        </a>
+        <a class="watch-card spot" href="https://www.instagram.com/benny_laufer" target="_blank" rel="noopener" data-reveal>
+          <img src="../assets/img/poster-2.webp" alt="" loading="lazy" decoding="async">
+          <svg class="brand-ico" aria-hidden="true"><use href="#i-ig"/></svg>
+          <h3>Instagram</h3>
+          <p>Moments from events, rehearsals and behind the scenes.</p>
+          <span class="go"><span dir="ltr">@benny_laufer</span><span class="go-cta">Watch <svg aria-hidden="true"><use href="#i-arrow"/></svg></span></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="contact" id="contact" aria-labelledby="contact-title">
+      <div class="contact-glow" aria-hidden="true"></div>
+      <div class="wrap contact-grid">
+        <div class="contact-copy">
+          <p class="eyebrow" data-reveal>Contact</p>
+          <h2 class="h2" id="contact-title" data-split>Let's talk about your event</h2>
+          <p class="contact-text" data-reveal>Fill in three details and we'll open a ready-made WhatsApp message, or reach us directly.</p>
+          <ul class="direct">
+            <li data-reveal><a href="https://wa.me/972559330757" target="_blank" rel="noopener"><span class="d-ico"><svg aria-hidden="true"><use href="#i-wa"/></svg></span><span><small>WhatsApp</small><strong dir="ltr">+972 55-933-0757</strong></span><svg class="d-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+            <li data-reveal><a href="tel:+972559330757"><span class="d-ico"><svg aria-hidden="true"><use href="#i-phone"/></svg></span><span><small>Phone</small><strong dir="ltr">055-933-0757</strong></span><svg class="d-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+            <li data-reveal><a href="mailto:bennylaufermusic.com@gmail.com"><span class="d-ico"><svg aria-hidden="true"><use href="#i-mail"/></svg></span><span><small>Email</small><strong dir="ltr">bennylaufermusic.com@gmail.com</strong></span><svg class="d-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+          </ul>
+        </div>
+
+        <form class="inquiry" id="inq" data-reveal novalidate>
+          <fieldset class="chips">
+            <legend>Type of event</legend>
             <label class="chip"><input type="radio" name="type" value="o1" checked><span>Chuppah & wedding</span></label>
             <label class="chip"><input type="radio" name="type" value="o2"><span>Gala evening</span></label>
             <label class="chip"><input type="radio" name="type" value="o3"><span>Private or corporate dinner</span></label>
             <label class="chip"><input type="radio" name="type" value="o4"><span>Concert</span></label>
             <label class="chip"><input type="radio" name="type" value="o5"><span>Other</span></label>
+          </fieldset>
+          <div class="fields">
+            <label class="field"><input id="fDate" type="date" placeholder=" "><span>Approximate date</span></label>
+            <label class="field"><input id="fPlace" type="text" autocomplete="address-level2" placeholder=" "><span>City or country</span></label>
           </div>
-        </fieldset>
-        <div class="fields">
-          <div class="field">
-            <label class="label" for="fDate">Approximate date <span class="opt">(optional)</span></label>
-            <input id="fDate" name="date" type="date" aria-describedby="fDateErr">
-            <p class="field-err" id="fDateErr" role="alert" hidden>That date has already passed. Pick a future date, or leave the field empty.</p>
+          <div class="wa">
+            <div class="wa-head"><span class="wa-avatar"><svg aria-hidden="true"><use href="#i-mono"/></svg></span><span>Your message</span></div>
+            <div class="bubble" aria-live="polite"><span id="waText"></span><span class="meta">now <svg viewBox="0 0 18 12" aria-hidden="true"><path d="M1 6.5 4.5 10 11 2M7 9.5 7.5 10 14 2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
           </div>
-          <div class="field">
-            <label class="label" for="fPlace">City or country <span class="opt">(optional)</span></label>
-            <input id="fPlace" name="place" type="text" autocomplete="address-level2" maxlength="80">
-          </div>
+          <a class="btn btn-gold btn-block magnetic js-wa" id="fSend" href="https://wa.me/972559330757" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg><span>Send on WhatsApp</span></a>
+          <p class="hint">This opens WhatsApp with a prepared message. Nothing is sent until you confirm.</p>
+        </form>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="wrap">
+        <div class="footer-mark" aria-hidden="true">
+          <svg class="footer-mono"><use href="#i-mono"/></svg>
+          <p class="footer-word" lang="en">BENNY LAUFER</p>
+          <svg class="baton" viewBox="0 0 1200 24" preserveAspectRatio="none"><path d="M2 16C2 11.5 10 11 22 11.6C36 12.2 50 13.2 64 13.3L1197 5.6Q1199.6 6 1197 6.5L64 17.7C50 17.8 36 19.6 22 20.4C10 21 2 20.5 2 16Z"/></svg>
         </div>
-        <div class="preview">
-          <p class="label" id="previewLabel">Your message</p>
-          <blockquote class="preview-text" id="waText" aria-labelledby="previewLabel"></blockquote>
+        <div class="footer-row">
+          <span>© <span id="yr">2026</span> Benny Laufer</span>
+          <span>Management & production: Eli Lev Productions</span>
+          <span class="footer-social">
+            <a href="https://www.youtube.com/@bennylaufer" target="_blank" rel="noopener" aria-label="YouTube"><svg aria-hidden="true"><use href="#i-yt"/></svg></a>
+            <a href="https://www.instagram.com/benny_laufer" target="_blank" rel="noopener" aria-label="Instagram"><svg aria-hidden="true"><use href="#i-ig"/></svg></a>
+            <a href="https://wa.me/972559330757" target="_blank" rel="noopener" aria-label="WhatsApp"><svg aria-hidden="true"><use href="#i-wa"/></svg></a>
+          </span>
+          <div class="lang" role="group" aria-label="Language"><a href="/" hreflang="he" lang="he">עב</a><a href="/en/" hreflang="en" lang="en" aria-current="page">EN</a><a href="/fr/" hreflang="fr" lang="fr">FR</a></div>
+          <a class="to-top" href="#top">Back to top <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </div>
-        <a class="btn btn--gold btn--block js-send" id="fSend" href="https://wa.me/972559330757" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg>Send on WhatsApp</a>
-        <p class="hint">This opens WhatsApp with a prepared message. Nothing is sent until you confirm.</p>
-        <p class="status" id="fStatus" aria-live="polite" hidden>WhatsApp should open in a new window. Didn't open? Call <a href="tel:+972559330757" dir="ltr">055-933-0757</a>.</p>
-      </form>
-    </div>
-  </section>
+      </div>
+    </footer>
+  </div>
 </main>
 
-<footer class="footer">
-  <div class="wrap">
-    <div class="footer-mark" aria-hidden="true">
-      <p class="footer-word" lang="en">BENNY LAUFER</p>
-      <svg class="baton" viewBox="0 0 1200 24" preserveAspectRatio="none"><path d="M2 16C2 11.5 10 11 22 11.6C36 12.2 50 13.2 64 13.3L1197 5.6Q1199.6 6 1197 6.5L64 17.7C50 17.8 36 19.6 22 20.4C10 21 2 20.5 2 16Z"/></svg>
-    </div>
-    <div class="footer-cols">
-      <div>
-        <p class="label">Contact</p>
-        <ul class="footer-list">
-          <li><a class="js-wa-hello" href="https://wa.me/972559330757" target="_blank" rel="noopener">WhatsApp</a></li>
-          <li><a href="tel:+972559330757" dir="ltr">055-933-0757</a></li>
-          <li><a href="mailto:bennylaufermusic.com@gmail.com">Email</a></li>
-        </ul>
-      </div>
-      <div>
-        <p class="label">Follow</p>
-        <ul class="footer-list">
-          <li><a href="https://www.youtube.com/@bennylaufer" target="_blank" rel="noopener">YouTube</a></li>
-          <li><a href="https://www.instagram.com/benny_laufer" target="_blank" rel="noopener">Instagram</a></li>
-        </ul>
-      </div>
-      <div>
-        <p class="label">Language</p>
-        <div class="lang" role="group" aria-label="Language"><a href="/" hreflang="he" lang="he">עב</a><a href="/en/" hreflang="en" lang="en" aria-current="page">EN</a><a href="/fr/" hreflang="fr" lang="fr">FR</a></div>
-      </div>
-    </div>
-    <div class="footer-base">
-      <p>© <span class="js-year">2026</span> Benny Laufer · Management & production: Eli Lev Productions</p>
-      <a class="to-top" href="#top">Back to top</a>
-    </div>
-  </div>
-</footer>
-
 <div class="dock" id="dock">
-  <a class="btn btn--gold" href="#contact">Check a date</a>
-  <a class="btn btn--line dock-wa js-wa-hello" href="https://wa.me/972559330757" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg></a>
+  <a class="btn btn-gold js-wa" href="#contact" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-wa"/></svg><span>Check if your date is free</span></a>
 </div>
 
 <dialog class="theater" id="theater" aria-label="Video">
-  <div class="theater-in">
-    <div class="theater-stage">
-      <video class="theater-video" controls playsinline preload="none"></video>
-      <p class="theater-err" hidden>This video didn't load. You can also watch performances on the YouTube channel. <a href="https://www.youtube.com/@bennylaufer" target="_blank" rel="noopener">YouTube</a></p>
-    </div>
-    <button class="icon-btn theater-close" type="button" aria-label="Close"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
-    <button class="icon-btn theater-prev" type="button" aria-label="Previous video"><svg class="ico-prev" aria-hidden="true"><use href="#i-arrow"/></svg></button>
-    <button class="icon-btn theater-next" type="button" aria-label="Next video"><svg class="ico-next" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+  <div class="theater-inner">
+    <video class="theater-video" controls playsinline preload="none"></video>
+    <button class="round-btn theater-close" type="button" aria-label="Close"><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+    <button class="round-btn theater-nav theater-prev" type="button" aria-label="Previous video"><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+    <button class="round-btn theater-nav theater-next" type="button" aria-label="Next video"><svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
   </div>
 </dialog>
 
-<script type="application/json" id="bl-config">{"lang": "en", "locale": "en", "wa": "972559330757", "text": "Hello, I'd like to check availability for the Benny Laufer Orchestra.\nEvent: {type}\nDate: {date}\nLocation: {place}", "hello": "Hello, I'd like to hear more about the Benny Laufer Orchestra.", "tbd": "to be confirmed", "types": {"o1": "Chuppah & wedding", "o2": "Gala evening", "o3": "Private or corporate dinner", "o4": "Concert", "o5": "Other"}}</script>
+<script>window.BL={lang:"en",locale:"en",wa:"972559330757",text:"Hello, I'd like to check availability for the Benny Laufer Orchestra.\nEvent: {type}\nDate: {date}\nLocation: {place}",tbd:"to be confirmed",types:{"o1": "Chuppah & wedding", "o2": "Gala evening", "o3": "Private or corporate dinner", "o4": "Concert", "o5": "Other"}};</script>
+<script src="../assets/vendor/gsap.min.js" defer></script>
+<script src="../assets/vendor/ScrollTrigger.min.js" defer></script>
+<script src="../assets/vendor/lenis.min.js" defer></script>
+<script src="../assets/js/main.js?v=7bae6e3586" defer></script>
 </body>
 </html>

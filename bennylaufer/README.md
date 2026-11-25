@@ -1,64 +1,62 @@
 # bennylaufer.com — redesign
 
-A one-page site for the Benny Laufer Orchestra in Hebrew (`/`), English (`/en/`) and French (`/fr/`).
-Live preview: **https://bennylaufer.vercel.app**
+A cinematic, scroll-driven one-page site for the Benny Laufer Orchestra in Hebrew (`/`), English (`/en/`) and French (`/fr/`).
+Black stage, champagne gold, one ivory chapter, all built from the content and media of the current site.
 
-## Design system
+## What's on the page
 
-The site is styled like a concert programme. Type, hairlines and photography carry it: no cards, glows, gradients or decorative icons.
+| Section | Effect |
+| --- | --- |
+| Hero | The gold monogram draws itself, the name rises out of a mask, and stage beams sway. Five gold staff lines can be plucked with the cursor or a finger. |
+| Hero → stage | The hero stays pinned while the B&W conducting photo opens from a small window into a full-bleed frame, revealing "This moment happens once. Give it an orchestra." |
+| Manifesto | Each word lights up as you read and scroll. |
+| About | Image reveal with parallax, staggered heading, roles list |
+| Marquee | Event types scroll by and speed up with your scroll |
+| On stage | The wide orchestra shot grows to full bleed; a two-photo collage moves with parallax |
+| Video | Highlights carousel: muted 8-second loops autoplay in view, with a progress pill. Tapping a clip opens the full video with sound in a lightbox. |
+| Services | A bento grid on an ivory sheet that rises over the page, with line-art icons that draw themselves and a gold spotlight that follows the cursor. |
+| Process | Sticky heading, a gold rail that fills as you scroll, and steps that light up one by one |
+| Contact | Event-type chips, date and place fields, and a **live WhatsApp message preview**. Nothing is sent until the visitor confirms in WhatsApp. |
+| Footer | The logo lockup is written out letter by letter and the baton draws across |
 
-| Token | Value | Use |
-| --- | --- | --- |
-| `--ink` / `--fg` | `#0c0b0a` / `#ece7dd` | Stage background and text (15.9:1) |
-| `--fg-2`, `--fg-3` | 7.9:1, 5.7:1 | Secondary text; `--fg-3` is the smallest text allowed |
-| `--fg-dim` | 3.3:1 | Large text before it lights up; input and button borders |
-| `--gold` | `#c9a34f` | Foil accent, used sparingly: the monogram, the surname, the primary action |
-| `--paper` / `--on-paper` | `#efe9dc` / `#191714` | The ivory chapter (services, booking steps) |
-| Display | Frank Ruhl Libre (he) · Bodoni Moda (en/fr) | Names and headings |
-| Text | Heebo (he) · Inter (en/fr) | Everything else |
-| Radius | `2px` controls · `0` media · round only for icon buttons | |
-| Space | 8-pt scale, `--section` for vertical rhythm, 12-column grid | |
-
-Every text pair passes WCAG 2.2 AA (`src` comments list the ratios). Tap targets are at least 44px on touch screens.
-
-## Behaviour
-
-- The hero draws in with CSS only, so first paint never waits for script. Scrolling pins the stage while the conducting photograph rises like a curtain.
-- The five staff lines are a canvas that reacts to a cursor or a finger. When nothing touches them they sleep, with no animation loop.
-- The manifesto lights up word by word. The wide stage photograph opens to full bleed. Other sections arrive once, quietly.
-- Video: muted 8-second loops play only while the section is in view. Tapping a clip opens the full video with sound in a native `<dialog>`. Buffering, failed-clip and failed-video states are handled.
-- Booking: choose an event type, a date (past dates are refused, with a message) and a place. A live preview shows the exact WhatsApp message. After sending, a status line offers the phone number in case WhatsApp doesn't open.
-- Mobile: a bottom action bar (check a date, plus WhatsApp) appears after the hero. It steps aside at the form and while typing, and respects safe areas.
-- `prefers-reduced-motion`: no pinning or scrubbing, everything visible. Without JavaScript the page is complete.
-
-## Engineering
-
-- No dependencies. `main.js` is about 8 KB gzipped, with one scroll listener and one rAF per frame. Each scene reads its rect first, then writes transforms.
-- Fonts are self-hosted, subset to the glyphs used and limited to the weights used (66 KB per Hebrew page). The footer wordmark has its own 2.6 KB font.
-- Images are AVIF and WebP with `srcset` and fixed aspect ratios, so there is no layout shift.
-- A Content-Security-Policy is set in every page: `script-src 'self'` plus the sha256 of the one inline line, `style-src 'self'`, nothing third-party. `vercel.json` adds frame-ancestors, Permissions-Policy and COOP. Page data lives in `<script type="application/json">`.
+Without JavaScript the page is still complete. It also honors `prefers-reduced-motion`: no pinning, no smooth scroll, every section static and readable.
 
 ## Files
 
 ```
-build.py            renders the three pages from src/ (and the CSP hash, sitemap, robots)
-src/template.html   markup ({{key}} raw, {{@key}} attribute-escaped)
-src/i18n.json       all copy, per language
-src/brand/          traced monogram + original logo files
-site/               the deployable static site
-vercel-edge/        how site/ is currently served on Vercel (see below)
+build.py            renders the three language pages from src/
+src/template.html   markup (placeholders: {{key}} raw, {{@key}} attribute-escaped)
+src/i18n.json       all text, per language — edit copy here
+src/brand/mono.svg  the gold monogram, traced from the original logo
+site/               deployable output (static)
+  assets/css/main.css   design system and layout
+  assets/js/main.js     motion and interaction (GSAP + ScrollTrigger, Lenis)
+  assets/vendor/        gsap 3.13.0, ScrollTrigger, lenis 1.3.4 (self-hosted)
+  assets/fonts/         Frank Ruhl Libre, Heebo, Bodoni Moda, Inter (SIL OFL)
+  assets/img/           AVIF/WebP/JPEG at several widths, video posters
+  media/                full videos (v*.mp4) and muted 8-second loops (loop-*.mp4)
+  og.jpg, favicon.svg, favicon-32.png, apple-touch-icon.png, icon-512.png
+  sitemap.xml, robots.txt, vercel.json
 ```
 
+## Build
+
 ```bash
-python3 build.py                      # site/index.html, site/en/, site/fr/, sitemap, robots
-python3 build.py --preview OUT_DIR    # the same pages with file-relative language links
+python3 build.py                      # writes site/index.html, site/en/, site/fr/, sitemap, robots
+python3 build.py --preview OUT_DIR    # same pages with file-relative language links (for local previews)
 ```
+
+After editing `main.css` or `main.js`, run the build again. That updates the `?v=` cache-buster.
 
 ## Deploy
 
-The Vercel account has no GitHub connection. Project `bennylaufer` (team `pini`) is therefore deployed from `vercel-edge/`:
+Live preview: **https://bennylaufer.vercel.app** (also https://benny-laufer.vercel.app). Vercel project `bennylaufer`, team `pini`.
 
-- `middleware.js` serves `/`, `/en/` and `/fr/` from this repo at a pinned commit. On `*.vercel.app` it sets `noindex`, because the canonical site is bennylaufer.com.
-- `vercel.json` rewrites `/assets`, `/media` and the icons to jsDelivr at the same commit.
+The Vercel account has no GitHub connection, so the project is deployed from `vercel-edge/` (three small files):
 
-To publish: push, put the new commit SHA in both files, and redeploy them. Once GitHub is connected to Vercel (Account Settings, Authentication), connect the repo instead: root directory `bennylaufer/site`, no build command.
+- `middleware.js` serves `/`, `/en/` and `/fr/` from the repo at a pinned commit and returns them as HTML. On `*.vercel.app` it adds `noindex`, because the canonical site is bennylaufer.com.
+- `vercel.json` rewrites `/assets`, `/media` and the icons to jsDelivr, at the same commit.
+
+To publish a change: push it, put the new commit SHA in both files, and redeploy them.
+
+Once GitHub is connected to Vercel (Account Settings, Authentication), connect the repo instead: root directory `bennylaufer/site`, no build command. Deploys then happen on every push.

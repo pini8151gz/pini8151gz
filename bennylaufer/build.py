@@ -7,7 +7,6 @@
 Text lives in src/i18n.json, markup in src/template.html. CSS/JS/images are
 authored directly under site/assets and shared by every language.
 """
-import base64
 import hashlib
 import html
 import json
@@ -109,62 +108,42 @@ def font_preload(lang: str, R: str) -> str:
     )
 
 
-def reels(t: dict, R: str) -> str:
-    items = []
+def reels(t: dict, R: str) -> tuple[str, str]:
+    items, dots = [], []
     for i, n in enumerate(VIDEOS, 1):
-        label = esc(f'{t["vd_open"]}: {t["vd_item"]} {i}')
+        label = esc(f'{t["vd_open"]} · {t["vd_item"]} {i}')
         items.append(
             f'<li class="reel" data-full="{R}media/v{n}.mp4" data-poster="{R}assets/img/poster-{n}.jpg">'
             f'<img src="{R}assets/img/poster-{n}.webp" alt="" loading="lazy" decoding="async" width="480" height="854">'
             f'<video muted playsinline preload="none" data-src="{R}media/loop-{n}.mp4" aria-hidden="true"></video>'
             f'<button class="reel-open" type="button" aria-label="{label}">'
-            f'<span class="reel-label"><svg aria-hidden="true"><use href="#i-play"/></svg>{t["vd_open"]}</span></button>'
-            f'<span class="reel-progress" aria-hidden="true"></span></li>'
+            f'<span class="reel-chip"><svg aria-hidden="true"><use href="#i-play"/></svg>{t["vd_open"]}</span></button></li>'
         )
-    return "".join(items)
-
-
-HEAD_JS = ("(function(d){var h=d.documentElement;h.classList.add('js');"
-           "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)h.classList.add('fx');})(document);")
-
-
-def csp() -> str:
-    digest = base64.b64encode(hashlib.sha256(HEAD_JS.encode()).digest()).decode()
-    return "; ".join([
-        "default-src 'self'",
-        f"script-src 'self' 'sha256-{digest}'",
-        "style-src 'self'",
-        "img-src 'self' data:",
-        "media-src 'self'",
-        "font-src 'self'",
-        "connect-src 'self'",
-        "object-src 'none'",
-        "base-uri 'self'",
-        "form-action 'none'",
-    ])
+        dots.append(f'<button class="dot" type="button" aria-label="{esc(t["vd_item"])} {i}"><i></i></button>')
+    return "".join(items), "".join(dots)
 
 
 def render(lang: str, data: dict, preview: bool, mono: str, ver: str) -> str:
     t = data[lang]
     R = "" if lang == "he" else "../"
     tpl = (SRC / "template.html").read_text()
-    config = {
-        "lang": lang, "locale": t["locale"], "wa": PHONE.lstrip("+"),
-        "text": t["wa_text"], "hello": t["wa_hello"], "tbd": t["wa_tbd"],
-        "types": {k: t[k] for k in ("o1", "o2", "o3", "o4", "o5")},
-    }
+    roles = "".join(f"<li>{r}</li>" for r in t["roles"])
+    group = "".join(f'<span dir="{t["dir"]}">{w}</span><i></i>' for w in t["marquee"])
+    marquee = f'<div class="marquee-group">{group}</div>' * 2
+    reel_html, dot_html = reels(t, R)
     special = {
         "R": R,
         "V": ver,
         "SEO": seo(t, lang),
         "MONO_D": mono,
         "LANG_SWITCH": lang_switch(lang, preview, t["lang_label"]),
+        "ROLES": roles,
+        "MARQUEE": marquee,
         "FONT_PRELOAD": font_preload(lang, R),
-        "REELS": reels(t, R),
-        "REEL_COUNT": str(len(VIDEOS)),
-        "CONFIG_JSON": json.dumps(config, ensure_ascii=False).replace("</", "<\\/"),
-        "HEAD_JS": HEAD_JS,
-        "CSP": csp(),
+        "REELS": reel_html,
+        "DOTS": dot_html,
+        "WA_JSON": json.dumps(t["wa_text"], ensure_ascii=False),
+        "TYPES_JSON": json.dumps({k: t[k] for k in ("o1", "o2", "o3", "o4", "o5")}, ensure_ascii=False),
     }
 
     def sub(m: re.Match) -> str:
